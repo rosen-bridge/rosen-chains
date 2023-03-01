@@ -1,0 +1,25 @@
+{
+  "name": "rosen-chains",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
+  "scripts": {
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces",
+    "coverage": "npm run coverage --workspaces",
+    "build": "npm run build --workspaces",
+    "type-check": "npm run type-check --workspaces",
+    "release": "npm run release --workspaces",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3"
+  },
+  "engines": {
+    "node": ">=16.14.0"
+  }
+}
