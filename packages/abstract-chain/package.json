@@ -12,8 +12,7 @@
     "type-check": "tsc --noEmit",
     "test": "jest --passWithNoTests",
     "coverage": "npm run test -- --coverage",
-    "release": "npm run test && npm run build && npm publish --access public",
-    "prepare": "husky install"
+    "release": "npm run test && npm run build && npm publish --access public"
   },
   "repository": {
     "type": "git",
