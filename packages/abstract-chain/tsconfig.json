@@ -5,6 +5,5 @@
     "rootDir": "./"
   },
   "exclude": ["lib/**/*.spec.ts", "lib/**/*.test.ts", "lib/**/*.mock.ts"],
-  "include": ["lib/**/*"],
-  "references": [{ "path": "../tokens" }, { "path": "../logger-interface" }]
+  "include": ["lib/**/*"]
 }
