@@ -33,7 +33,6 @@ abstract class AbstractUtxoChain extends AbstractChain {
    * @returns an object containing the selected boxes with a boolean showing if requirements covered or not
    */
   getCoveringBoxes = async (
-    // TODO: implement unit tests for this function
     address: string,
     requiredAssets: AssetBalance,
     unallowableBoxIds: string[],
@@ -59,6 +58,9 @@ abstract class AbstractUtxoChain extends AbstractChain {
         this.GET_BOX_API_LIMIT
       );
       offset += this.GET_BOX_API_LIMIT;
+
+      // end process if there are no more boxes
+      if (boxes.length === 0) break;
 
       // process received boxes
       for (const box of boxes) {
@@ -91,7 +93,7 @@ abstract class AbstractUtxoChain extends AbstractChain {
           unCoveredNativeToken -=
             unCoveredNativeToken >= boxInfo.assets.nativeToken
               ? boxInfo.assets.nativeToken
-              : 0n;
+              : unCoveredNativeToken;
           result.push(trackedBox);
         }
 
