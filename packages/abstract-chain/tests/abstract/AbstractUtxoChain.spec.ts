@@ -185,7 +185,7 @@ describe('AbstractUtxoChain', () => {
 
     /**
      * Target: AbstractUtxoChain.getCoveringBoxes should return enough boxes
-     *  with covered key when boxes cover required assets
+     *  with covered key when two pages boxes cover required assets
      * Dependencies:
      *    -
      * Scenario:
@@ -249,8 +249,8 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return enough boxes
-     *  with covered key when boxes cover required assets
+     * Target: AbstractUtxoChain.getCoveringBoxes should return all boxes with
+     *  NOT covered key when two pages boxes do NOT cover required assets
      * Dependencies:
      *    -
      * Scenario:
@@ -311,8 +311,8 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return enough boxes
-     *  with covered key when boxes cover required assets
+     * Target: AbstractUtxoChain.getCoveringBoxes should return no boxes with
+     *  NOT covered key when address has no boxes
      * Dependencies:
      *    -
      * Scenario:
@@ -347,6 +347,211 @@ describe('AbstractUtxoChain', () => {
       // Check returned value
       expect(result.covered).toEqual(false);
       expect(result.boxes).toEqual([]);
+    });
+
+    /**
+     * Target: AbstractUtxoChain.getCoveringBoxes should return enough boxes
+     *  with covered key when tracked boxes cover required assets
+     * Dependencies:
+     *    -
+     * Scenario:
+     *    Mock a network object to return 2 boxes
+     *    Mock a Map to track first box to a new box
+     *    Mock chain 'getBoxInfo' function to return mocked boxes assets
+     *    Mock an AssetBalance object with assets less than box assets
+     *    Run test
+     *    Check returned value
+     * Expected Output:
+     *    It should return the correct value
+     */
+    it('should return enough boxes with covered key when tracked boxes cover required assets', async () => {
+      // Mock a network object to return 2 boxes
+      const network = new TestUtxoChainNetwork();
+      spyOn(network, 'getAddressBoxes')
+        .mockResolvedValue([])
+        .mockResolvedValueOnce(['serialized-box-1', 'serialized-box-2']);
+
+      // Mock a Map to track first box to a new box
+      const trackMap = new Map<string, string>();
+      trackMap.set('box1', 'serialized-tracked-box-1');
+
+      // Mock chain 'getBoxInfo' function to return mocked boxes assets
+      const chain = new TestUtxoChain(network);
+      spyOn(chain, 'getBoxInfo')
+        .mockReturnValueOnce({
+          id: 'box1',
+          assets: {
+            nativeToken: 100000n,
+            tokens: [{ id: 'token1', value: 200n }],
+          },
+        })
+        .mockReturnValueOnce({
+          id: 'trackedBox1',
+          assets: {
+            nativeToken: 80000n,
+            tokens: [{ id: 'token1', value: 150n }],
+          },
+        })
+        .mockReturnValueOnce({
+          id: 'box2',
+          assets: {
+            nativeToken: 100000n,
+            tokens: [{ id: 'token1', value: 200n }],
+          },
+        });
+
+      // Mock an AssetBalance object with assets less than box assets
+      const requiredAssets: AssetBalance = {
+        nativeToken: 50000n,
+        tokens: [{ id: 'token1', value: 100n }],
+      };
+
+      // Run test
+      const result = await chain.getCoveringBoxes(
+        '',
+        requiredAssets,
+        [],
+        trackMap
+      );
+
+      // Check returned value
+      expect(result.covered).toEqual(true);
+      expect(result.boxes).toEqual(['serialized-tracked-box-1']);
+    });
+
+    /**
+     * Target: AbstractUtxoChain.getCoveringBoxes should return all boxes with
+     *  NOT covered key when tracked boxes does NOT cover required assets
+     * Dependencies:
+     *    -
+     * Scenario:
+     *    Mock a network object to return 2 boxes
+     *    Mock a Map to track first box to a new box
+     *    Mock chain 'getBoxInfo' function to return mocked boxes assets
+     *    Mock an AssetBalance object with assets more than box assets
+     *    Run test
+     *    Check returned value
+     * Expected Output:
+     *    It should return the correct value
+     */
+    it('should return all boxes with NOT covered key when tracked boxes does NOT cover required assets', async () => {
+      // Mock a network object to return 2 boxes
+      const network = new TestUtxoChainNetwork();
+      spyOn(network, 'getAddressBoxes')
+        .mockResolvedValue([])
+        .mockResolvedValueOnce(['serialized-box-1', 'serialized-box-2']);
+
+      // Mock a Map to track first box to a new box
+      const trackMap = new Map<string, string>();
+      trackMap.set('box1', 'serialized-tracked-box-1');
+
+      // Mock chain 'getBoxInfo' function to return mocked boxes assets
+      const chain = new TestUtxoChain(network);
+      spyOn(chain, 'getBoxInfo')
+        .mockReturnValueOnce({
+          id: 'box1',
+          assets: {
+            nativeToken: 100000n,
+            tokens: [{ id: 'token1', value: 200n }],
+          },
+        })
+        .mockReturnValueOnce({
+          id: 'trackedBox1',
+          assets: {
+            nativeToken: 80000n,
+            tokens: [{ id: 'token1', value: 150n }],
+          },
+        })
+        .mockReturnValueOnce({
+          id: 'box2',
+          assets: {
+            nativeToken: 100000n,
+            tokens: [{ id: 'token1', value: 200n }],
+          },
+        });
+
+      // Mock an AssetBalance object with assets less than box assets
+      const requiredAssets: AssetBalance = {
+        nativeToken: 190000n,
+        tokens: [{ id: 'token1', value: 390n }],
+      };
+
+      // Run test
+      const result = await chain.getCoveringBoxes(
+        '',
+        requiredAssets,
+        [],
+        trackMap
+      );
+
+      // Check returned value
+      expect(result.covered).toEqual(false);
+      expect(result.boxes).toEqual([
+        'serialized-tracked-box-1',
+        'serialized-box-2',
+      ]);
+    });
+
+    /**
+     * Target: AbstractUtxoChain.getCoveringBoxes should return second box
+     *  with covered key when first box is not allowed
+     * Dependencies:
+     *    -
+     * Scenario:
+     *    Mock a network object to return 2 boxes
+     *    Mock first box as unallowable
+     *    Mock chain 'getBoxInfo' function to return mocked boxes assets
+     *    Mock an AssetBalance object with assets less than box assets
+     *    Run test
+     *    Check returned value
+     * Expected Output:
+     *    It should return the correct value
+     */
+    it('should return second box with covered key when first box is not allowed', async () => {
+      // Mock a network object to return 2 boxes
+      const network = new TestUtxoChainNetwork();
+      spyOn(network, 'getAddressBoxes')
+        .mockResolvedValue([])
+        .mockResolvedValueOnce(['serialized-box-1', 'serialized-box-2']);
+
+      // Mock first box as unallowable
+      const unallowableIds = ['box1'];
+
+      // Mock chain 'getBoxInfo' function to return mocked boxes assets
+      const chain = new TestUtxoChain(network);
+      spyOn(chain, 'getBoxInfo')
+        .mockReturnValueOnce({
+          id: 'box1',
+          assets: {
+            nativeToken: 100000n,
+            tokens: [{ id: 'token1', value: 200n }],
+          },
+        })
+        .mockReturnValueOnce({
+          id: 'box2',
+          assets: {
+            nativeToken: 100000n,
+            tokens: [{ id: 'token1', value: 200n }],
+          },
+        });
+
+      // Mock an AssetBalance object with assets less than box assets
+      const requiredAssets: AssetBalance = {
+        nativeToken: 90000n,
+        tokens: [{ id: 'token1', value: 190n }],
+      };
+
+      // Run test
+      const result = await chain.getCoveringBoxes(
+        '',
+        requiredAssets,
+        unallowableIds,
+        emptyMap
+      );
+
+      // Check returned value
+      expect(result.covered).toEqual(true);
+      expect(result.boxes).toEqual(['serialized-box-2']);
     });
   });
 });

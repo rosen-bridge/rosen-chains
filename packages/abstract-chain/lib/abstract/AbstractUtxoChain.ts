@@ -74,7 +74,7 @@ abstract class AbstractUtxoChain extends AbstractChain {
         }
 
         // exclude unallowable boxes
-        if (boxInfo.id in unallowableBoxIds) continue;
+        if (unallowableBoxIds.includes(boxInfo.id)) continue;
 
         // check and add if box assets are useful to requirements
         let isUseful = false;
