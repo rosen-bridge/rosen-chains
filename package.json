@@ -16,7 +16,9 @@
     "prepare": "husky install"
   },
   "devDependencies": {
+    "@types/jest-when": "^3.5.2",
     "husky": "^8.0.1",
+    "jest-when": "^3.5.2",
     "lint-staged": "^13.0.3"
   },
   "engines": {
