@@ -1,8 +1,8 @@
-import TestUtxoChainNetwork from './TestUtxoChainNetwork';
-import spyOn = jest.spyOn;
 import TestUtxoChain from './TestUtxoChain';
-import { AssetBalance } from '../../lib/abstract/Interfaces';
+import TestUtxoChainNetwork from './TestUtxoChainNetwork';
+import { AssetBalance } from '../../lib';
 import { when } from 'jest-when';
+import spyOn = jest.spyOn;
 
 describe('AbstractUtxoChain', () => {
   describe('getCoveringBoxes', () => {
@@ -10,7 +10,7 @@ describe('AbstractUtxoChain', () => {
 
     /**
      * Target: AbstractUtxoChain.getCoveringBoxes should return enough boxes
-     *  with covered key when boxes cover required assets
+     *  as covered when boxes cover required assets
      * Dependencies:
      *    -
      * Scenario:
@@ -22,7 +22,7 @@ describe('AbstractUtxoChain', () => {
      * Expected Output:
      *    It should return the correct value
      */
-    it('should return enough boxes with covered key when boxes cover required assets', async () => {
+    it('should return enough boxes as covered when boxes cover required assets', async () => {
       // Mock a network object to return 2 boxes
       const network = new TestUtxoChainNetwork();
       spyOn(network, 'getAddressBoxes')
@@ -31,8 +31,8 @@ describe('AbstractUtxoChain', () => {
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
       const chain = new TestUtxoChain(network);
-      const chainSPy = spyOn(chain, 'getBoxInfo');
-      when(chainSPy)
+      const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
+      when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
         .mockReturnValueOnce({
           id: 'box1',
@@ -41,7 +41,7 @@ describe('AbstractUtxoChain', () => {
             tokens: [{ id: 'token1', value: 200n }],
           },
         });
-      when(chainSPy)
+      when(getBoxInfoSpy)
         .calledWith('serialized-box-2')
         .mockReturnValueOnce({
           id: 'box2',
@@ -71,8 +71,8 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return all boxes with
-     *  NOT covered key when boxes do NOT cover required assets
+     * Target: AbstractUtxoChain.getCoveringBoxes should return all boxes as
+     *  NOT covered when boxes do NOT cover required assets
      * Dependencies:
      *    -
      * Scenario:
@@ -84,7 +84,7 @@ describe('AbstractUtxoChain', () => {
      * Expected Output:
      *    It should return the correct value
      */
-    it('should return all boxes with NOT covered key when boxes do NOT cover required assets', async () => {
+    it('should return all boxes as NOT covered when boxes do NOT cover required assets', async () => {
       // Mock a network object to return 2 boxes
       const network = new TestUtxoChainNetwork();
       spyOn(network, 'getAddressBoxes')
@@ -93,8 +93,8 @@ describe('AbstractUtxoChain', () => {
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
       const chain = new TestUtxoChain(network);
-      const chainSPy = spyOn(chain, 'getBoxInfo');
-      when(chainSPy)
+      const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
+      when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
         .mockReturnValueOnce({
           id: 'box1',
@@ -103,7 +103,7 @@ describe('AbstractUtxoChain', () => {
             tokens: [{ id: 'token1', value: 200n }],
           },
         });
-      when(chainSPy)
+      when(getBoxInfoSpy)
         .calledWith('serialized-box-2')
         .mockReturnValueOnce({
           id: 'box2',
@@ -134,7 +134,7 @@ describe('AbstractUtxoChain', () => {
 
     /**
      * Target: AbstractUtxoChain.getCoveringBoxes should return all useful boxes
-     *  with NOT covered key when boxes do NOT cover required tokens
+     *  as NOT covered key when boxes do NOT cover required tokens
      * Dependencies:
      *    -
      * Scenario:
@@ -147,7 +147,7 @@ describe('AbstractUtxoChain', () => {
      * Expected Output:
      *    It should return the correct value
      */
-    it('should return all useful boxes with NOT covered key when boxes do NOT cover required tokens', async () => {
+    it('should return all useful boxes as NOT covered when boxes do NOT cover required tokens', async () => {
       // Mock a network object to return 2 boxes
       const network = new TestUtxoChainNetwork();
       spyOn(network, 'getAddressBoxes')
@@ -157,8 +157,8 @@ describe('AbstractUtxoChain', () => {
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
       //  (second box doesn't contain required token)
       const chain = new TestUtxoChain(network);
-      const chainSPy = spyOn(chain, 'getBoxInfo');
-      when(chainSPy)
+      const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
+      when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
         .mockReturnValueOnce({
           id: 'box1',
@@ -167,7 +167,7 @@ describe('AbstractUtxoChain', () => {
             tokens: [{ id: 'token1', value: 200n }],
           },
         });
-      when(chainSPy)
+      when(getBoxInfoSpy)
         .calledWith('serialized-box-2')
         .mockReturnValueOnce({
           id: 'box2',
@@ -198,7 +198,7 @@ describe('AbstractUtxoChain', () => {
 
     /**
      * Target: AbstractUtxoChain.getCoveringBoxes should return enough boxes
-     *  with covered key when two pages boxes cover required assets
+     *  as covered when two pages boxes cover required assets
      * Dependencies:
      *    -
      * Scenario:
@@ -210,26 +210,23 @@ describe('AbstractUtxoChain', () => {
      * Expected Output:
      *    It should return the correct value
      */
-    it('should return enough boxes with covered key when two pages boxes cover required assets', async () => {
+    it('should return enough boxes as covered when two pages boxes cover required assets', async () => {
       // Mock a network object to return 12 boxes
       const network = new TestUtxoChainNetwork();
-      const networkSpy = spyOn(network, 'getAddressBoxes');
-      networkSpy.mockResolvedValue([]);
-      networkSpy.mockResolvedValueOnce(
-        Array.from({ length: 10 }, (x, i) => i).map(
-          (i) => `serialized-box-${i + 1}`
+      spyOn(network, 'getAddressBoxes')
+        .mockResolvedValue([])
+        .mockResolvedValueOnce(
+          Array.from({ length: 10 }, (x, i) => i).map(
+            (i) => `serialized-box-${i + 1}`
+          )
         )
-      );
-      networkSpy.mockResolvedValueOnce([
-        'serialized-box-11',
-        'serialized-box-12',
-      ]);
+        .mockResolvedValueOnce(['serialized-box-11', 'serialized-box-12']);
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
       const chain = new TestUtxoChain(network);
-      const chainSpy = spyOn(chain, 'getBoxInfo');
+      const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       Array.from({ length: 12 }, (x, i) => i).map((i) => {
-        when(chainSpy)
+        when(getBoxInfoSpy)
           .calledWith(`serialized-box-${i + 1}`)
           .mockReturnValueOnce({
             id: `box${i + 1}`,
@@ -264,8 +261,8 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return all boxes with
-     *  NOT covered key when two pages boxes do NOT cover required assets
+     * Target: AbstractUtxoChain.getCoveringBoxes should return all boxes as
+     *  NOT covered when two pages boxes do NOT cover required assets
      * Dependencies:
      *    -
      * Scenario:
@@ -277,26 +274,23 @@ describe('AbstractUtxoChain', () => {
      * Expected Output:
      *    It should return the correct value
      */
-    it('should return all boxes with NOT covered key when two pages boxes do NOT cover required assets', async () => {
+    it('should return all boxes as NOT covered when two pages boxes do NOT cover required assets', async () => {
       // Mock a network object to return 12 boxes
       const network = new TestUtxoChainNetwork();
-      const networkSpy = spyOn(network, 'getAddressBoxes');
-      networkSpy.mockResolvedValue([]);
-      networkSpy.mockResolvedValueOnce(
-        Array.from({ length: 10 }, (x, i) => i).map(
-          (i) => `serialized-box-${i + 1}`
+      spyOn(network, 'getAddressBoxes')
+        .mockResolvedValue([])
+        .mockResolvedValueOnce(
+          Array.from({ length: 10 }, (x, i) => i).map(
+            (i) => `serialized-box-${i + 1}`
+          )
         )
-      );
-      networkSpy.mockResolvedValueOnce([
-        'serialized-box-11',
-        'serialized-box-12',
-      ]);
+        .mockResolvedValueOnce(['serialized-box-11', 'serialized-box-12']);
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
       const chain = new TestUtxoChain(network);
-      const chainSpy = spyOn(chain, 'getBoxInfo');
+      const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       Array.from({ length: 12 }, (x, i) => i).map((i) => {
-        when(chainSpy)
+        when(getBoxInfoSpy)
           .calledWith(`serialized-box-${i + 1}`)
           .mockReturnValueOnce({
             id: `box${i + 1}`,
@@ -328,8 +322,8 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return no boxes with
-     *  NOT covered key when address has no boxes
+     * Target: AbstractUtxoChain.getCoveringBoxes should return no boxes as
+     *  NOT covered when address has no boxes
      * Dependencies:
      *    -
      * Scenario:
@@ -340,11 +334,10 @@ describe('AbstractUtxoChain', () => {
      * Expected Output:
      *    It should return the correct value
      */
-    it('should return no boxes with NOT covered key when address has no boxes', async () => {
+    it('should return no boxes as NOT covered when address has no boxes', async () => {
       // Mock a network object to return NO boxes
       const network = new TestUtxoChainNetwork();
-      const networkSpy = spyOn(network, 'getAddressBoxes');
-      networkSpy.mockResolvedValue([]);
+      spyOn(network, 'getAddressBoxes').mockResolvedValue([]);
 
       // Mock an AssetBalance object with some assets
       const requiredAssets: AssetBalance = {
@@ -368,7 +361,7 @@ describe('AbstractUtxoChain', () => {
 
     /**
      * Target: AbstractUtxoChain.getCoveringBoxes should return enough boxes
-     *  with covered key when tracked boxes cover required assets
+     *  as covered when tracked boxes cover required assets
      * Dependencies:
      *    -
      * Scenario:
@@ -381,7 +374,7 @@ describe('AbstractUtxoChain', () => {
      * Expected Output:
      *    It should return the correct value
      */
-    it('should return enough boxes with covered key when tracked boxes cover required assets', async () => {
+    it('should return enough boxes as covered when tracked boxes cover required assets', async () => {
       // Mock a network object to return 2 boxes
       const network = new TestUtxoChainNetwork();
       spyOn(network, 'getAddressBoxes')
@@ -394,8 +387,8 @@ describe('AbstractUtxoChain', () => {
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
       const chain = new TestUtxoChain(network);
-      const chainSpy = spyOn(chain, 'getBoxInfo');
-      when(chainSpy)
+      const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
+      when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
         .mockReturnValueOnce({
           id: 'box1',
@@ -404,7 +397,7 @@ describe('AbstractUtxoChain', () => {
             tokens: [{ id: 'token1', value: 200n }],
           },
         });
-      when(chainSpy)
+      when(getBoxInfoSpy)
         .calledWith('serialized-tracked-box-1')
         .mockReturnValueOnce({
           id: 'trackedBox1',
@@ -413,7 +406,7 @@ describe('AbstractUtxoChain', () => {
             tokens: [{ id: 'token1', value: 150n }],
           },
         });
-      when(chainSpy)
+      when(getBoxInfoSpy)
         .calledWith('serialized-box-2')
         .mockReturnValueOnce({
           id: 'box2',
@@ -443,8 +436,8 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return all boxes with
-     *  NOT covered key when tracked boxes do NOT cover required assets
+     * Target: AbstractUtxoChain.getCoveringBoxes should return all boxes as
+     *  NOT covered when tracked boxes do NOT cover required assets
      * Dependencies:
      *    -
      * Scenario:
@@ -457,7 +450,7 @@ describe('AbstractUtxoChain', () => {
      * Expected Output:
      *    It should return the correct value
      */
-    it('should return all boxes with NOT covered key when tracked boxes do NOT cover required assets', async () => {
+    it('should return all boxes as NOT covered when tracked boxes do NOT cover required assets', async () => {
       // Mock a network object to return 2 boxes
       const network = new TestUtxoChainNetwork();
       spyOn(network, 'getAddressBoxes')
@@ -470,8 +463,8 @@ describe('AbstractUtxoChain', () => {
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
       const chain = new TestUtxoChain(network);
-      const chainSpy = spyOn(chain, 'getBoxInfo');
-      when(chainSpy)
+      const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
+      when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
         .mockReturnValueOnce({
           id: 'box1',
@@ -480,7 +473,7 @@ describe('AbstractUtxoChain', () => {
             tokens: [{ id: 'token1', value: 200n }],
           },
         });
-      when(chainSpy)
+      when(getBoxInfoSpy)
         .calledWith('serialized-tracked-box-1')
         .mockReturnValueOnce({
           id: 'trackedBox1',
@@ -489,7 +482,7 @@ describe('AbstractUtxoChain', () => {
             tokens: [{ id: 'token1', value: 150n }],
           },
         });
-      when(chainSpy)
+      when(getBoxInfoSpy)
         .calledWith('serialized-box-2')
         .mockReturnValueOnce({
           id: 'box2',
@@ -523,12 +516,12 @@ describe('AbstractUtxoChain', () => {
 
     /**
      * Target: AbstractUtxoChain.getCoveringBoxes should return second box
-     *  with covered key when first box is not allowed
+     *  as covered when first box is not allowed
      * Dependencies:
      *    -
      * Scenario:
      *    Mock a network object to return 2 boxes
-     *    Mock first box as unallowable
+     *    Mock first box as forbidden
      *    Mock chain 'getBoxInfo' function to return mocked boxes assets
      *    Mock an AssetBalance object with assets less than box assets
      *    Run test
@@ -536,20 +529,20 @@ describe('AbstractUtxoChain', () => {
      * Expected Output:
      *    It should return the correct value
      */
-    it('should return second box with covered key when first box is not allowed', async () => {
+    it('should return second box as covered when first box is not allowed', async () => {
       // Mock a network object to return 2 boxes
       const network = new TestUtxoChainNetwork();
       spyOn(network, 'getAddressBoxes')
         .mockResolvedValue([])
         .mockResolvedValueOnce(['serialized-box-1', 'serialized-box-2']);
 
-      // Mock first box as unallowable
-      const unallowableIds = ['box1'];
+      // Mock first box as forbidden
+      const forbiddenIds = ['box1'];
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
       const chain = new TestUtxoChain(network);
-      const chainSpy = spyOn(chain, 'getBoxInfo');
-      when(chainSpy)
+      const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
+      when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
         .mockReturnValueOnce({
           id: 'box1',
@@ -558,7 +551,7 @@ describe('AbstractUtxoChain', () => {
             tokens: [{ id: 'token1', value: 200n }],
           },
         });
-      when(chainSpy)
+      when(getBoxInfoSpy)
         .calledWith('serialized-box-2')
         .mockReturnValueOnce({
           id: 'box2',
@@ -578,7 +571,7 @@ describe('AbstractUtxoChain', () => {
       const result = await chain.getCoveringBoxes(
         '',
         requiredAssets,
-        unallowableIds,
+        forbiddenIds,
         emptyMap
       );
 

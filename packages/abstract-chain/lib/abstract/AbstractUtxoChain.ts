@@ -1,10 +1,10 @@
 import AbstractChain from './AbstractChain';
 import AbstractUtxoChainNetwork from './network/AbstractUtxoChainNetwork';
-import { AssetBalance, BoxInfo, CoveringBoxes } from './Interfaces';
+import { AssetBalance, BoxInfo, CoveringBoxes } from './types';
+import { GET_BOX_API_LIMIT } from './constants';
 
 abstract class AbstractUtxoChain extends AbstractChain {
   declare network: AbstractUtxoChainNetwork;
-  protected GET_BOX_API_LIMIT = 10;
 
   /**
    * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
@@ -28,36 +28,36 @@ abstract class AbstractUtxoChain extends AbstractChain {
    * gets useful, allowable and last boxes for an address until required assets are satisfied
    * @param address the address
    * @param requiredAssets the required assets
-   * @param unallowableBoxIds the id of unallowable boxes
+   * @param forbiddenBoxIds the id of forbidden boxes
    * @param trackMap the mapping of a box id to it's next box
    * @returns an object containing the selected boxes with a boolean showing if requirements covered or not
    */
   getCoveringBoxes = async (
     address: string,
     requiredAssets: AssetBalance,
-    unallowableBoxIds: string[],
+    forbiddenBoxIds: string[],
     trackMap: Map<string, string>
   ): Promise<CoveringBoxes> => {
-    let unCoveredNativeToken = requiredAssets.nativeToken;
-    const unCoveredTokens = requiredAssets.tokens.filter(
+    let uncoveredNativeToken = requiredAssets.nativeToken;
+    const uncoveredTokens = requiredAssets.tokens.filter(
       (info) => info.value > 0n
     );
 
-    const remaining = () => {
-      return unCoveredTokens.length > 0 || unCoveredNativeToken > 0n;
+    const isRequirementRemaining = () => {
+      return uncoveredTokens.length > 0 || uncoveredNativeToken > 0n;
     };
 
     let offset = 0;
     const result: string[] = [];
 
     // get boxes until requirements are satisfied
-    while (remaining()) {
+    while (isRequirementRemaining()) {
       const boxes = await this.network.getAddressBoxes(
         address,
         offset,
-        this.GET_BOX_API_LIMIT
+        GET_BOX_API_LIMIT
       );
-      offset += this.GET_BOX_API_LIMIT;
+      offset += GET_BOX_API_LIMIT;
 
       // end process if there are no more boxes
       if (boxes.length === 0) break;
@@ -73,37 +73,37 @@ abstract class AbstractUtxoChain extends AbstractChain {
           boxInfo = this.getBoxInfo(trackedBox);
         }
 
-        // exclude unallowable boxes
-        if (unallowableBoxIds.includes(boxInfo.id)) continue;
+        // exclude forbidden boxes
+        if (forbiddenBoxIds.includes(boxInfo.id)) continue;
 
         // check and add if box assets are useful to requirements
         let isUseful = false;
         boxInfo.assets.tokens.forEach((boxToken) => {
-          const tokenIndex = unCoveredTokens.findIndex(
+          const tokenIndex = uncoveredTokens.findIndex(
             (requiredToken) => requiredToken.id === boxToken.id
           );
           if (tokenIndex !== -1) {
             isUseful = true;
-            const token = unCoveredTokens[tokenIndex];
+            const token = uncoveredTokens[tokenIndex];
             if (token.value > boxToken.value) token.value -= boxToken.value;
-            else unCoveredTokens.splice(tokenIndex, 1);
+            else uncoveredTokens.splice(tokenIndex, 1);
           }
         });
-        if (isUseful || unCoveredNativeToken > 0n) {
-          unCoveredNativeToken -=
-            unCoveredNativeToken >= boxInfo.assets.nativeToken
+        if (isUseful || uncoveredNativeToken > 0n) {
+          uncoveredNativeToken -=
+            uncoveredNativeToken >= boxInfo.assets.nativeToken
               ? boxInfo.assets.nativeToken
-              : unCoveredNativeToken;
+              : uncoveredNativeToken;
           result.push(trackedBox);
         }
 
         // end process if requirements are satisfied
-        if (!remaining()) break;
+        if (!isRequirementRemaining()) break;
       }
     }
 
     return {
-      covered: !remaining(),
+      covered: !isRequirementRemaining(),
       boxes: result,
     };
   };

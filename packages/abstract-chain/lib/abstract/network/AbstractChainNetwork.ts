@@ -1,4 +1,4 @@
-import { AssetBalance } from '../Interfaces';
+import { AssetBalance } from '../types';
 
 abstract class AbstractChainNetwork {
   /**

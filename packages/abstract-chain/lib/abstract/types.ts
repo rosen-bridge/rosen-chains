@@ -55,7 +55,7 @@ interface PaymentTransactionModel {
    * @param creatorId id of the creator guard
    * @return signature
    */
-  signMetaData: (creatorId: number) => string;
+  signMetadata: (creatorId: number) => string;
 
   /**
    * verifies the signature over json data alongside guardId
@@ -63,13 +63,13 @@ interface PaymentTransactionModel {
    * @param msgSignature hex string signature over json data alongside guardId
    * @return true if signature verified
    */
-  verifyMetaDataSignature: (signerId: number, msgSignature: string) => boolean;
+  verifyMetadataSignature: (signerId: number, msgSignature: string) => boolean;
 }
 
 enum ConfirmationStatus {
   ConfirmedEnough,
-  notConfirmedEnough,
-  notFound,
+  NotConfirmedEnough,
+  NotFound,
 }
 
 export {

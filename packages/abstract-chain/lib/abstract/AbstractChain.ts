@@ -4,15 +4,23 @@ import {
   ConfirmationStatus,
   EventTriggerModel,
   PaymentTransactionModel,
-} from './Interfaces';
+} from './types';
 import { Fee } from '@rosen-bridge/minimum-fee';
 
 abstract class AbstractChain {
   protected network: AbstractChainNetwork;
+  protected static signMap: Map<string, (_: string) => void>;
 
   constructor(network: AbstractChainNetwork) {
     this.network = network;
   }
+
+  /**
+   * @returns the sign map
+   */
+  static getSignMap = (): Map<string, (_: string) => void> => {
+    return AbstractChain.signMap;
+  };
 
   /**
    * generates unsigned payment transaction of the event using lock address
@@ -79,10 +87,11 @@ abstract class AbstractChain {
   /**
    * requests the corresponding signer service to sign the transaction
    * @param transaction the transaction
+   * @returns the signed transaction
    */
-  abstract requestToSign: (
+  abstract signTransaction: (
     transaction: PaymentTransactionModel
-  ) => Promise<void>;
+  ) => Promise<PaymentTransactionModel>;
 
   /**
    * extracts confirmation status for a payment transaction
