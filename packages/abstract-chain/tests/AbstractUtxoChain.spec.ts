@@ -1,8 +1,9 @@
 import TestUtxoChain from './TestUtxoChain';
 import TestUtxoChainNetwork from './TestUtxoChainNetwork';
-import { AssetBalance } from '../../lib';
+import { AssetBalance } from '../lib';
 import { when } from 'jest-when';
-import spyOn = jest.spyOn;
+
+const spyOn = jest.spyOn;
 
 describe('AbstractUtxoChain', () => {
   describe('getCoveringBoxes', () => {

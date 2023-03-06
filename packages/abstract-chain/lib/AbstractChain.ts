@@ -9,7 +9,7 @@ import { Fee } from '@rosen-bridge/minimum-fee';
 
 abstract class AbstractChain {
   protected network: AbstractChainNetwork;
-  protected static signMap: Map<string, (_: string) => void>;
+  protected static signMap: Map<string, (txId: string) => void>;
 
   constructor(network: AbstractChainNetwork) {
     this.network = network;

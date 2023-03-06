@@ -1,5 +1,4 @@
-import { AbstractUtxoChain } from '../../lib';
-import { BoxInfo } from '../../lib';
+import { AbstractUtxoChain, BoxInfo } from '../lib';
 
 class TestUtxoChain extends AbstractUtxoChain {
   notImplemented = () => {
