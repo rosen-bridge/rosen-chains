@@ -37,6 +37,7 @@ class, some network functions may be added to this network class.
 
 ```typescript
 // Ergo is an UTxO-based blockchain, so class inherits `AbstractUtxoChainNetwork`
+// <chain_name>Network
 class ErgoNetwork extends AbstractUtxoChainNetwork {
   ...
 }
@@ -44,12 +45,13 @@ class ErgoNetwork extends AbstractUtxoChainNetwork {
 
 After defining network class, a chain class should be implemented, inheriting `AbstractChain`
 (or `AbstractUtxoChain` if the blockchain is UTxO-based) which implements all required functions.
-The functions will be explained in the [Class Document](#class-document) section. Any required
+The functions will be explained in the [Chain Class Document](#chain-class-document) section. Any required
 actions found in this step which relates directly to blockchain network should be added to the
 network class. Also `network` variable type should be declared as the network class type.
 
 ```typescript
 // Ergo is an UTxO-based blockchain, so class inherits `AbstractUtxoChain`
+// <chain_name>Chain
 class ErgoChain extends AbstractUtxoChain {
   declare network: ErgoNetwork;
 
@@ -64,11 +66,13 @@ defining the network class is required.
 
 Implementing a network class for a chain can proceed after an abstract network class is defined
 for that chain. In order to implement a new network, a class inheriting the chain's network
-class should be implemented. Class name should contain both name of the chain and source of
-data. For example, in case of Ergo chain and adding a network class to communicate with Explorer,
-the class will be as follows:
+class should be implemented. The functions will be explained in the
+[Network Class Document](#network-class-document) section. Class name should contain both name of
+the chain and source of data. For example, in case of Ergo chain and adding a network class to
+communicate with Explorer, the class will be as follows:
 
 ```typescript
+// <chain_name><data_source>Network
 class ErgoExplorerNetwork extends ErgoNetwork {
   ...
 }
