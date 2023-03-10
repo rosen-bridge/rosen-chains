@@ -4,7 +4,7 @@ abstract class AbstractUtxoChainNetwork extends AbstractChainNetwork {
   /**
    * gets confirmed and unspent boxes of an address
    * @param address the address
-   * @returns an object containing the amount of each asset
+   * @returns list of serialized string of the boxes
    */
   abstract getAddressBoxes: (
     address: string,
