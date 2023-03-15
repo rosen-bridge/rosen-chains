@@ -1,6 +1,13 @@
 import { AssetBalance } from '../types';
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/logger-interface';
 
 abstract class AbstractChainNetwork {
+  logger: AbstractLogger;
+
+  constructor(logger?: AbstractLogger) {
+    this.logger = logger ? logger : new DummyLogger();
+  }
+
   /**
    * gets the blockchain height
    * @returns the blockchain height
@@ -22,11 +29,22 @@ abstract class AbstractChainNetwork {
   abstract getAddressAssets: (address: string) => Promise<AssetBalance>;
 
   /**
+   * gets id of all transactions in the given block
+   * @param blockId the block id
+   * @returns list of the transaction ids in the block
+   */
+  abstract getBlockTransactionIds: (blockId: string) => Promise<string[]>;
+
+  /**
    * gets a transaction
    * @param transactionId the transaction id
+   * @param blockId the block id
    * @returns the serialized string of the transaction
    */
-  abstract getTransaction: (transactionId: string) => Promise<string>;
+  abstract getTransaction: (
+    transactionId: string,
+    blockId: string
+  ) => Promise<string>;
 
   /**
    * submits a transaction

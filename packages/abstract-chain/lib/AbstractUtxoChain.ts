@@ -14,8 +14,8 @@ abstract class AbstractUtxoChain extends AbstractChain {
    */
   abstract getMempoolBoxMapping: (
     address: string,
-    tokenId: string
-  ) => Promise<Map<string, string>>;
+    tokenId?: string
+  ) => Promise<Map<string, string | undefined>>;
 
   /**
    * extracts box id and assets of a box
@@ -35,7 +35,7 @@ abstract class AbstractUtxoChain extends AbstractChain {
   getCoveringBoxes = async (
     address: string,
     requiredAssets: AssetBalance,
-    forbiddenBoxIds: string[],
+    forbiddenBoxIds: Array<string>,
     trackMap: Map<string, string>
   ): Promise<CoveringBoxes> => {
     let uncoveredNativeToken = requiredAssets.nativeToken;
@@ -48,7 +48,7 @@ abstract class AbstractUtxoChain extends AbstractChain {
     };
 
     let offset = 0;
-    const result: string[] = [];
+    const result: Array<string> = [];
 
     // get boxes until requirements are satisfied
     while (isRequirementRemaining()) {
