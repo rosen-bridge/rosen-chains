@@ -1,0 +1,11 @@
+{
+  "verbose": true,
+  "testEnvironment": "node",
+  "preset": "ts-jest/presets/js-with-babel",
+  "coveragePathIgnorePatterns": [
+    "<rootDir>/node_modules",
+    "<rootDir>/dist",
+    "<rootDir>/tests"
+  ],
+  "coverageReporters": ["lcov", "cobertura", "text", "text-summary"]
+}
