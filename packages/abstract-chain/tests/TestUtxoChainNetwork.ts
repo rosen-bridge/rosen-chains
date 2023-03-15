@@ -17,7 +17,7 @@ class TestUtxoChainNetwork extends AbstractUtxoChainNetwork {
     address: string,
     offset: number,
     limit: number
-  ): Promise<string[]> => {
+  ): Promise<Array<string>> => {
     throw Error('Not mocked');
   };
 }

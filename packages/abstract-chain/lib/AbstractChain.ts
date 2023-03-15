@@ -1,70 +1,67 @@
 import AbstractChainNetwork from './network/AbstractChainNetwork';
 import {
   AssetBalance,
+  ChainConfigs,
   ConfirmationStatus,
-  EventTriggerModel,
+  EventTrigger,
   PaymentOrder,
-  PaymentTransactionModel,
+  PaymentTransaction,
   TransactionAssetBalance,
 } from './types';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/logger-interface';
-import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
 import ChainUtils from './ChainUtils';
 
 abstract class AbstractChain {
   protected network: AbstractChainNetwork;
-  protected abstract extractor: AbstractRosenDataExtractor<string>;
+  protected configs: ChainConfigs;
   logger: AbstractLogger;
-  rsnRatioDivisor: bigint;
 
   constructor(
     network: AbstractChainNetwork,
-    rsnRatioDivisor: bigint,
+    configs: ChainConfigs,
     logger?: AbstractLogger
   ) {
     this.network = network;
+    this.configs = configs;
     this.logger = logger ? logger : new DummyLogger();
-    this.rsnRatioDivisor = rsnRatioDivisor;
   }
 
   /**
-   * generates unsigned payment transaction for payment order
+   * generates unsigned PaymentTransaction for payment order
    * @param eventId the id of event
    * @param order the payment order (list of single payments)
    * @param inputs the inputs for transaction
-   * @returns the generated payment transaction
+   * @returns the generated PaymentTransaction
    */
   abstract generateTransaction: (
     eventId: string,
     order: PaymentOrder,
     ...extra: Array<any>
-  ) => Promise<PaymentTransactionModel>;
+  ) => Promise<PaymentTransaction>;
 
   /**
-   * gets input and output assets of a payment transaction
-   * @param transaction the payment transaction
-   * @returns true if the transaction verified
+   * gets input and output assets of a PaymentTransaction
+   * @param transaction the PaymentTransaction
+   * @returns an object containing the amount of input and output assets
    */
   abstract getTransactionAssets: (
-    transaction: PaymentTransactionModel
+    transaction: PaymentTransaction
   ) => TransactionAssetBalance;
 
   /**
-   * verifies transaction fee for a payment transaction
-   * @param transaction the payment transaction
-   * @returns true if the transaction verified
+   * verifies transaction fee for a PaymentTransaction
+   * @param transaction the PaymentTransaction
+   * @returns true if the transaction fee verified
    */
-  abstract verifyTransactionFee: (
-    transaction: PaymentTransactionModel
-  ) => boolean;
+  abstract verifyTransactionFee: (transaction: PaymentTransaction) => boolean;
 
   /**
-   * verifies no token burned in the payment transaction
-   * @param transaction the payment transaction
+   * verifies no token burned in a PaymentTransaction
+   * @param transaction the PaymentTransaction
    * @returns true if not token burned
    */
-  verifyNoTokenBurned = (transaction: PaymentTransactionModel): boolean => {
+  verifyNoTokenBurned = (transaction: PaymentTransaction): boolean => {
     const assets = this.getTransactionAssets(transaction);
     return ChainUtils.isEqualAssetBalance(
       assets.inputAssets,
@@ -73,12 +70,12 @@ abstract class AbstractChain {
   };
 
   /**
-   * verifies additional conditions for a payment transaction
-   * @param transaction the payment transaction
+   * verifies additional conditions for a PaymentTransaction
+   * @param transaction the PaymentTransaction
    * @returns true if the transaction verified
    */
   verifyTransactionExtraConditions = (
-    transaction: PaymentTransactionModel
+    transaction: PaymentTransaction
   ): boolean => {
     return true;
   };
@@ -91,7 +88,7 @@ abstract class AbstractChain {
    * @returns true if the event verified
    */
   abstract verifyEvent: (
-    event: EventTriggerModel,
+    event: EventTrigger,
     RwtId: string,
     feeConfig: Fee
   ) => Promise<boolean>;
@@ -101,9 +98,7 @@ abstract class AbstractChain {
    * @param transaction the transaction
    * @returns true if the transaction is still valid
    */
-  abstract isTxValid: (
-    transaction: PaymentTransactionModel
-  ) => Promise<boolean>;
+  abstract isTxValid: (transaction: PaymentTransaction) => Promise<boolean>;
 
   /**
    * requests the corresponding signer service to sign the transaction
@@ -113,14 +108,14 @@ abstract class AbstractChain {
    * @returns the signed transaction
    */
   abstract signTransaction: (
-    transaction: PaymentTransactionModel,
+    transaction: PaymentTransaction,
     requiredSign: number,
     signFunction: (...arg: Array<any>) => any
-  ) => Promise<PaymentTransactionModel>;
+  ) => Promise<PaymentTransaction>;
 
   /**
    * extracts confirmation status for a payment transaction
-   * @param transactionId the payment transaction id
+   * @param transactionId the PaymentTransaction id
    * @returns the transaction confirmation status
    */
   abstract getPaymentTxConfirmationStatus: (
@@ -153,7 +148,7 @@ abstract class AbstractChain {
    * @param transaction the transaction
    */
   abstract submitTransaction: (
-    transaction: PaymentTransactionModel
+    transaction: PaymentTransaction
   ) => Promise<void>;
 
   /**

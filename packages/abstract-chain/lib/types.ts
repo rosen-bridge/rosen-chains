@@ -1,3 +1,13 @@
+interface ChainConfigs {
+  fee: bigint;
+  observationTxConfirmation: number;
+  paymentTxConfirmation: number;
+  coldTxConfirmation: number;
+  lockAddress: string;
+  coldStorageAddress: string;
+  rwtId: string;
+}
+
 interface CoveringBoxes {
   covered: boolean;
   boxes: Array<string>;
@@ -31,7 +41,7 @@ interface SinglePayment {
 
 type PaymentOrder = Array<SinglePayment>;
 
-interface EventTriggerModel {
+interface EventTrigger {
   fromChain: string;
   toChain: string;
   fromAddress: string;
@@ -51,7 +61,7 @@ interface EventTriggerModel {
   getId: () => string;
 }
 
-interface PaymentTransactionModel {
+interface PaymentTransaction {
   network: string;
   txId: string;
   eventId: string;
@@ -85,6 +95,7 @@ class TransactionTypes {
 }
 
 export {
+  ChainConfigs,
   CoveringBoxes,
   TokenInfo,
   AssetBalance,
@@ -92,8 +103,8 @@ export {
   BoxInfo,
   SinglePayment,
   PaymentOrder,
-  EventTriggerModel,
-  PaymentTransactionModel,
+  EventTrigger,
+  PaymentTransaction,
   PaymentTransactionJsonModel,
   ConfirmationStatus,
   TransactionTypes,

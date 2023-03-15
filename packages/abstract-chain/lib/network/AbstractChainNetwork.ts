@@ -1,7 +1,9 @@
 import { AssetBalance } from '../types';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/logger-interface';
+import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
 
 abstract class AbstractChainNetwork {
+  protected abstract extractor: AbstractRosenDataExtractor<string>;
   logger: AbstractLogger;
 
   constructor(logger?: AbstractLogger) {
@@ -33,7 +35,7 @@ abstract class AbstractChainNetwork {
    * @param blockId the block id
    * @returns list of the transaction ids in the block
    */
-  abstract getBlockTransactionIds: (blockId: string) => Promise<string[]>;
+  abstract getBlockTransactionIds: (blockId: string) => Promise<Array<string>>;
 
   /**
    * gets a transaction
@@ -56,7 +58,7 @@ abstract class AbstractChainNetwork {
    * gets all transactions in mempool (returns empty list if the chain has no mempool)
    * @returns list of serialized string of the transactions in mempool
    */
-  abstract getMempoolTransactions: () => Promise<string[]>;
+  abstract getMempoolTransactions: () => Promise<Array<string>>;
 }
 
 export default AbstractChainNetwork;
