@@ -64,7 +64,7 @@ abstract class AbstractChain {
    */
   verifyNoTokenBurned = (transaction: PaymentTransaction): boolean => {
     const assets = this.getTransactionAssets(transaction);
-    return ChainUtils.isEqualAssetBalance(
+    return !ChainUtils.isEqualAssetBalance(
       assets.inputAssets,
       assets.outputAssets
     );

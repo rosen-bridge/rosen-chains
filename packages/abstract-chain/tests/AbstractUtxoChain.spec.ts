@@ -1,5 +1,5 @@
 import TestUtxoChain from './TestUtxoChain';
-import TestUtxoChainNetwork from './TestUtxoChainNetwork';
+import TestUtxoChainNetwork from './network/TestUtxoChainNetwork';
 import { AssetBalance, ChainConfigs } from '../lib';
 import { when } from 'jest-when';
 

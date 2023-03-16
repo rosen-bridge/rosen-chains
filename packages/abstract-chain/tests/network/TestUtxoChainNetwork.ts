@@ -1,5 +1,5 @@
-import { AbstractUtxoChainNetwork } from '../lib';
-import TestRosenDataExtractor from './TestRosenDataExtractor';
+import { AbstractUtxoChainNetwork } from '../../lib';
+import TestRosenDataExtractor from '../TestRosenDataExtractor';
 
 class TestUtxoChainNetwork extends AbstractUtxoChainNetwork {
   extractor = new TestRosenDataExtractor();
@@ -15,13 +15,14 @@ class TestUtxoChainNetwork extends AbstractUtxoChainNetwork {
   getBlockTransactionIds = this.notImplemented;
   submitTransaction = this.notImplemented;
   getMempoolTransactions = this.notImplemented;
+
   isBoxUnspentAndValid = this.notImplemented;
 
   getAddressBoxes = (
     address: string,
     offset: number,
     limit: number
-  ): Promise<Array<string>> => {
+  ): Promise<string[]> => {
     throw Error('Not mocked');
   };
 }

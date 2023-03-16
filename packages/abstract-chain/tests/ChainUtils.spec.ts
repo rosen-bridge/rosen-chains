@@ -1,4 +1,4 @@
-import { AssetBalance, ChainConfigs, ChainUtils, ValueError } from '../lib';
+import { AssetBalance, ChainUtils, ValueError } from '../lib';
 
 describe('ChainUtils', () => {
   describe('isEqualAssetBalance', () => {
@@ -292,7 +292,7 @@ describe('ChainUtils', () => {
       };
 
       // run test
-      const result = ChainUtils.sumAssetBalance(a, b);
+      ChainUtils.sumAssetBalance(a, b);
 
       // check passed objects
       expect(a).toEqual({
@@ -509,7 +509,7 @@ describe('ChainUtils', () => {
       };
 
       // run test
-      const result = ChainUtils.reduceAssetBalance(a, b);
+      ChainUtils.reduceAssetBalance(a, b);
 
       // check passed objects
       expect(a).toEqual({
