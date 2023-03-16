@@ -13,7 +13,7 @@ describe('ChainUtils', () => {
      * @expected
      * - it should return true
      */
-    it('should return true when assets are equal', async () => {
+    it('should return true when assets are equal', () => {
       // mock an AssetBalance
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -48,7 +48,7 @@ describe('ChainUtils', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when native token is NOT equal', async () => {
+    it('should return false when native token is NOT equal', () => {
       // mock two AssetBalance with different native token value
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -84,7 +84,7 @@ describe('ChainUtils', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when a token is missing in first object', async () => {
+    it('should return false when a token is missing in first object', () => {
       // mock two AssetBalance (second object has 1 more token)
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -127,7 +127,7 @@ describe('ChainUtils', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when a token is missing in second object', async () => {
+    it('should return false when a token is missing in second object', () => {
       // mock two AssetBalance (first object has 1 more token)
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -170,7 +170,7 @@ describe('ChainUtils', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when a token value is not equal', async () => {
+    it('should return false when a token value is not equal', () => {
       // mock two AssetBalance with different token value
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -208,7 +208,7 @@ describe('ChainUtils', () => {
      * @expected
      * - it should return aggregated assets
      */
-    it('should return aggregated assets successfully', async () => {
+    it('should return aggregated assets successfully', () => {
       // mock two AssetBalance
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -270,7 +270,7 @@ describe('ChainUtils', () => {
      * @expected
      * - passed objects should be the same
      */
-    it('should NOT mitigate original objects', async () => {
+    it('should NOT mitigate original objects', () => {
       // mock two AssetBalance
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -328,7 +328,7 @@ describe('ChainUtils', () => {
      * @expected
      * - it should return aggregated assets
      */
-    it('should return remaining assets successfully', async () => {
+    it('should return remaining assets successfully', () => {
       // mock two AssetBalance
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -382,7 +382,7 @@ describe('ChainUtils', () => {
      * @expected
      * - it should return aggregated assets
      */
-    it('should throw exception when native token is not enough', async () => {
+    it('should throw exception when native token is not enough', () => {
       // mock two AssetBalance (second object has more native token)
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -409,7 +409,7 @@ describe('ChainUtils', () => {
      * @expected
      * - it should return aggregated assets
      */
-    it('should throw exception when a token value is not enough', async () => {
+    it('should throw exception when a token value is not enough', () => {
       // mock two AssetBalance (second object has more value for a token)
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -446,7 +446,7 @@ describe('ChainUtils', () => {
      * @expected
      * - it should return aggregated assets
      */
-    it('should throw exception when native token is missing', async () => {
+    it('should throw exception when native token is missing', () => {
       // mock two AssetBalance (second object has a token is missing in first object)
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -487,7 +487,7 @@ describe('ChainUtils', () => {
      * @expected
      * - passed objects should be the same
      */
-    it('should NOT mitigate original objects', async () => {
+    it('should NOT mitigate original objects', () => {
       // mock two AssetBalance
       const a: AssetBalance = {
         nativeToken: 300n,

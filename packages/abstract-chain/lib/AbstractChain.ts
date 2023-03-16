@@ -169,7 +169,7 @@ abstract class AbstractChain {
   ): Promise<boolean> => {
     const lockAssets = await this.getLockAddressAssets();
     try {
-      ChainUtils.reduceAssetBalance(required, lockAssets);
+      ChainUtils.reduceAssetBalance(lockAssets, required);
     } catch (e) {
       if (e instanceof ValueError) {
         this.logger.warn(e.message);

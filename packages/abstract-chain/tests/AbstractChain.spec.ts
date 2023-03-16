@@ -43,7 +43,7 @@ describe('AbstractChain', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when no token burned', async () => {
+    it('should return false when no token burned', () => {
       // mock an AssetBalance
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -83,7 +83,7 @@ describe('AbstractChain', () => {
      * @expected
      * - it should return true
      */
-    it('should return true when some amount of a token got burned', async () => {
+    it('should return true when some amount of a token got burned', () => {
       // mock two AssetBalance (second object has less value for a token)
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -145,7 +145,7 @@ describe('AbstractChain', () => {
       getLockAddressAssetsSpy.mockResolvedValueOnce(lockAssets);
 
       // run test
-      const result = chain.hasLockAddressEnoughAssets(requiredAssets);
+      const result = await chain.hasLockAddressEnoughAssets(requiredAssets);
 
       // Check returned value
       expect(result).toEqual(true);
@@ -176,7 +176,7 @@ describe('AbstractChain', () => {
       getLockAddressAssetsSpy.mockResolvedValueOnce(lockAssets);
 
       // run test
-      const result = chain.hasLockAddressEnoughAssets(requiredAssets);
+      const result = await chain.hasLockAddressEnoughAssets(requiredAssets);
 
       // Check returned value
       expect(result).toEqual(false);
