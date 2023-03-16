@@ -13,16 +13,18 @@ class ChainUtils {
     if (a.nativeToken !== b.nativeToken) return false;
 
     // check all tokens in `a` exist in `b`
-    a.tokens.forEach((token) => {
+    for (let i = 0; i < a.tokens.length; i++) {
+      const token = a.tokens[i];
       const targetToken = b.tokens.find((item) => item.id === token.id);
       if (!targetToken || targetToken.value !== token.value) return false;
-    });
+    }
 
     // check all tokens in `b` exist in `a`
-    b.tokens.forEach((token) => {
+    for (let i = 0; i < b.tokens.length; i++) {
+      const token = b.tokens[i];
       const targetToken = a.tokens.find((item) => item.id === token.id);
       if (!targetToken || targetToken.value !== token.value) return false;
-    });
+    }
 
     return true;
   };
@@ -38,15 +40,8 @@ class ChainUtils {
     const nativeToken = a.nativeToken + b.nativeToken;
     const tokens: Array<TokenInfo> = [];
 
-    // add all tokens in `a` to result
-    a.tokens.forEach((token) => {
-      const targetToken = tokens.find((item) => item.id === token.id);
-      if (targetToken) targetToken.value += token.value;
-      else tokens.push(structuredClone(token));
-    });
-
-    // add all tokens in `b` to result
-    b.tokens.forEach((token) => {
+    // add all tokens to result
+    [...a.tokens, ...b.tokens].forEach((token) => {
       const targetToken = tokens.find((item) => item.id === token.id);
       if (targetToken) targetToken.value += token.value;
       else tokens.push(structuredClone(token));

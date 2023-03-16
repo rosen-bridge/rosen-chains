@@ -11,6 +11,7 @@ import {
 import { Fee } from '@rosen-bridge/minimum-fee';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/logger-interface';
 import ChainUtils from './ChainUtils';
+import { ValueError } from './errors';
 
 abstract class AbstractChain {
   protected network: AbstractChainNetwork;
@@ -161,13 +162,21 @@ abstract class AbstractChain {
   /**
    * checks if lock address assets are more than required assets or not
    * @param required required amount of assets
-   * @returns an object containing the amount of each asset
+   * @returns true if lock assets are more than required assets
    */
-  hasLockAddressEnoughAssets = (
+  hasLockAddressEnoughAssets = async (
     required: AssetBalance
-  ): Promise<AssetBalance> => {
-    // TODO: implement this
-    throw Error(`not implemented yet`);
+  ): Promise<boolean> => {
+    const lockAssets = await this.getLockAddressAssets();
+    try {
+      ChainUtils.reduceAssetBalance(required, lockAssets);
+    } catch (e) {
+      if (e instanceof ValueError) {
+        this.logger.warn(e.message);
+        return false;
+      } else throw e;
+    }
+    return true;
   };
 }
 
