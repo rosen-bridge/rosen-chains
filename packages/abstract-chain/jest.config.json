@@ -7,5 +7,6 @@
     "<rootDir>/dist",
     "<rootDir>/tests"
   ],
+  "transformIgnorePatterns": ["node_modules/(?!(@rosen-bridge/*|lodash-es)/)"],
   "coverageReporters": ["lcov", "cobertura", "text", "text-summary"]
 }

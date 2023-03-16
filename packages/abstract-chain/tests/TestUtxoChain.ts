@@ -5,10 +5,9 @@ class TestUtxoChain extends AbstractUtxoChain {
     throw Error('Not implemented');
   };
 
-  generatePaymentTransaction = this.notImplemented;
-  generateColdStorageTransaction = this.notImplemented;
-  verifyPaymentTransaction = this.notImplemented;
-  verifyColdStorageTransaction = this.notImplemented;
+  generateTransaction = this.notImplemented;
+  getTransactionAssets = this.notImplemented;
+  verifyTransactionFee = this.notImplemented;
   verifyEvent = this.notImplemented;
   isTxValid = this.notImplemented;
   signTransaction = this.notImplemented;
