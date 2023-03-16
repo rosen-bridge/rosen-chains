@@ -68,10 +68,10 @@ class ChainUtils {
     // sum native token
     let nativeToken = 0n;
     if (a.nativeToken > b.nativeToken + minimumNativeToken)
-      nativeToken = a.nativeToken + b.nativeToken;
+      nativeToken = a.nativeToken - b.nativeToken;
     else
       throw new ValueError(
-        `Cannot reduce native token: [${a.nativeToken}] is less than [${b.nativeToken} + ${minimumNativeToken}]`
+        `Cannot reduce native token: [${a.nativeToken.toString()}] is less than [${b.nativeToken.toString()} + ${minimumNativeToken.toString()}]`
       );
 
     // reduce all `b` tokens
@@ -84,7 +84,9 @@ class ChainUtils {
         else if (tokens[index].value === token.value) tokens.splice(index, 1);
         else
           throw new ValueError(
-            `Cannot reduce token [${token.id}]: [${tokens[index].value}] is less than [${token.value}]`
+            `Cannot reduce token [${token.id}]: [${tokens[
+              index
+            ].value.toString()}] is less than [${token.value.toString()}]`
           );
       } else
         throw new ValueError(
