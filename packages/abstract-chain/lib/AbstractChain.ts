@@ -51,6 +51,15 @@ abstract class AbstractChain {
   ) => TransactionAssetBalance;
 
   /**
+   * extracts payment order of a PaymentTransaction
+   * @param transaction the PaymentTransaction
+   * @returns the transaction payment order (list of single payments)
+   */
+  abstract extractTransactionOrder: (
+    transaction: PaymentTransaction
+  ) => PaymentOrder;
+
+  /**
    * verifies transaction fee for a PaymentTransaction
    * @param transaction the PaymentTransaction
    * @returns true if the transaction fee verified
