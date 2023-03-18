@@ -1,27 +1,39 @@
 import TestUtxoChain from './TestUtxoChain';
-import TestUtxoChainNetwork from './TestUtxoChainNetwork';
-import { AssetBalance } from '../lib';
+import TestUtxoChainNetwork from './network/TestUtxoChainNetwork';
+import { AssetBalance, ChainConfigs } from '../lib';
 import { when } from 'jest-when';
 
 const spyOn = jest.spyOn;
 
 describe('AbstractUtxoChain', () => {
+  const generateChainObject = (network: TestUtxoChainNetwork) => {
+    const config: ChainConfigs = {
+      fee: 100n,
+      observationTxConfirmation: 5,
+      paymentTxConfirmation: 6,
+      coldTxConfirmation: 7,
+      lockAddress: 'lock_addr',
+      coldStorageAddress: 'cold_addr',
+      rwtId: 'rwt',
+    };
+    return new TestUtxoChain(network, config);
+  };
+
   describe('getCoveringBoxes', () => {
     const emptyMap = new Map<string, string>();
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return enough boxes
-     *  as covered when boxes cover required assets
-     * Dependencies:
-     *    -
-     * Scenario:
-     *    Mock a network object to return 2 boxes
-     *    Mock chain 'getBoxInfo' function to return mocked boxes assets
-     *    Mock an AssetBalance object with assets less than box assets
-     *    Run test
-     *    Check returned value
-     * Expected Output:
-     *    It should return the correct value
+     * @target AbstractUtxoChain.getCoveringBoxes should return enough boxes
+     * as covered when boxes cover required assets
+     * @dependencies
+     * @scenario
+     * - mock a network object to return 2 boxes
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets
+     * - mock an AssetBalance object with assets less than box assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the correct value
      */
     it('should return enough boxes as covered when boxes cover required assets', async () => {
       // Mock a network object to return 2 boxes
@@ -31,7 +43,7 @@ describe('AbstractUtxoChain', () => {
         .mockResolvedValueOnce(['serialized-box-1', 'serialized-box-2']);
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = new TestUtxoChain(network);
+      const chain = generateChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
@@ -72,18 +84,17 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return all boxes as
-     *  NOT covered when boxes do NOT cover required assets
-     * Dependencies:
-     *    -
-     * Scenario:
-     *    Mock a network object to return 2 boxes
-     *    Mock chain 'getBoxInfo' function to return mocked boxes assets
-     *    Mock an AssetBalance object with assets more than box assets
-     *    Run test
-     *    Check returned value
-     * Expected Output:
-     *    It should return the correct value
+     * @target AbstractUtxoChain.getCoveringBoxes should return all boxes as
+     * NOT covered when boxes do NOT cover required assets
+     * @dependencies
+     * @scenario
+     * - mock a network object to return 2 boxes
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets
+     * - mock an AssetBalance object with assets more than box assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the correct value
      */
     it('should return all boxes as NOT covered when boxes do NOT cover required assets', async () => {
       // Mock a network object to return 2 boxes
@@ -93,7 +104,7 @@ describe('AbstractUtxoChain', () => {
         .mockResolvedValueOnce(['serialized-box-1', 'serialized-box-2']);
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = new TestUtxoChain(network);
+      const chain = generateChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
@@ -134,19 +145,18 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return all useful boxes
-     *  as NOT covered key when boxes do NOT cover required tokens
-     * Dependencies:
-     *    -
-     * Scenario:
-     *    Mock a network object to return 2 boxes
-     *    Mock chain 'getBoxInfo' function to return mocked boxes assets
-     *      (second box doesn't contain required token)
-     *    Mock an AssetBalance object with tokens more than box tokens
-     *    Run test
-     *    Check returned value
-     * Expected Output:
-     *    It should return the correct value
+     * @target AbstractUtxoChain.getCoveringBoxes should return all useful boxes
+     * as NOT covered key when boxes do NOT cover required tokens
+     * @dependencies
+     * @scenario
+     * - mock a network object to return 2 boxes
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets
+     *   (second box doesn't contain required token)
+     * - mock an AssetBalance object with tokens more than box tokens
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the correct value
      */
     it('should return all useful boxes as NOT covered when boxes do NOT cover required tokens', async () => {
       // Mock a network object to return 2 boxes
@@ -157,7 +167,7 @@ describe('AbstractUtxoChain', () => {
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
       //  (second box doesn't contain required token)
-      const chain = new TestUtxoChain(network);
+      const chain = generateChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
@@ -198,18 +208,17 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return enough boxes
-     *  as covered when two pages boxes cover required assets
-     * Dependencies:
-     *    -
-     * Scenario:
-     *    Mock a network object to return 12 boxes
-     *    Mock chain 'getBoxInfo' function to return mocked boxes assets
-     *    Mock an AssetBalance object with assets less than box assets
-     *    Run test
-     *    Check returned value
-     * Expected Output:
-     *    It should return the correct value
+     * @target AbstractUtxoChain.getCoveringBoxes should return enough boxes
+     * as covered when two pages boxes cover required assets
+     * @dependencies
+     * @scenario
+     * - mock a network object to return 12 boxes
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets
+     * - mock an AssetBalance object with assets less than box assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the correct value
      */
     it('should return enough boxes as covered when two pages boxes cover required assets', async () => {
       // Mock a network object to return 12 boxes
@@ -224,7 +233,7 @@ describe('AbstractUtxoChain', () => {
         .mockResolvedValueOnce(['serialized-box-11', 'serialized-box-12']);
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = new TestUtxoChain(network);
+      const chain = generateChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       Array.from({ length: 12 }, (x, i) => i).map((i) => {
         when(getBoxInfoSpy)
@@ -262,18 +271,17 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return all boxes as
-     *  NOT covered when two pages boxes do NOT cover required assets
-     * Dependencies:
-     *    -
-     * Scenario:
-     *    Mock a network object to return 12 boxes
-     *    Mock chain 'getBoxInfo' function to return mocked boxes assets
-     *    Mock an AssetBalance object with assets more than box assets
-     *    Run test
-     *    Check returned value
-     * Expected Output:
-     *    It should return the correct value
+     * @target AbstractUtxoChain.getCoveringBoxes should return all boxes as
+     * NOT covered when two pages boxes do NOT cover required assets
+     * @dependencies
+     * @scenario
+     * - mock a network object to return 12 boxes
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets
+     * - mock an AssetBalance object with assets more than box assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the correct value
      */
     it('should return all boxes as NOT covered when two pages boxes do NOT cover required assets', async () => {
       // Mock a network object to return 12 boxes
@@ -288,7 +296,7 @@ describe('AbstractUtxoChain', () => {
         .mockResolvedValueOnce(['serialized-box-11', 'serialized-box-12']);
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = new TestUtxoChain(network);
+      const chain = generateChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       Array.from({ length: 12 }, (x, i) => i).map((i) => {
         when(getBoxInfoSpy)
@@ -323,17 +331,16 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return no boxes as
-     *  NOT covered when address has no boxes
-     * Dependencies:
-     *    -
-     * Scenario:
-     *    Mock a network object to return NO boxes
-     *    Mock an AssetBalance object with some assets
-     *    Run test
-     *    Check returned value
-     * Expected Output:
-     *    It should return the correct value
+     * @target AbstractUtxoChain.getCoveringBoxes should return no boxes as
+     * NOT covered when address has no boxes
+     * @dependencies
+     * @scenario
+     * - mock a network object to return NO boxes
+     * - mock an AssetBalance object with some assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the correct value
      */
     it('should return no boxes as NOT covered when address has no boxes', async () => {
       // Mock a network object to return NO boxes
@@ -347,7 +354,7 @@ describe('AbstractUtxoChain', () => {
       };
 
       // Run test
-      const chain = new TestUtxoChain(network);
+      const chain = generateChainObject(network);
       const result = await chain.getCoveringBoxes(
         '',
         requiredAssets,
@@ -361,19 +368,18 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return enough boxes
-     *  as covered when tracked boxes cover required assets
-     * Dependencies:
-     *    -
-     * Scenario:
-     *    Mock a network object to return 2 boxes
-     *    Mock a Map to track first box to a new box
-     *    Mock chain 'getBoxInfo' function to return mocked boxes assets
-     *    Mock an AssetBalance object with assets less than box assets
-     *    Run test
-     *    Check returned value
-     * Expected Output:
-     *    It should return the correct value
+     * @target AbstractUtxoChain.getCoveringBoxes should return enough boxes
+     * as covered when tracked boxes cover required assets
+     * @dependencies
+     * @scenario
+     * - mock a network object to return 2 boxes
+     * - mock a Map to track first box to a new box
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets
+     * - mock an AssetBalance object with assets less than box assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the correct value
      */
     it('should return enough boxes as covered when tracked boxes cover required assets', async () => {
       // Mock a network object to return 2 boxes
@@ -387,7 +393,7 @@ describe('AbstractUtxoChain', () => {
       trackMap.set('box1', 'serialized-tracked-box-1');
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = new TestUtxoChain(network);
+      const chain = generateChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
@@ -437,19 +443,18 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return all boxes as
-     *  NOT covered when tracked boxes do NOT cover required assets
-     * Dependencies:
-     *    -
-     * Scenario:
-     *    Mock a network object to return 2 boxes
-     *    Mock a Map to track first box to a new box
-     *    Mock chain 'getBoxInfo' function to return mocked boxes assets
-     *    Mock an AssetBalance object with assets more than box assets
-     *    Run test
-     *    Check returned value
-     * Expected Output:
-     *    It should return the correct value
+     * @target AbstractUtxoChain.getCoveringBoxes should return all boxes as
+     * NOT covered when tracked boxes do NOT cover required assets
+     * @dependencies
+     * @scenario
+     * - mock a network object to return 2 boxes
+     * - mock a Map to track first box to a new box
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets
+     * - mock an AssetBalance object with assets more than box assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the correct value
      */
     it('should return all boxes as NOT covered when tracked boxes do NOT cover required assets', async () => {
       // Mock a network object to return 2 boxes
@@ -463,7 +468,7 @@ describe('AbstractUtxoChain', () => {
       trackMap.set('box1', 'serialized-tracked-box-1');
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = new TestUtxoChain(network);
+      const chain = generateChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
@@ -516,19 +521,18 @@ describe('AbstractUtxoChain', () => {
     });
 
     /**
-     * Target: AbstractUtxoChain.getCoveringBoxes should return second box
-     *  as covered when first box is not allowed
-     * Dependencies:
-     *    -
-     * Scenario:
-     *    Mock a network object to return 2 boxes
-     *    Mock first box as forbidden
-     *    Mock chain 'getBoxInfo' function to return mocked boxes assets
-     *    Mock an AssetBalance object with assets less than box assets
-     *    Run test
-     *    Check returned value
-     * Expected Output:
-     *    It should return the correct value
+     * @target AbstractUtxoChain.getCoveringBoxes should return second box
+     * as covered when first box is not allowed
+     * @dependencies
+     * @scenario
+     * - mock a network object to return 2 boxes
+     * - mock first box as forbidden
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets
+     * - mock an AssetBalance object with assets less than box assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the correct value
      */
     it('should return second box as covered when first box is not allowed', async () => {
       // Mock a network object to return 2 boxes
@@ -541,7 +545,7 @@ describe('AbstractUtxoChain', () => {
       const forbiddenIds = ['box1'];
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = new TestUtxoChain(network);
+      const chain = generateChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')

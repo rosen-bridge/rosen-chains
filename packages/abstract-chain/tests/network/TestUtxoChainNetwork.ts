@@ -1,6 +1,9 @@
-import { AbstractUtxoChainNetwork } from '../lib';
+import { AbstractUtxoChainNetwork } from '../../lib';
+import TestRosenDataExtractor from '../TestRosenDataExtractor';
 
 class TestUtxoChainNetwork extends AbstractUtxoChainNetwork {
+  extractor = new TestRosenDataExtractor();
+
   notImplemented = () => {
     throw Error('Not implemented');
   };
@@ -9,8 +12,10 @@ class TestUtxoChainNetwork extends AbstractUtxoChainNetwork {
   getTxConfirmation = this.notImplemented;
   getAddressAssets = this.notImplemented;
   getTransaction = this.notImplemented;
+  getBlockTransactionIds = this.notImplemented;
   submitTransaction = this.notImplemented;
   getMempoolTransactions = this.notImplemented;
+
   isBoxUnspentAndValid = this.notImplemented;
 
   getAddressBoxes = (

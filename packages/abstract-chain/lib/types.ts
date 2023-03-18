@@ -1,6 +1,16 @@
+interface ChainConfigs {
+  fee: bigint;
+  observationTxConfirmation: number;
+  paymentTxConfirmation: number;
+  coldTxConfirmation: number;
+  lockAddress: string;
+  coldStorageAddress: string;
+  rwtId: string;
+}
+
 interface CoveringBoxes {
   covered: boolean;
-  boxes: string[];
+  boxes: Array<string>;
 }
 
 interface TokenInfo {
@@ -10,7 +20,12 @@ interface TokenInfo {
 
 interface AssetBalance {
   nativeToken: bigint;
-  tokens: TokenInfo[];
+  tokens: Array<TokenInfo>;
+}
+
+interface TransactionAssetBalance {
+  inputAssets: AssetBalance;
+  outputAssets: AssetBalance;
 }
 
 interface BoxInfo {
@@ -18,7 +33,15 @@ interface BoxInfo {
   assets: AssetBalance;
 }
 
-interface EventTriggerModel {
+interface SinglePayment {
+  address: string;
+  assets: AssetBalance;
+  extra?: string;
+}
+
+type PaymentOrder = Array<SinglePayment>;
+
+interface EventTrigger {
   fromChain: string;
   toChain: string;
   fromAddress: string;
@@ -30,7 +53,7 @@ interface EventTriggerModel {
   targetChainTokenId: string;
   sourceTxId: string;
   sourceBlockId: string;
-  WIDs: string[];
+  WIDs: Array<string>;
 
   /**
    * @return id of event trigger
@@ -38,7 +61,7 @@ interface EventTriggerModel {
   getId: () => string;
 }
 
-interface PaymentTransactionModel {
+interface PaymentTransaction {
   network: string;
   txId: string;
   eventId: string;
@@ -49,21 +72,14 @@ interface PaymentTransactionModel {
    * @return transaction hex string
    */
   getTxHexString: () => string;
+}
 
-  /**
-   * signs the json data alongside guardId
-   * @param creatorId id of the creator guard
-   * @return signature
-   */
-  signMetadata: (creatorId: number) => string;
-
-  /**
-   * verifies the signature over json data alongside guardId
-   * @param signerId id of the signer guard
-   * @param msgSignature hex string signature over json data alongside guardId
-   * @return true if signature verified
-   */
-  verifyMetadataSignature: (signerId: number, msgSignature: string) => boolean;
+interface PaymentTransactionJsonModel {
+  network: string;
+  txId: string;
+  eventId: string;
+  txBytes: string;
+  txType: string;
 }
 
 enum ConfirmationStatus {
@@ -72,12 +88,24 @@ enum ConfirmationStatus {
   NotFound,
 }
 
+class TransactionTypes {
+  static payment = 'payment';
+  static reward = 'reward';
+  static coldStorage = 'cold-storage';
+}
+
 export {
+  ChainConfigs,
   CoveringBoxes,
   TokenInfo,
   AssetBalance,
+  TransactionAssetBalance,
   BoxInfo,
-  EventTriggerModel,
-  PaymentTransactionModel,
+  SinglePayment,
+  PaymentOrder,
+  EventTrigger,
+  PaymentTransaction,
+  PaymentTransactionJsonModel,
   ConfirmationStatus,
+  TransactionTypes,
 };
