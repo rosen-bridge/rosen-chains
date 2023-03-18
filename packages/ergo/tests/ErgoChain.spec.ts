@@ -2,20 +2,23 @@ import * as boxTestData from './boxTestData';
 import * as transactionTestData from './transactionTestData';
 import * as ergoTestUtils from './ergoTestUtils';
 import { ErgoChain } from '../lib';
-import { BoxInfo } from '@rosen-chains/abstract-chain';
+import { BoxInfo, ConfirmationStatus } from '@rosen-chains/abstract-chain';
 import TestErgoNetwork from './network/TestErgoNetwork';
 import { ErgoConfigs } from '../lib/types';
 import { transaction0BoxMapping } from './transactionTestData';
+import { when } from 'jest-when';
 
 const spyOn = jest.spyOn;
 
 describe('ErgoChain', () => {
+  const paymentTxConfirmation = 9;
+  const coldTxConfirmation = 10;
   const generateChainObject = (network: TestErgoNetwork) => {
     const config: ErgoConfigs = {
       fee: 100n,
       observationTxConfirmation: 5,
-      paymentTxConfirmation: 6,
-      coldTxConfirmation: 7,
+      paymentTxConfirmation: paymentTxConfirmation,
+      coldTxConfirmation: coldTxConfirmation,
       lockAddress: 'lock_addr',
       coldStorageAddress: 'cold_addr',
       rwtId: 'rwt',
@@ -24,6 +27,194 @@ describe('ErgoChain', () => {
     };
     return new ErgoChain(network, config);
   };
+
+  describe('getPaymentTxConfirmationStatus', () => {
+    /**
+     * @target ErgoChain.getPaymentTxConfirmationStatus should return
+     * ConfirmedEnough when tx confirmation is more than expected config
+     * @dependencies
+     * @scenario
+     * - generate a random txId
+     * - mock a network object to return enough confirmation for mocked txId
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return `ConfirmedEnough` enum
+     */
+    it('should return ConfirmedEnough when tx confirmation is more than expected config', async () => {
+      // generate a random txId
+      const txId = ergoTestUtils.generateRandomId();
+
+      // mock a network object to return enough confirmation for mocked txId
+      const network = new TestErgoNetwork();
+      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+      when(getTxConfirmationSpy)
+        .calledWith(txId)
+        .mockResolvedValueOnce(paymentTxConfirmation);
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.getPaymentTxConfirmationStatus(txId);
+
+      // check returned value
+      expect(result).toEqual(ConfirmationStatus.ConfirmedEnough);
+    });
+
+    /**
+     * @target ErgoChain.getPaymentTxConfirmationStatus should return
+     * NotConfirmedEnough when tx confirmation is less than expected config
+     * @dependencies
+     * @scenario
+     * - generate a random txId
+     * - mock a network object to return insufficient confirmation for mocked
+     *   txId
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return `NotConfirmedEnough` enum
+     */
+    it('should return NotConfirmedEnough when tx confirmation is less than expected config', async () => {
+      // generate a random txId
+      const txId = ergoTestUtils.generateRandomId();
+
+      // mock a network object to return enough confirmation for mocked txId
+      const network = new TestErgoNetwork();
+      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+      when(getTxConfirmationSpy)
+        .calledWith(txId)
+        .mockResolvedValueOnce(paymentTxConfirmation - 1);
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.getPaymentTxConfirmationStatus(txId);
+
+      // check returned value
+      expect(result).toEqual(ConfirmationStatus.NotConfirmedEnough);
+    });
+
+    /**
+     * @target ErgoChain.getPaymentTxConfirmationStatus should return
+     * NotFound when tx confirmation is -1
+     * @dependencies
+     * @scenario
+     * - generate a random txId
+     * - mock a network object to return -1 confirmation for mocked txId
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return `NotFound` enum
+     */
+    it('should return NotFound when tx confirmation is -1', async () => {
+      // generate a random txId
+      const txId = ergoTestUtils.generateRandomId();
+
+      // mock a network object to return enough confirmation for mocked txId
+      const network = new TestErgoNetwork();
+      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+      when(getTxConfirmationSpy).calledWith(txId).mockResolvedValueOnce(-1);
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.getPaymentTxConfirmationStatus(txId);
+
+      // check returned value
+      expect(result).toEqual(ConfirmationStatus.NotFound);
+    });
+  });
+
+  describe('getColdStorageTxConfirmationStatus', () => {
+    /**
+     * @target ErgoChain.getColdStorageTxConfirmationStatus should return
+     * ConfirmedEnough when tx confirmation is more than expected config
+     * @dependencies
+     * @scenario
+     * - generate a random txId
+     * - mock a network object to return enough confirmation for mocked txId
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return `ConfirmedEnough` enum
+     */
+    it('should return ConfirmedEnough when tx confirmation is more than expected config', async () => {
+      // generate a random txId
+      const txId = ergoTestUtils.generateRandomId();
+
+      // mock a network object to return enough confirmation for mocked txId
+      const network = new TestErgoNetwork();
+      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+      when(getTxConfirmationSpy)
+        .calledWith(txId)
+        .mockResolvedValueOnce(coldTxConfirmation);
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.getColdStorageTxConfirmationStatus(txId);
+
+      // check returned value
+      expect(result).toEqual(ConfirmationStatus.ConfirmedEnough);
+    });
+
+    /**
+     * @target ErgoChain.getColdStorageTxConfirmationStatus should return
+     * NotConfirmedEnough when tx confirmation is less than expected config
+     * @dependencies
+     * @scenario
+     * - generate a random txId
+     * - mock a network object to return insufficient confirmation for mocked
+     *   txId
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return `NotConfirmedEnough` enum
+     */
+    it('should return NotConfirmedEnough when tx confirmation is less than expected config', async () => {
+      // generate a random txId
+      const txId = ergoTestUtils.generateRandomId();
+
+      // mock a network object to return enough confirmation for mocked txId
+      const network = new TestErgoNetwork();
+      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+      when(getTxConfirmationSpy)
+        .calledWith(txId)
+        .mockResolvedValueOnce(coldTxConfirmation - 1);
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.getColdStorageTxConfirmationStatus(txId);
+
+      // check returned value
+      expect(result).toEqual(ConfirmationStatus.NotConfirmedEnough);
+    });
+
+    /**
+     * @target ErgoChain.getColdStorageTxConfirmationStatus should return
+     * NotFound when tx confirmation is -1
+     * @dependencies
+     * @scenario
+     * - generate a random txId
+     * - mock a network object to return -1 confirmation for mocked txId
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return `NotFound` enum
+     */
+    it('should return NotFound when tx confirmation is -1', async () => {
+      // generate a random txId
+      const txId = ergoTestUtils.generateRandomId();
+
+      // mock a network object to return enough confirmation for mocked txId
+      const network = new TestErgoNetwork();
+      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+      when(getTxConfirmationSpy).calledWith(txId).mockResolvedValueOnce(-1);
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.getColdStorageTxConfirmationStatus(txId);
+
+      // check returned value
+      expect(result).toEqual(ConfirmationStatus.NotFound);
+    });
+  });
 
   describe('isTxInMempool', () => {
     /**
