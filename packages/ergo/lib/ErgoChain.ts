@@ -496,12 +496,12 @@ class ErgoChain extends AbstractUtxoChain {
    */
   isTxInMempool = async (transactionId: string): Promise<boolean> => {
     const mempoolTxs = await this.network.getMempoolTransactions();
-    mempoolTxs.map((serializedTx) =>
+    const mempoolTxIds = mempoolTxs.map((serializedTx) =>
       wasm.Transaction.sigma_parse_bytes(Buffer.from(serializedTx, 'hex'))
         .id()
         .to_str()
     );
-    return mempoolTxs.includes(transactionId);
+    return mempoolTxIds.includes(transactionId);
   };
 
   /**
