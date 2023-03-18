@@ -11,6 +11,7 @@ class TestUtxoChain extends AbstractChain {
   };
 
   generateTransaction = this.notImplemented;
+  extractTransactionOrder = this.notImplemented;
   verifyTransactionFee = this.notImplemented;
   verifyEvent = this.notImplemented;
   isTxValid = this.notImplemented;
