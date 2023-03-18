@@ -67,11 +67,6 @@ interface PaymentTransaction {
   eventId: string;
   txBytes: Uint8Array;
   txType: string;
-
-  /**
-   * @return transaction hex string
-   */
-  getTxHexString: () => string;
 }
 
 interface PaymentTransactionJsonModel {

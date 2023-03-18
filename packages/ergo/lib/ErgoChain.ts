@@ -14,6 +14,7 @@ import {
   TransactionTypes,
   UnexpectedApiError,
   ChainUtils,
+  SinglePayment,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import * as wasm from 'ergo-lib-wasm-nodejs';
@@ -24,6 +25,7 @@ import { ErgoConfigs } from './types';
 import { AbstractLogger } from '@rosen-bridge/logger-interface';
 import ErgoTransaction from './ErgoTransaction';
 import ErgoUtils from './ErgoUtils';
+import { Buffer } from 'buffer';
 
 class ErgoChain extends AbstractUtxoChain {
   declare network: AbstractErgoNetwork;
@@ -234,6 +236,33 @@ class ErgoChain extends AbstractUtxoChain {
       inputAssets,
       outputAssets,
     };
+  };
+
+  /**
+   * extracts payment order of a PaymentTransaction
+   * @param transaction the PaymentTransaction
+   * @returns the transaction payment order (list of single payments)
+   */
+  extractTransactionOrder = (transaction: PaymentTransaction): PaymentOrder => {
+    const tx = Serializer.deserialize(transaction.txBytes).unsigned_tx();
+
+    const order: PaymentOrder = [];
+    for (let i = 0; i < tx.output_candidates().len(); i++) {
+      const output = tx.output_candidates().get(i);
+      const assets = ErgoUtils.getBoxAssets(output);
+      const r4Value = output.register_value(4)?.to_coll_coll_byte()[0];
+
+      const payment: SinglePayment = {
+        address: wasm.Address.recreate_from_ergo_tree(
+          output.ergo_tree()
+        ).to_base58(wasm.NetworkPrefix.Mainnet),
+        assets: assets,
+      };
+      if (r4Value) payment.extra = Buffer.from(r4Value).toString('hex');
+      order.push(payment);
+    }
+
+    return order;
   };
 
   /**

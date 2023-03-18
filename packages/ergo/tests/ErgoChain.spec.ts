@@ -2,11 +2,18 @@ import * as boxTestData from './boxTestData';
 import * as transactionTestData from './transactionTestData';
 import * as ergoTestUtils from './ergoTestUtils';
 import { ErgoChain } from '../lib';
-import { BoxInfo, ConfirmationStatus } from '@rosen-chains/abstract-chain';
+import {
+  BoxInfo,
+  ChainUtils,
+  ConfirmationStatus,
+  PaymentTransaction,
+  ValueError,
+} from '@rosen-chains/abstract-chain';
 import TestErgoNetwork from './network/TestErgoNetwork';
 import { ErgoConfigs } from '../lib/types';
-import { transaction0BoxMapping } from './transactionTestData';
 import { when } from 'jest-when';
+import * as wasm from 'ergo-lib-wasm-nodejs';
+import ErgoTransaction from '../lib/ErgoTransaction';
 
 const spyOn = jest.spyOn;
 
@@ -27,6 +34,197 @@ describe('ErgoChain', () => {
     };
     return new ErgoChain(network, config);
   };
+
+  describe('isTxValid', () => {
+    /**
+     * @target ErgoChain.isTxValid should return true when all inputs are valid
+     * @dependencies
+     * @scenario
+     * - mock a network object to return as valid for all inputs of a mocked
+     *   transaction
+     * - mock PaymentTransaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return true
+     */
+    it('should return true when all inputs are valid', async () => {
+      // mock a network object to return as valid for all inputs of a mocked transaction
+      const network = new TestErgoNetwork();
+      const isBoxUnspentAndValidSpy = spyOn(network, 'isBoxUnspentAndValid');
+      transactionTestData.transaction0InputIds.forEach((inputId) =>
+        when(isBoxUnspentAndValidSpy)
+          .calledWith(inputId)
+          .mockResolvedValueOnce(true)
+      );
+
+      // mock PaymentTransaction
+      const paymentTx = new ErgoTransaction(
+        'txId',
+        'eventId',
+        ergoTestUtils
+          .toTransaction(transactionTestData.transaction0)
+          .sigma_serialize_bytes(),
+        [],
+        [],
+        'txType'
+      );
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.isTxValid(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(true);
+    });
+
+    /**
+     * @target ErgoChain.isTxValid should return false when at least one input
+     * is invalid
+     * @dependencies
+     * @scenario
+     * - mock a network object to return as valid for all inputs of a mocked
+     *   transaction except for the first one
+     * - mock PaymentTransaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when at least one input is invalid', async () => {
+      // mock a network object to return as valid for all inputs of a mocked transaction except for the first one
+      const network = new TestErgoNetwork();
+      const isBoxUnspentAndValidSpy = spyOn(network, 'isBoxUnspentAndValid');
+      let isFirstBox = true;
+      transactionTestData.transaction0InputIds.forEach((inputId) => {
+        when(isBoxUnspentAndValidSpy)
+          .calledWith(inputId)
+          .mockResolvedValueOnce(!isFirstBox);
+        isFirstBox = false;
+      });
+
+      // mock PaymentTransaction
+      const paymentTx = new ErgoTransaction(
+        'txId',
+        'eventId',
+        ergoTestUtils
+          .toTransaction(transactionTestData.transaction0)
+          .sigma_serialize_bytes(),
+        [],
+        [],
+        'txType'
+      );
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.isTxValid(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+  });
+
+  describe('signTransaction', () => {
+    const ergoChain = generateChainObject(new TestErgoNetwork());
+
+    /**
+     * @target ErgoChain.signTransaction should return PaymentTransaction of the
+     * signed transaction
+     * @dependencies
+     * @scenario
+     * - mock a sign function to return signed transaction
+     * - mock PaymentTransaction of unsigned transaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return PaymentTransaction of signed transaction (all fields
+     *   are same as input object, except txBytes which is signed transaction)
+     */
+    it('should return PaymentTransaction of the signed transaction', async () => {
+      // mock a sign function to return signed transaction
+      const signFunction = async (
+        tx: wasm.ReducedTransaction,
+        requiredSign: number,
+        boxes: Array<wasm.ErgoBox>,
+        dataBoxes?: Array<wasm.ErgoBox>
+      ): Promise<wasm.Transaction> =>
+        ergoTestUtils.deserializeTransaction(
+          transactionTestData.transaction2SignedSerialized
+        );
+
+      // mock PaymentTransaction of unsigned transaction
+      const paymentTx = new ErgoTransaction(
+        'txId',
+        'eventId',
+        wasm.ReducedTransaction.sigma_parse_bytes(
+          Buffer.from(transactionTestData.transaction2UnsignedSerialized, 'hex')
+        ).sigma_serialize_bytes(),
+        [],
+        [],
+        'txType'
+      );
+
+      // run test
+      const result = (await ergoChain.signTransaction(
+        paymentTx,
+        0,
+        signFunction
+      )) as ErgoTransaction;
+
+      // check returned value
+      expect(result.txId).toEqual(paymentTx.txId);
+      expect(result.eventId).toEqual(paymentTx.eventId);
+      expect(result.txBytes).toEqual(
+        ergoTestUtils
+          .deserializeTransaction(
+            transactionTestData.transaction2SignedSerialized
+          )
+          .sigma_serialize_bytes()
+      );
+      expect(result.inputBoxes).toEqual(paymentTx.inputBoxes);
+      expect(result.dataInputs).toEqual(paymentTx.dataInputs);
+      expect(result.txType).toEqual(paymentTx.txType);
+    });
+
+    /**
+     * @target ErgoChain.signTransaction should throw error when signing failed
+     * @dependencies
+     * @scenario
+     * - mock a sign function to throw error
+     * - mock PaymentTransaction of unsigned transaction
+     * - run test & check thrown exception
+     * @expected
+     * - it should throw the exact error thrown by sign function
+     */
+    it('should throw error when signing failed', async () => {
+      // mock a sign function to throw error
+      const signFunction = async (
+        tx: wasm.ReducedTransaction,
+        requiredSign: number,
+        boxes: Array<wasm.ErgoBox>,
+        dataBoxes?: Array<wasm.ErgoBox>
+      ): Promise<wasm.Transaction> => {
+        throw Error(`TestError: sign failed`);
+      };
+
+      // mock PaymentTransaction of unsigned transaction
+      const paymentTx = new ErgoTransaction(
+        'txId',
+        'eventId',
+        wasm.ReducedTransaction.sigma_parse_bytes(
+          Buffer.from(transactionTestData.transaction2UnsignedSerialized, 'hex')
+        ).sigma_serialize_bytes(),
+        [],
+        [],
+        'txType'
+      );
+
+      // run test & check thrown exception
+      await expect(async () => {
+        await ergoChain.signTransaction(paymentTx, 0, signFunction);
+      }).rejects.toThrow(`TestError: sign failed`);
+    });
+  });
 
   describe('getPaymentTxConfirmationStatus', () => {
     /**
@@ -327,7 +525,7 @@ describe('ErgoChain', () => {
           ergoTestUtils.toTransaction(txJson).sigma_serialize_bytes()
         ).toString('hex')
       );
-      const boxMapping = transaction0BoxMapping;
+      const boxMapping = transactionTestData.transaction0BoxMapping;
 
       // mock a network object to return mocked transactions for mempool
       const network = new TestErgoNetwork();
@@ -371,7 +569,7 @@ describe('ErgoChain', () => {
           ergoTestUtils.toTransaction(txJson).sigma_serialize_bytes()
         ).toString('hex')
       );
-      const boxMapping = transaction0BoxMapping;
+      const boxMapping = transactionTestData.transaction0BoxMapping;
       const trackingTokenId =
         '03689941746717cddd05c52f454e34eb6e203a84f931fdc47c52f44589f83496';
 
@@ -421,7 +619,7 @@ describe('ErgoChain', () => {
           ergoTestUtils.toTransaction(txJson).sigma_serialize_bytes()
         ).toString('hex')
       );
-      const boxMapping = transaction0BoxMapping;
+      const boxMapping = transactionTestData.transaction0BoxMapping;
       const trackingTokenId =
         '3f3add41746717cddd05c52f454e34eb98424408a931fdc47c52f44f0537f126';
 

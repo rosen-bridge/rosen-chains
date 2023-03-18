@@ -19,7 +19,10 @@ class TestErgoNetwork extends AbstractErgoNetwork {
   getTransaction = this.notImplemented;
   getBlockTransactionIds = this.notImplemented;
   submitTransaction = this.notImplemented;
-  isBoxUnspentAndValid = this.notImplemented;
+
+  isBoxUnspentAndValid = (boxId: string): Promise<boolean> => {
+    throw Error('Not mocked');
+  };
 
   getTxConfirmation = (txId: string): Promise<ConfirmationStatus> => {
     throw Error('Not mocked');
