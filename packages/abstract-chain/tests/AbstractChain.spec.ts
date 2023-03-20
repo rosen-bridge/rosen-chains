@@ -26,7 +26,6 @@ describe('AbstractChain', () => {
       eventId: 'mockedNetworkId',
       txBytes: Buffer.from('mockedTxBytes'),
       txType: 'payment',
-      getTxHexString: () => 'mockedTxHexString',
     };
     const network = new TestChainNetwork();
 

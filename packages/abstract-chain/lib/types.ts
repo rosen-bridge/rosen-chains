@@ -54,11 +54,6 @@ interface EventTrigger {
   sourceTxId: string;
   sourceBlockId: string;
   WIDs: Array<string>;
-
-  /**
-   * @return id of event trigger
-   */
-  getId: () => string;
 }
 
 interface PaymentTransaction {
