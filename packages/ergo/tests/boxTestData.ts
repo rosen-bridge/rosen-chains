@@ -1,4 +1,4 @@
-import { AssetBalance } from '@rosen-chains/abstract-chain';
+import { AssetBalance, EventTrigger } from '@rosen-chains/abstract-chain';
 
 export const ergoBox1 = `{
   "boxId": "09704ca5e07fe502e4974b07ba8ec7e32c242d1dfc06b036465d6596f5a8ed4b",
@@ -48,5 +48,47 @@ export const box1Assets: AssetBalance = {
       id: '7b0cc1b9c6e3dbf41a8cd0fe059a545dfbd0dfafc4093d0555a9851f06662dff',
       value: 10000000n,
     },
+  ],
+};
+
+export const validEvent: EventTrigger = {
+  fromChain: 'ergo',
+  toChain: 'cardano',
+  fromAddress: 'fromAddress',
+  toAddress: 'toAddress',
+  amount: '1000000',
+  bridgeFee: '1000',
+  networkFee: '5000',
+  sourceChainTokenId: 'sourceTokenId',
+  targetChainTokenId: 'targetTokenId',
+  sourceTxId:
+    '6e3dbf41a8e3dbf41a8cd0fe059a54cef8bb140322503d0555a9851f056825ba',
+  sourceBlockId:
+    '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ea',
+  WIDs: [
+    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6e',
+    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b90',
+    'ebc091d854e83a8fdc0e51936923171fc74895715591be81b8d286888d877e70',
+  ],
+};
+
+export const invalidEvent: EventTrigger = {
+  fromChain: 'ergo',
+  toChain: 'cardano',
+  fromAddress: 'fromAddress',
+  toAddress: 'toAddress',
+  amount: '5500',
+  bridgeFee: '1000',
+  networkFee: '5000',
+  sourceChainTokenId: 'sourceTokenId',
+  targetChainTokenId: 'targetTokenId',
+  sourceTxId:
+    '6e3dbf41a8e3dbf41a8cd0fe059a54cef8bb140322503d0555a9851f056825ba',
+  sourceBlockId:
+    '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ea',
+  WIDs: [
+    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6e',
+    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b90',
+    'ebc091d854e83a8fdc0e51936923171fc74895715591be81b8d286888d877e70',
   ],
 };
