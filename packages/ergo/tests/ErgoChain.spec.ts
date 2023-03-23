@@ -32,6 +32,102 @@ describe('ErgoChain', () => {
     return new ErgoChain(network, config);
   };
 
+  describe('verifyTransactionFee', () => {
+    const network = new TestErgoNetwork();
+
+    /**
+     * @target ErgoChain.verifyTransactionFee should return true when fee is
+     * less than config fee
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - mock a config that has more fee comparing to mocked transaction fee
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return true
+     */
+    it('should return true when fee is less than config fee', async () => {
+      // mock PaymentTransaction
+      const paymentTx = new ErgoTransaction(
+        'txId',
+        'eventId',
+        wasm.ReducedTransaction.sigma_parse_bytes(
+          Buffer.from(transactionTestData.transaction2UnsignedSerialized, 'hex')
+        ).sigma_serialize_bytes(),
+        [],
+        [],
+        'txType'
+      );
+
+      // mock a config that has more fee comparing to mocked transaction fee
+      const config: ErgoConfigs = {
+        fee: 1200000n,
+        observationTxConfirmation: 5,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress: 'lock_addr',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 1000000n,
+        eventTxConfirmation: 18,
+      };
+
+      // run test
+      const ergoChain = new ErgoChain(network, config);
+      const result = await ergoChain.verifyTransactionFee(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(true);
+    });
+
+    /**
+     * @target ErgoChain.verifyTransactionFee should return false when fee is
+     * more than config fee
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - mock a config that has less fee comparing to mocked transaction fee
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when fee is more than config fee', async () => {
+      // mock PaymentTransaction
+      const paymentTx = new ErgoTransaction(
+        'txId',
+        'eventId',
+        wasm.ReducedTransaction.sigma_parse_bytes(
+          Buffer.from(transactionTestData.transaction2UnsignedSerialized, 'hex')
+        ).sigma_serialize_bytes(),
+        [],
+        [],
+        'txType'
+      );
+
+      // mock a config that has less fee comparing to mocked transaction fee
+      const config: ErgoConfigs = {
+        fee: 100n,
+        observationTxConfirmation: 5,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress: 'lock_addr',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 1000000n,
+        eventTxConfirmation: 18,
+      };
+
+      // run test
+      const ergoChain = new ErgoChain(network, config);
+      const result = await ergoChain.verifyTransactionFee(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+  });
+
   describe('verifyEvent', () => {
     const feeConfig: Fee = {
       bridgeFee: 0n,

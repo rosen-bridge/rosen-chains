@@ -15,6 +15,7 @@ import {
   UnexpectedApiError,
   ChainUtils,
   SinglePayment,
+  ImpossibleBehavior,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import * as wasm from 'ergo-lib-wasm-nodejs';
@@ -28,6 +29,8 @@ import ErgoUtils from './ErgoUtils';
 import { Buffer } from 'buffer';
 
 class ErgoChain extends AbstractUtxoChain {
+  static feeBoxErgoTree =
+    '1005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304';
   declare network: AbstractErgoNetwork;
   declare configs: ErgoConfigs;
 
@@ -273,25 +276,23 @@ class ErgoChain extends AbstractUtxoChain {
   verifyTransactionFee = (transaction: PaymentTransaction): boolean => {
     const tx = Serializer.deserialize(transaction.txBytes).unsigned_tx();
     const outputBoxes = tx.output_candidates();
-    if (
-      BigInt(
-        outputBoxes
-          .get(outputBoxes.len() - 1)
-          .value()
-          .as_i64()
-          .to_str()
-      ) > this.configs.fee
-    ) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction fee [${outputBoxes
-          .get(outputBoxes.len() - 1)
-          .value()
-          .as_i64()
-          .to_str()}] is more than maximum allowed fee [${this.configs.fee}]`
-      );
-      return false;
+    for (let i = 0; i < outputBoxes.len(); i++) {
+      const box = outputBoxes.get(i);
+      if (box.ergo_tree().to_base16_bytes() === ErgoChain.feeBoxErgoTree) {
+        if (BigInt(box.value().as_i64().to_str()) > this.configs.fee) {
+          this.logger.debug(
+            `Tx [${transaction.txId}] invalid: Transaction fee [${box
+              .value()
+              .as_i64()
+              .to_str()}] is more than maximum allowed fee [${
+              this.configs.fee
+            }]`
+          );
+          return false;
+        } else return true;
+      }
     }
-    return true;
+    throw new ImpossibleBehavior(`No box matching fee box ergo tree found`);
   };
 
   /**
