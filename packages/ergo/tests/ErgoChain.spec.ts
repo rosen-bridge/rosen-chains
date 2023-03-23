@@ -10,6 +10,7 @@ import * as wasm from 'ergo-lib-wasm-nodejs';
 import ErgoTransaction from '../lib/ErgoTransaction';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
 import { Fee } from '@rosen-bridge/minimum-fee';
+import { JsonBI } from '@rosen-bridge/minimum-fee/dist/lib/network/parser';
 
 const spyOn = jest.spyOn;
 
@@ -31,6 +32,78 @@ describe('ErgoChain', () => {
     };
     return new ErgoChain(network, config);
   };
+
+  describe('getTransactionAssets', () => {
+    const network = new TestErgoNetwork();
+
+    /**
+     * @target ErgoUtils.getTransactionAssets should get transaction assets
+     * successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction assets
+     */
+    it('should get transaction assets successfully', () => {
+      // mock PaymentTransaction
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction3PaymentTransaction
+      );
+      const expectedAssets = transactionTestData.transaction3Assets;
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = ergoChain.getTransactionAssets(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(expectedAssets);
+    });
+  });
+
+  describe('extractTransactionOrder', () => {
+    const network = new TestErgoNetwork();
+
+    /**
+     * @target ErgoUtils.extractTransactionOrder should extract transaction
+     * order successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction order
+     */
+    it('should extract transaction order successfully', () => {
+      // mock PaymentTransaction
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction3PaymentTransaction
+      );
+      const expectedOrder = transactionTestData.transaction3Order;
+      const config: ErgoConfigs = {
+        fee: 1100000n,
+        observationTxConfirmation: 5,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress:
+          'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 1000000n,
+        eventTxConfirmation: 18,
+      };
+
+      // run test
+      const ergoChain = new ErgoChain(network, config);
+      const result = ergoChain.extractTransactionOrder(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(expectedOrder);
+    });
+  });
 
   describe('verifyTransactionFee', () => {
     const network = new TestErgoNetwork();

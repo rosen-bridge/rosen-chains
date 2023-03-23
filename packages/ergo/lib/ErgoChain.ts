@@ -219,6 +219,7 @@ class ErgoChain extends AbstractUtxoChain {
     // extract output boxes assets
     for (let i = 0; i < tx.output_candidates().len(); i++) {
       const output = tx.output_candidates().get(i);
+      outputAssets.nativeToken += BigInt(output.value().as_i64().to_str());
       for (let j = 0; j < output.tokens().len(); j++) {
         const targetToken = outputAssets.tokens.find(
           (item) => item.id === output.tokens().get(j).id().to_str()
@@ -254,6 +255,16 @@ class ErgoChain extends AbstractUtxoChain {
       const output = tx.output_candidates().get(i);
       const assets = ErgoUtils.getBoxAssets(output);
       const r4Value = output.register_value(4)?.to_coll_coll_byte()[0];
+
+      // skip change box and fee box
+      if (
+        output.ergo_tree().to_base16_bytes() === ErgoChain.feeBoxErgoTree ||
+        output.ergo_tree().to_base16_bytes() ===
+          wasm.Address.from_base58(this.configs.lockAddress)
+            .to_ergo_tree()
+            .to_base16_bytes()
+      )
+        continue;
 
       const payment: SinglePayment = {
         address: wasm.Address.recreate_from_ergo_tree(
