@@ -128,7 +128,9 @@ class ErgoChain extends AbstractUtxoChain {
     // create change box
     const boxBuilder = new wasm.ErgoBoxCandidateBuilder(
       wasm.BoxValue.from_i64(
-        wasm.I64.from_str(remainingAssets.nativeToken.toString())
+        wasm.I64.from_str(
+          (remainingAssets.nativeToken - this.configs.fee).toString()
+        )
       ),
       wasm.Contract.new(
         wasm.Address.from_base58(this.configs.lockAddress).to_ergo_tree()
@@ -172,6 +174,8 @@ class ErgoChain extends AbstractUtxoChain {
       ctx
     );
 
+    // TODO: PaymentTransaction object need additional info which is not
+    //  in this function context. For now, txType is `payment`.
     // create PaymentTransaction object
     const txBytes = Serializer.serialize(reducedTx);
     const txId = reducedTx.unsigned_tx().id().to_str();

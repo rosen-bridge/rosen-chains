@@ -14,9 +14,12 @@ class TestErgoNetwork extends AbstractErgoNetwork {
     throw Error('Not implemented');
   };
 
-  getHeight = this.notImplemented;
   getAddressAssets = this.notImplemented;
   submitTransaction = this.notImplemented;
+
+  getHeight = (): Promise<number> => {
+    throw Error('Not mocked');
+  };
 
   getTransaction = (txId: string, blockId: string): Promise<string> => {
     throw Error('Not mocked');

@@ -10,7 +10,6 @@ import * as wasm from 'ergo-lib-wasm-nodejs';
 import ErgoTransaction from '../lib/ErgoTransaction';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
 import { Fee } from '@rosen-bridge/minimum-fee';
-import { JsonBI } from '@rosen-bridge/minimum-fee/dist/lib/network/parser';
 
 const spyOn = jest.spyOn;
 
@@ -33,11 +32,105 @@ describe('ErgoChain', () => {
     return new ErgoChain(network, config);
   };
 
+  describe('generateTransaction', () => {
+    /**
+     * @target ErgoChain.getTransactionAssets should generate payment
+     * transaction successfully
+     * @dependencies
+     * @scenario
+     * - mock transaction order, input and data input boxes
+     * - mock a network object with mocked 'getHeight' and 'getStateContext'
+     *   functions
+     * - mock chain config
+     * - run test
+     * - check attributes of returned value
+     * @expected
+     * - PaymentTransaction inputs, dataInputs and eventId should be as expected
+     * - extracted order of generated transaction should be the same as input
+     *   order
+     * - transaction fee should be the same as config fee
+     */
+    it('should generate payment transaction successfully', async () => {
+      // mock transaction order, input and data input boxes
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction3PaymentTransaction
+      );
+      const order = transactionTestData.transaction3Order;
+      const inputs = paymentTx.inputBoxes.map((serializedBox) =>
+        Buffer.from(serializedBox).toString('hex')
+      );
+      const dataInputs = paymentTx.dataInputs.map((serializedBox) =>
+        Buffer.from(serializedBox).toString('hex')
+      );
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getHeight'
+      const getHeightSpy = spyOn(network, 'getHeight');
+      getHeightSpy.mockResolvedValue(966000);
+      // mock 'getStateContext'
+      const getStateContextSpy = spyOn(network, 'getStateContext');
+      getStateContextSpy.mockResolvedValue(
+        transactionTestData.mockedStateContext
+      );
+
+      // mock chain config
+      const config: ErgoConfigs = {
+        fee: 1100000n,
+        observationTxConfirmation: 5,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress:
+          'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 300000n,
+        eventTxConfirmation: 18,
+      };
+
+      // run test
+      const ergoChain = new ErgoChain(network, config);
+      const result = await ergoChain.generateTransaction(
+        paymentTx.eventId,
+        order,
+        inputs,
+        dataInputs
+      );
+
+      // check returned value
+      //  PaymentTransaction inputs, dataInputs and eventId should be as expected
+      const ergoTx = result as ErgoTransaction;
+      expect(ergoTx.inputBoxes).toEqual(paymentTx.inputBoxes);
+      expect(ergoTx.dataInputs).toEqual(paymentTx.dataInputs);
+      expect(ergoTx.eventId).toEqual(paymentTx.eventId);
+      //  extracted order of generated transaction should be the same as input order
+      const extractedOrder = ergoChain.extractTransactionOrder(result);
+      expect(extractedOrder).toEqual(order);
+      //  transaction fee should be the same as config fee
+      const tx = wasm.ReducedTransaction.sigma_parse_bytes(
+        result.txBytes
+      ).unsigned_tx();
+      let boxChecked = false;
+      for (let i = 0; i < tx.output_candidates().len(); i++) {
+        if (
+          tx.output_candidates().get(i).ergo_tree().to_base16_bytes() ===
+          ErgoChain.feeBoxErgoTree
+        ) {
+          expect(
+            BigInt(tx.output_candidates().get(i).value().as_i64().to_str())
+          ).toEqual(config.fee);
+          boxChecked = true;
+        }
+      }
+      expect(boxChecked).toEqual(true);
+    });
+  });
+
   describe('getTransactionAssets', () => {
     const network = new TestErgoNetwork();
 
     /**
-     * @target ErgoUtils.getTransactionAssets should get transaction assets
+     * @target ErgoChain.getTransactionAssets should get transaction assets
      * successfully
      * @dependencies
      * @scenario
@@ -67,7 +160,7 @@ describe('ErgoChain', () => {
     const network = new TestErgoNetwork();
 
     /**
-     * @target ErgoUtils.extractTransactionOrder should extract transaction
+     * @target ErgoChain.extractTransactionOrder should extract transaction
      * order successfully
      * @dependencies
      * @scenario
