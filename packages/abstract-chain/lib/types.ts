@@ -54,11 +54,6 @@ interface EventTrigger {
   sourceTxId: string;
   sourceBlockId: string;
   WIDs: Array<string>;
-
-  /**
-   * @return id of event trigger
-   */
-  getId: () => string;
 }
 
 interface PaymentTransaction {
@@ -67,11 +62,6 @@ interface PaymentTransaction {
   eventId: string;
   txBytes: Uint8Array;
   txType: string;
-
-  /**
-   * @return transaction hex string
-   */
-  getTxHexString: () => string;
 }
 
 interface PaymentTransactionJsonModel {
