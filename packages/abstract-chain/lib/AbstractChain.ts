@@ -31,12 +31,14 @@ abstract class AbstractChain {
   /**
    * generates unsigned PaymentTransaction for payment order
    * @param eventId the id of event
+   * @param txType transaction type
    * @param order the payment order (list of single payments)
    * @param inputs the inputs for transaction
    * @returns the generated PaymentTransaction
    */
   abstract generateTransaction: (
     eventId: string,
+    txType: string,
     order: PaymentOrder,
     ...extra: Array<any>
   ) => Promise<PaymentTransaction>;
