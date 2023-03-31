@@ -11,7 +11,6 @@ import {
   PaymentOrder,
   PaymentTransaction,
   TransactionAssetBalance,
-  TransactionTypes,
   UnexpectedApiError,
   ChainUtils,
   SinglePayment,
@@ -45,6 +44,7 @@ class ErgoChain extends AbstractUtxoChain {
   /**
    * generates unsigned payment transaction for payment order
    * @param eventId the id of event
+   * @param txType transaction type
    * @param order the payment order (list of single payments)
    * @param inputs the inputs for transaction
    * @param dataInputs the data inputs for transaction
@@ -52,6 +52,7 @@ class ErgoChain extends AbstractUtxoChain {
    */
   generateTransaction = async (
     eventId: string,
+    txType: string,
     order: PaymentOrder,
     inputs: Array<string>,
     dataInputs: Array<string>
@@ -174,8 +175,6 @@ class ErgoChain extends AbstractUtxoChain {
       ctx
     );
 
-    // TODO: PaymentTransaction object need additional info which is not
-    //  in this function context. For now, txType is `payment`.
     // create PaymentTransaction object
     const txBytes = Serializer.serialize(reducedTx);
     const txId = reducedTx.unsigned_tx().id().to_str();
@@ -185,11 +184,11 @@ class ErgoChain extends AbstractUtxoChain {
       txBytes,
       inputs.map((boxBytes) => Buffer.from(boxBytes, 'hex')),
       dataInputs.map((boxBytes) => Buffer.from(boxBytes, 'hex')),
-      TransactionTypes.payment
+      txType
     );
 
     this.logger.info(
-      `Ergo transaction [${txId}] generated for event [${eventId}]`
+      `Ergo transaction [${txId}] as type [${txType}] generated for event [${eventId}]`
     );
     return ergoTx;
   };
