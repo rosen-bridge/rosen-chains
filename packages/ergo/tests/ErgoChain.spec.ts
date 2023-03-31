@@ -45,7 +45,8 @@ describe('ErgoChain', () => {
      * - run test
      * - check attributes of returned value
      * @expected
-     * - PaymentTransaction inputs, dataInputs and eventId should be as expected
+     * - PaymentTransaction inputs, dataInputs, eventId and txType should be as
+     *   expected
      * - extracted order of generated transaction should be the same as input
      *   order
      * - transaction fee should be the same as config fee
@@ -92,17 +93,19 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(network, config);
       const result = await ergoChain.generateTransaction(
         paymentTx.eventId,
+        paymentTx.txType,
         order,
         inputs,
         dataInputs
       );
 
       // check returned value
-      //  PaymentTransaction inputs, dataInputs and eventId should be as expected
+      //  PaymentTransaction inputs, dataInputs, eventId and txType should be as expected
       const ergoTx = result as ErgoTransaction;
       expect(ergoTx.inputBoxes).toEqual(paymentTx.inputBoxes);
       expect(ergoTx.dataInputs).toEqual(paymentTx.dataInputs);
       expect(ergoTx.eventId).toEqual(paymentTx.eventId);
+      expect(ergoTx.txType).toEqual(paymentTx.txType);
       //  extracted order of generated transaction should be the same as input order
       const extractedOrder = ergoChain.extractTransactionOrder(result);
       expect(extractedOrder).toEqual(order);
