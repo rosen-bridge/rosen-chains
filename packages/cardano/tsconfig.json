@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "./"
+  },
+  "exclude": ["tests"],
+  "include": ["lib/**/*"],
+  "references": [{ "path": "../abstract-chain" }]
+}
