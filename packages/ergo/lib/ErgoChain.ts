@@ -15,6 +15,7 @@ import {
   ChainUtils,
   SinglePayment,
   ImpossibleBehavior,
+  TransactionTypes,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import * as wasm from 'ergo-lib-wasm-nodejs';
@@ -470,15 +471,30 @@ class ErgoChain extends AbstractUtxoChain {
   };
 
   /**
-   * extracts confirmation status for a payment transaction
-   * @param transactionId the payment transaction id
+   * extracts confirmation status for a transaction
+   * @param transactionId the transaction id
+   * @param transactionType type of the transaction
    * @returns the transaction confirmation status
    */
-  getPaymentTxConfirmationStatus = async (
-    transactionId: string
+  getTxConfirmationStatus = async (
+    transactionId: string,
+    transactionType: string
   ): Promise<ConfirmationStatus> => {
+    let expectedConfirmation = 0;
+    if (transactionType === TransactionTypes.lock)
+      expectedConfirmation = this.configs.observationTxConfirmation;
+    else if (
+      transactionType === TransactionTypes.payment ||
+      transactionType === TransactionTypes.reward
+    )
+      expectedConfirmation = this.configs.paymentTxConfirmation;
+    else if (transactionType === TransactionTypes.coldStorage)
+      expectedConfirmation = this.configs.coldTxConfirmation;
+    else
+      throw new Error(`Transaction type [${transactionType}] is not defined`);
+
     const confirmation = await this.network.getTxConfirmation(transactionId);
-    if (confirmation >= this.configs.paymentTxConfirmation)
+    if (confirmation >= expectedConfirmation)
       return ConfirmationStatus.ConfirmedEnough;
     else if (confirmation === -1) return ConfirmationStatus.NotFound;
     else return ConfirmationStatus.NotConfirmedEnough;

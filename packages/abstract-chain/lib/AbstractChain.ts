@@ -127,7 +127,7 @@ abstract class AbstractChain {
 
   /**
    * extracts confirmation status for a transaction
-   * @param transactionId the PaymentTransaction id
+   * @param transactionId the transaction id
    * @param transactionType type of the transaction
    * @returns the transaction confirmation status
    */
