@@ -126,21 +126,14 @@ abstract class AbstractChain {
   ) => Promise<PaymentTransaction>;
 
   /**
-   * extracts confirmation status for a payment transaction
+   * extracts confirmation status for a transaction
    * @param transactionId the PaymentTransaction id
+   * @param transactionType type of the transaction
    * @returns the transaction confirmation status
    */
-  abstract getPaymentTxConfirmationStatus: (
-    transactionId: string
-  ) => Promise<ConfirmationStatus>;
-
-  /**
-   * extracts confirmation status for an asset transfer transaction
-   * @param transactionId the asset transfer transaction id
-   * @returns the transaction confirmation status
-   */
-  abstract getColdStorageTxConfirmationStatus: (
-    transactionId: string
+  abstract getTxConfirmationStatus: (
+    transactionId: string,
+    transactionType: string
   ) => Promise<ConfirmationStatus>;
 
   /**
