@@ -82,6 +82,7 @@ class TransactionTypes {
   static payment = 'payment';
   static reward = 'reward';
   static coldStorage = 'cold-storage';
+  static lock = 'lock';
 }
 
 export {

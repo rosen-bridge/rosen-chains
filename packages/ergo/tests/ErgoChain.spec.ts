@@ -2,7 +2,11 @@ import * as boxTestData from './boxTestData';
 import * as transactionTestData from './transactionTestData';
 import * as ergoTestUtils from './ergoTestUtils';
 import { ErgoChain } from '../lib';
-import { BoxInfo, ConfirmationStatus } from '@rosen-chains/abstract-chain';
+import {
+  BoxInfo,
+  ConfirmationStatus,
+  TransactionTypes,
+} from '@rosen-chains/abstract-chain';
 import TestErgoNetwork from './network/TestErgoNetwork';
 import { ErgoConfigs } from '../lib/types';
 import { when } from 'jest-when';
@@ -14,13 +18,14 @@ import { Fee } from '@rosen-bridge/minimum-fee';
 const spyOn = jest.spyOn;
 
 describe('ErgoChain', () => {
+  const observationTxConfirmation = 5;
   const paymentTxConfirmation = 9;
   const coldTxConfirmation = 10;
   const rwtId = 'rwt';
   const generateChainObject = (network: TestErgoNetwork) => {
     const config: ErgoConfigs = {
       fee: 100n,
-      observationTxConfirmation: 5,
+      observationTxConfirmation: observationTxConfirmation,
       paymentTxConfirmation: paymentTxConfirmation,
       coldTxConfirmation: coldTxConfirmation,
       lockAddress: 'lock_addr',
@@ -78,7 +83,7 @@ describe('ErgoChain', () => {
       // mock chain config
       const config: ErgoConfigs = {
         fee: 1100000n,
-        observationTxConfirmation: 5,
+        observationTxConfirmation: observationTxConfirmation,
         paymentTxConfirmation: paymentTxConfirmation,
         coldTxConfirmation: coldTxConfirmation,
         lockAddress:
@@ -181,7 +186,7 @@ describe('ErgoChain', () => {
       const expectedOrder = transactionTestData.transaction3Order;
       const config: ErgoConfigs = {
         fee: 1100000n,
-        observationTxConfirmation: 5,
+        observationTxConfirmation: observationTxConfirmation,
         paymentTxConfirmation: paymentTxConfirmation,
         coldTxConfirmation: coldTxConfirmation,
         lockAddress:
@@ -232,7 +237,7 @@ describe('ErgoChain', () => {
       // mock a config that has more fee comparing to mocked transaction fee
       const config: ErgoConfigs = {
         fee: 1200000n,
-        observationTxConfirmation: 5,
+        observationTxConfirmation: observationTxConfirmation,
         paymentTxConfirmation: paymentTxConfirmation,
         coldTxConfirmation: coldTxConfirmation,
         lockAddress: 'lock_addr',
@@ -278,7 +283,7 @@ describe('ErgoChain', () => {
       // mock a config that has less fee comparing to mocked transaction fee
       const config: ErgoConfigs = {
         fee: 100n,
-        observationTxConfirmation: 5,
+        observationTxConfirmation: observationTxConfirmation,
         paymentTxConfirmation: paymentTxConfirmation,
         coldTxConfirmation: coldTxConfirmation,
         lockAddress: 'lock_addr',
@@ -735,9 +740,21 @@ describe('ErgoChain', () => {
     });
   });
 
-  describe('getPaymentTxConfirmationStatus', () => {
+  describe('getTxConfirmationStatus', () => {
     /**
-     * @target ErgoChain.getPaymentTxConfirmationStatus should return
+     * gets test confirmation config for a transaction by type
+     * @param type
+     */
+    const getConfigConfirmation = (type: string): number => {
+      if (type === TransactionTypes.payment) return paymentTxConfirmation;
+      else if (type === TransactionTypes.reward) return paymentTxConfirmation;
+      else if (type === TransactionTypes.coldStorage) return coldTxConfirmation;
+      else if (type === TransactionTypes.lock) return observationTxConfirmation;
+      else throw new Error(`Transaction type [${type}] is not defined`);
+    };
+
+    /**
+     * @target ErgoChain.getTxConfirmationStatus should return
      * ConfirmedEnough when tx confirmation is more than expected config
      * @dependencies
      * @scenario
@@ -748,28 +765,36 @@ describe('ErgoChain', () => {
      * @expected
      * - it should return `ConfirmedEnough` enum
      */
-    it('should return ConfirmedEnough when tx confirmation is more than expected config', async () => {
-      // generate a random txId
-      const txId = ergoTestUtils.generateRandomId();
+    it.each([
+      TransactionTypes.payment,
+      TransactionTypes.reward,
+      TransactionTypes.coldStorage,
+      TransactionTypes.lock,
+    ])(
+      'should return ConfirmedEnough when %p tx confirmation is more than expected config',
+      async (txType: string) => {
+        // generate a random txId
+        const txId = ergoTestUtils.generateRandomId();
 
-      // mock a network object to return enough confirmation for mocked txId
-      const network = new TestErgoNetwork();
-      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-      when(getTxConfirmationSpy)
-        .calledWith(txId)
-        .mockResolvedValueOnce(paymentTxConfirmation);
+        // mock a network object to return enough confirmation for mocked txId
+        const network = new TestErgoNetwork();
+        const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+        when(getTxConfirmationSpy)
+          .calledWith(txId)
+          .mockResolvedValueOnce(getConfigConfirmation(txType));
 
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.getPaymentTxConfirmationStatus(txId);
+        // run test
+        const ergoChain = generateChainObject(network);
+        const result = await ergoChain.getTxConfirmationStatus(txId, txType);
 
-      // check returned value
-      expect(result).toEqual(ConfirmationStatus.ConfirmedEnough);
-    });
+        // check returned value
+        expect(result).toEqual(ConfirmationStatus.ConfirmedEnough);
+      }
+    );
 
     /**
-     * @target ErgoChain.getPaymentTxConfirmationStatus should return
-     * NotConfirmedEnough when tx confirmation is less than expected config
+     * @target ErgoChain.getTxConfirmationStatus should return
+     * NotConfirmedEnough when payment tx confirmation is less than expected config
      * @dependencies
      * @scenario
      * - generate a random txId
@@ -780,27 +805,35 @@ describe('ErgoChain', () => {
      * @expected
      * - it should return `NotConfirmedEnough` enum
      */
-    it('should return NotConfirmedEnough when tx confirmation is less than expected config', async () => {
-      // generate a random txId
-      const txId = ergoTestUtils.generateRandomId();
+    it.each([
+      TransactionTypes.payment,
+      TransactionTypes.reward,
+      TransactionTypes.coldStorage,
+      TransactionTypes.lock,
+    ])(
+      'should return NotConfirmedEnough when %p tx confirmation is less than expected config',
+      async (txType: string) => {
+        // generate a random txId
+        const txId = ergoTestUtils.generateRandomId();
 
-      // mock a network object to return enough confirmation for mocked txId
-      const network = new TestErgoNetwork();
-      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-      when(getTxConfirmationSpy)
-        .calledWith(txId)
-        .mockResolvedValueOnce(paymentTxConfirmation - 1);
+        // mock a network object to return insufficient confirmation for mocked
+        const network = new TestErgoNetwork();
+        const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+        when(getTxConfirmationSpy)
+          .calledWith(txId)
+          .mockResolvedValueOnce(getConfigConfirmation(txType) - 1);
 
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.getPaymentTxConfirmationStatus(txId);
+        // run test
+        const ergoChain = generateChainObject(network);
+        const result = await ergoChain.getTxConfirmationStatus(txId, txType);
 
-      // check returned value
-      expect(result).toEqual(ConfirmationStatus.NotConfirmedEnough);
-    });
+        // check returned value
+        expect(result).toEqual(ConfirmationStatus.NotConfirmedEnough);
+      }
+    );
 
     /**
-     * @target ErgoChain.getPaymentTxConfirmationStatus should return
+     * @target ErgoChain.getTxConfirmationStatus should return
      * NotFound when tx confirmation is -1
      * @dependencies
      * @scenario
@@ -822,101 +855,10 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = await ergoChain.getPaymentTxConfirmationStatus(txId);
-
-      // check returned value
-      expect(result).toEqual(ConfirmationStatus.NotFound);
-    });
-  });
-
-  describe('getColdStorageTxConfirmationStatus', () => {
-    /**
-     * @target ErgoChain.getColdStorageTxConfirmationStatus should return
-     * ConfirmedEnough when tx confirmation is more than expected config
-     * @dependencies
-     * @scenario
-     * - generate a random txId
-     * - mock a network object to return enough confirmation for mocked txId
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return `ConfirmedEnough` enum
-     */
-    it('should return ConfirmedEnough when tx confirmation is more than expected config', async () => {
-      // generate a random txId
-      const txId = ergoTestUtils.generateRandomId();
-
-      // mock a network object to return enough confirmation for mocked txId
-      const network = new TestErgoNetwork();
-      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-      when(getTxConfirmationSpy)
-        .calledWith(txId)
-        .mockResolvedValueOnce(coldTxConfirmation);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.getColdStorageTxConfirmationStatus(txId);
-
-      // check returned value
-      expect(result).toEqual(ConfirmationStatus.ConfirmedEnough);
-    });
-
-    /**
-     * @target ErgoChain.getColdStorageTxConfirmationStatus should return
-     * NotConfirmedEnough when tx confirmation is less than expected config
-     * @dependencies
-     * @scenario
-     * - generate a random txId
-     * - mock a network object to return insufficient confirmation for mocked
-     *   txId
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return `NotConfirmedEnough` enum
-     */
-    it('should return NotConfirmedEnough when tx confirmation is less than expected config', async () => {
-      // generate a random txId
-      const txId = ergoTestUtils.generateRandomId();
-
-      // mock a network object to return enough confirmation for mocked txId
-      const network = new TestErgoNetwork();
-      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-      when(getTxConfirmationSpy)
-        .calledWith(txId)
-        .mockResolvedValueOnce(coldTxConfirmation - 1);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.getColdStorageTxConfirmationStatus(txId);
-
-      // check returned value
-      expect(result).toEqual(ConfirmationStatus.NotConfirmedEnough);
-    });
-
-    /**
-     * @target ErgoChain.getColdStorageTxConfirmationStatus should return
-     * NotFound when tx confirmation is -1
-     * @dependencies
-     * @scenario
-     * - generate a random txId
-     * - mock a network object to return -1 confirmation for mocked txId
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return `NotFound` enum
-     */
-    it('should return NotFound when tx confirmation is -1', async () => {
-      // generate a random txId
-      const txId = ergoTestUtils.generateRandomId();
-
-      // mock a network object to return enough confirmation for mocked txId
-      const network = new TestErgoNetwork();
-      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-      when(getTxConfirmationSpy).calledWith(txId).mockResolvedValueOnce(-1);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.getColdStorageTxConfirmationStatus(txId);
+      const result = await ergoChain.getTxConfirmationStatus(
+        txId,
+        TransactionTypes.payment
+      );
 
       // check returned value
       expect(result).toEqual(ConfirmationStatus.NotFound);
