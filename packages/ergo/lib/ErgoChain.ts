@@ -501,21 +501,6 @@ class ErgoChain extends AbstractUtxoChain {
   };
 
   /**
-   * extracts confirmation status for an asset transfer transaction
-   * @param transactionId the asset transfer transaction id
-   * @returns the transaction confirmation status
-   */
-  getColdStorageTxConfirmationStatus = async (
-    transactionId: string
-  ): Promise<ConfirmationStatus> => {
-    const confirmation = await this.network.getTxConfirmation(transactionId);
-    if (confirmation >= this.configs.coldTxConfirmation)
-      return ConfirmationStatus.ConfirmedEnough;
-    else if (confirmation === -1) return ConfirmationStatus.NotFound;
-    else return ConfirmationStatus.NotConfirmedEnough;
-  };
-
-  /**
    * gets the amount of each asset in the lock address
    * @returns an object containing the amount of each asset
    */
