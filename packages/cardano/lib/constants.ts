@@ -5,6 +5,8 @@ import {
   TransactionBuilderConfigBuilder,
 } from '@emurgo/cardano-serialization-lib-nodejs';
 
+const CARDANO_CHAIN = 'cardano';
+
 const protocolParameters = {
   minFeeA: BigNum.from_str('44'),
   minFeeB: BigNum.from_str('155381'),
@@ -20,7 +22,7 @@ const linearFee = LinearFee.new(
   protocolParameters.minFeeB
 );
 
-export const txBuilderConfig: TransactionBuilderConfig =
+const txBuilderConfig: TransactionBuilderConfig =
   TransactionBuilderConfigBuilder.new()
     .fee_algo(linearFee)
     .pool_deposit(protocolParameters.poolDeposit)
@@ -29,3 +31,5 @@ export const txBuilderConfig: TransactionBuilderConfig =
     .max_tx_size(protocolParameters.maxTxSize)
     .coins_per_utxo_word(protocolParameters.coinsPerUtxoWord)
     .build();
+
+export { txBuilderConfig, CARDANO_CHAIN };

@@ -7,7 +7,7 @@ abstract class AbstractCardanoNetwork extends AbstractUtxoChainNetwork {
    * gets the current network slot
    * @returns the current network slot
    */
-  abstract getNetworkSlot: () => Promise<number>;
+  abstract currentSlot: () => Promise<number>;
 }
 
 export default AbstractCardanoNetwork;
