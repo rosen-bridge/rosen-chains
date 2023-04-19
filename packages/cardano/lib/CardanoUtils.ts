@@ -129,7 +129,7 @@ class CardanoUtils {
   ): string => {
     return CIP14.fromParts(
       policyId.to_bytes(),
-      assetName.to_bytes()
+      Buffer.from(assetName.to_js_value(), 'hex')
     ).fingerprint();
   };
 }

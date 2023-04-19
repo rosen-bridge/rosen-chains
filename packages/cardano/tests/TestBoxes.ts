@@ -1,0 +1,98 @@
+import { randomBytes } from 'crypto';
+import { AddressUtxo } from '../lib/types';
+import {
+  Address,
+  AssetName,
+  Assets,
+  BigNum,
+  MultiAsset,
+  ScriptHash,
+  TransactionOutput,
+  Value,
+} from '@emurgo/cardano-serialization-lib-nodejs';
+
+class TestBoxes {
+  static mockBankBoxes = (): AddressUtxo[] => {
+    const box1: AddressUtxo = {
+      tx_hash: this.generateRandomId(),
+      tx_index: 0,
+      value: this.adaToLovelaceString(30),
+      asset_list: [
+        {
+          policy_id: 'cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be',
+          asset_name: '43617264616e6f546f6b656e7654657374',
+          quantity: '55',
+          fingerprint: 'asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7',
+        },
+        {
+          policy_id: '48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b',
+          asset_name: '5273744572676f546f6b656e7654657374',
+          quantity: '5000',
+          fingerprint: 'asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2',
+        },
+      ],
+    };
+    const box2: AddressUtxo = {
+      tx_hash: this.generateRandomId(),
+      tx_index: 0,
+      value: this.adaToLovelaceString(100),
+      asset_list: [
+        {
+          policy_id: 'cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be',
+          asset_name: '43617264616e6f546f6b656e7654657374',
+          quantity: '45',
+          fingerprint: 'asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7',
+        },
+      ],
+    };
+    const box3: AddressUtxo = {
+      tx_hash: this.generateRandomId(),
+      tx_index: 2,
+      value: this.adaToLovelaceString(10),
+      asset_list: [],
+    };
+
+    const box4: AddressUtxo = {
+      tx_hash: this.generateRandomId(),
+      tx_index: 0,
+      value: '10000',
+      asset_list: [
+        {
+          policy_id: 'ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286',
+          asset_name: '5273744552477654657374',
+          quantity: '1000',
+          fingerprint: 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz',
+        },
+      ],
+    };
+
+    return [box1, box2, box3, box4];
+  };
+
+  static AddressUtxoToTransactionOutput = (
+    box: AddressUtxo,
+    address: string
+  ): TransactionOutput => {
+    const value = Value.new(BigNum.from_str(box.value));
+    const multiAsset = MultiAsset.new();
+    box.asset_list.forEach((asset) => {
+      const assets = Assets.new();
+      assets.insert(
+        AssetName.new(Buffer.from(asset.asset_name, 'hex')),
+        BigNum.from_str(asset.quantity)
+      );
+      multiAsset.insert(ScriptHash.from_hex(asset.policy_id), assets);
+    });
+
+    value.set_multiasset(multiAsset);
+    const output = TransactionOutput.new(Address.from_bech32(address), value);
+    return output;
+  };
+
+  static adaToLovelaceString = (ada: number): string =>
+    (ada * 1000000).toString();
+
+  static generateRandomId = (): string => randomBytes(32).toString('hex');
+}
+
+export default TestBoxes;

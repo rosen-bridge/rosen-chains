@@ -198,7 +198,13 @@ class CardanoChain extends AbstractUtxoChain {
     const txId = Buffer.from(hash_transaction(txBody).to_bytes()).toString(
       'hex'
     );
-    const cardanoTx = new CardanoTransaction(eventId, txBytes, txId, txType);
+    const cardanoTx = new CardanoTransaction(
+      eventId,
+      txBytes,
+      txId,
+      txType,
+      bankBoxes.map((box) => box.tx_hash + '.' + box.tx_index)
+    );
 
     this.logger.info(
       `Cardano transaction [${txId}] as type [${txType}] generated for event [${eventId}]`
