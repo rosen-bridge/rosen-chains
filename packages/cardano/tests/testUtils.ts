@@ -1,17 +1,8 @@
 import { randomBytes } from 'crypto';
 import { AddressUtxo } from '../lib/types';
-import {
-  Address,
-  AssetName,
-  Assets,
-  BigNum,
-  MultiAsset,
-  ScriptHash,
-  TransactionOutput,
-  Value,
-} from '@emurgo/cardano-serialization-lib-nodejs';
+import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 
-class TestBoxes {
+class TestUtils {
   static mockBankBoxes = (): AddressUtxo[] => {
     const box1: AddressUtxo = {
       tx_hash: this.generateRandomId(),
@@ -72,21 +63,37 @@ class TestBoxes {
   static AddressUtxoToTransactionOutput = (
     box: AddressUtxo,
     address: string
-  ): TransactionOutput => {
-    const value = Value.new(BigNum.from_str(box.value));
-    const multiAsset = MultiAsset.new();
+  ): CardanoWasm.TransactionOutput => {
+    const value = CardanoWasm.Value.new(CardanoWasm.BigNum.from_str(box.value));
+    const multiAsset = CardanoWasm.MultiAsset.new();
     box.asset_list.forEach((asset) => {
-      const assets = Assets.new();
+      const assets = CardanoWasm.Assets.new();
       assets.insert(
-        AssetName.new(Buffer.from(asset.asset_name, 'hex')),
-        BigNum.from_str(asset.quantity)
+        CardanoWasm.AssetName.new(Buffer.from(asset.asset_name, 'hex')),
+        CardanoWasm.BigNum.from_str(asset.quantity)
       );
-      multiAsset.insert(ScriptHash.from_hex(asset.policy_id), assets);
+      multiAsset.insert(
+        CardanoWasm.ScriptHash.from_hex(asset.policy_id),
+        assets
+      );
     });
 
     value.set_multiasset(multiAsset);
-    const output = TransactionOutput.new(Address.from_bech32(address), value);
+    const output = CardanoWasm.TransactionOutput.new(
+      CardanoWasm.Address.from_bech32(address),
+      value
+    );
     return output;
+  };
+
+  static AddressUtxoToTransactionInput = (
+    box: AddressUtxo
+  ): CardanoWasm.TransactionInput => {
+    const input = CardanoWasm.TransactionInput.new(
+      CardanoWasm.TransactionHash.from_bytes(Buffer.from(box.tx_hash, 'hex')),
+      box.tx_index
+    );
+    return input;
   };
 
   static adaToLovelaceString = (ada: number): string =>
@@ -95,4 +102,4 @@ class TestBoxes {
   static generateRandomId = (): string => randomBytes(32).toString('hex');
 }
 
-export default TestBoxes;
+export default TestUtils;

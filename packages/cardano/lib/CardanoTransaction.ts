@@ -7,21 +7,18 @@ class CardanoTransaction implements PaymentTransaction {
   txBytes: Uint8Array;
   txId: string;
   txType: string;
-  inputBoxes: Array<string>;
 
   constructor(
     eventId: string,
     txBytes: Uint8Array,
     txId: string,
-    txType: string,
-    inputBoxes: Array<string>
+    txType: string
   ) {
     this.network = CARDANO_CHAIN;
     this.eventId = eventId;
     this.txBytes = txBytes;
     this.txId = txId;
     this.txType = txType;
-    this.inputBoxes = inputBoxes;
   }
 
   /**
@@ -34,8 +31,7 @@ class CardanoTransaction implements PaymentTransaction {
       obj.eventId,
       Buffer.from(obj.txBytes, 'hex'),
       obj.txId,
-      obj.txType,
-      obj.inputBoxes
+      obj.txType
     );
   };
 
@@ -50,7 +46,6 @@ class CardanoTransaction implements PaymentTransaction {
       txBytes: this.getTxHexString(),
       txId: this.txId,
       txType: this.txType,
-      inputBoxes: this.inputBoxes,
     });
   };
 

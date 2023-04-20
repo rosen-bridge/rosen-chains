@@ -7,13 +7,9 @@ import {
   transaction1Order,
   transaction1PaymentTransaction,
 } from './testData';
-import TestBoxes from './TestBoxes';
+import TestUtils from './testUtils';
 import CardanoTransaction from '../lib/CardanoTransaction';
-import {
-  Transaction,
-  TransactionOutput,
-  Value,
-} from '@emurgo/cardano-serialization-lib-nodejs';
+import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 
 const spyOn = jest.spyOn;
 
@@ -32,7 +28,7 @@ describe('CardanoChain', () => {
   };
   const rosenTokens: RosenTokens = JSON.parse(testTokenMap);
   const tokenMap = new TokenMap(rosenTokens);
-  const bankBoxes = TestBoxes.mockBankBoxes();
+  const bankBoxes = TestUtils.mockBankBoxes();
 
   describe('generateTransaction', () => {
     const network = new TestCardanoNetwork();
@@ -93,24 +89,64 @@ describe('CardanoChain', () => {
 
     it('should get box info successfully', async () => {
       const rawBox = bankBoxes[0];
-      const cardanoBox = TestBoxes.AddressUtxoToTransactionOutput(
-        rawBox,
-        configs.lockAddress
-      );
+      const cardanoBox = TestUtils.AddressUtxoToTransactionInput(rawBox);
       const serializedBox = cardanoBox.to_hex();
 
       // run the test
       const cardanoChain = new CardanoChain(network, configs, tokenMap);
       const result = await cardanoChain.getBoxInfo(serializedBox);
-      expect(result.id).toEqual('1');
-      expect(result.assets.nativeToken.toString()).toEqual(rawBox.value);
-      result.assets.tokens.forEach((token) => {
-        const found = rawBox.asset_list.find(
-          (asset) => asset.fingerprint === token.id
-        );
-        expect(found).toBeDefined();
-        expect(found?.quantity).toEqual(token.value.toString());
-      });
+      expect(result.id).toEqual(rawBox.tx_hash + '.' + rawBox.tx_index);
+    });
+  });
+
+  describe('signTransaction', function () {
+    const network = new TestCardanoNetwork();
+
+    it('should return PaymentTransaction of the signed transaction', async () => {
+      const signFunction = async (
+        tx: Transaction,
+        requiredSign: number
+      ): Promise<Transaction> => {
+        return tx;
+      };
+
+      const paymentTx = CardanoTransaction.fromJson(
+        transaction1PaymentTransaction
+      );
+
+      // run test
+      const cardanoChain = new CardanoChain(network, configs, tokenMap);
+      const result = await cardanoChain.signTransaction(
+        paymentTx,
+        0,
+        signFunction
+      );
+
+      // check returned value
+      expect(result.txId).toEqual(paymentTx.txId);
+      expect(result.txType).toEqual(paymentTx.txType);
+      expect(result.eventId).toEqual(paymentTx.eventId);
+      expect(result.network).toEqual(paymentTx.network);
+    });
+
+    it('should throw error when signing failed', async () => {
+      const signFunction = async (
+        tx: Transaction,
+        requiredSign: number
+      ): Promise<Transaction> => {
+        throw Error(`TestError: sign failed`);
+      };
+
+      const paymentTx = CardanoTransaction.fromJson(
+        transaction1PaymentTransaction
+      );
+
+      // run test
+      const cardanoChain = new CardanoChain(network, configs, tokenMap);
+
+      await expect(async () => {
+        await cardanoChain.signTransaction(paymentTx, 0, signFunction);
+      }).rejects.toThrow('TestError: sign failed');
     });
   });
 });

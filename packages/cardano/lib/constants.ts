@@ -1,29 +1,24 @@
-import {
-  BigNum,
-  LinearFee,
-  TransactionBuilderConfig,
-  TransactionBuilderConfigBuilder,
-} from '@emurgo/cardano-serialization-lib-nodejs';
+import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 
 const CARDANO_CHAIN = 'cardano';
 
 const protocolParameters = {
-  minFeeA: BigNum.from_str('44'),
-  minFeeB: BigNum.from_str('155381'),
-  poolDeposit: BigNum.from_str('500000000'),
-  keyDeposit: BigNum.from_str('2000000'),
+  minFeeA: CardanoWasm.BigNum.from_str('44'),
+  minFeeB: CardanoWasm.BigNum.from_str('155381'),
+  poolDeposit: CardanoWasm.BigNum.from_str('500000000'),
+  keyDeposit: CardanoWasm.BigNum.from_str('2000000'),
   maxValueSize: 4000,
   maxTxSize: 8000,
-  coinsPerUtxoWord: BigNum.from_str('34482'),
+  coinsPerUtxoWord: CardanoWasm.BigNum.from_str('34482'),
 };
 
-const linearFee = LinearFee.new(
+const linearFee = CardanoWasm.LinearFee.new(
   protocolParameters.minFeeA,
   protocolParameters.minFeeB
 );
 
-const txBuilderConfig: TransactionBuilderConfig =
-  TransactionBuilderConfigBuilder.new()
+const txBuilderConfig: CardanoWasm.TransactionBuilderConfig =
+  CardanoWasm.TransactionBuilderConfigBuilder.new()
     .fee_algo(linearFee)
     .pool_deposit(protocolParameters.poolDeposit)
     .key_deposit(protocolParameters.keyDeposit)

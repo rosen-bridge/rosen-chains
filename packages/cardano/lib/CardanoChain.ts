@@ -2,6 +2,7 @@ import {
   AbstractUtxoChain,
   AssetBalance,
   BoxInfo,
+  ChainUtils,
   ConfirmationStatus,
   EventTrigger,
   PaymentOrder,
@@ -13,22 +14,7 @@ import { Fee } from '@rosen-bridge/minimum-fee';
 import AbstractCardanoNetwork from './network/AbstractCardanoNetwork';
 import { AbstractLogger } from '@rosen-bridge/logger-interface';
 import { AddressUtxo, Asset, CardanoConfigs } from './types';
-import {
-  Address,
-  AssetName,
-  Assets,
-  BigNum,
-  hash_transaction,
-  MultiAsset,
-  ScriptHash,
-  Transaction,
-  TransactionBuilder,
-  TransactionHash,
-  TransactionInput,
-  TransactionOutput,
-  TransactionWitnessSet,
-  Value,
-} from '@emurgo/cardano-serialization-lib-nodejs';
+import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import { TokenMap } from '@rosen-bridge/tokens';
 import { txBuilderConfig } from './constants';
 import CardanoUtils from './CardanoUtils';
@@ -94,27 +80,29 @@ class CardanoChain extends AbstractUtxoChain {
       );
     }
     const cardanoOrder = order[0];
-    const txBuilder = TransactionBuilder.new(txBuilderConfig);
+    const txBuilder = CardanoWasm.TransactionBuilder.new(txBuilderConfig);
 
     // add inputs
     bankBoxes.forEach((box) => {
-      const txHash = TransactionHash.from_bytes(
+      const txHash = CardanoWasm.TransactionHash.from_bytes(
         Buffer.from(box.tx_hash, 'hex')
       );
-      const inputBox = TransactionInput.new(txHash, box.tx_index);
+      const inputBox = CardanoWasm.TransactionInput.new(txHash, box.tx_index);
       txBuilder.add_input(
-        Address.from_bech32(this.configs.lockAddress),
+        CardanoWasm.Address.from_bech32(this.configs.lockAddress),
         inputBox,
-        Value.new(CardanoUtils.bigIntToBigNum(cardanoOrder.assets.nativeToken))
+        CardanoWasm.Value.new(
+          CardanoUtils.bigIntToBigNum(cardanoOrder.assets.nativeToken)
+        )
       );
     });
 
     // create order output
-    const address = Address.from_bech32(cardanoOrder.address);
-    const value = Value.new(
+    const address = CardanoWasm.Address.from_bech32(cardanoOrder.address);
+    const value = CardanoWasm.Value.new(
       CardanoUtils.bigIntToBigNum(cardanoOrder.assets.nativeToken)
     );
-    const paymentMultiAsset = MultiAsset.new();
+    const paymentMultiAsset = CardanoWasm.MultiAsset.new();
     if (cardanoOrder.assets.tokens.length > 1) {
       throw new Error('Can not send more than one token in an order');
     }
@@ -125,13 +113,11 @@ class CardanoChain extends AbstractUtxoChain {
         token.id,
         this.tokenMap
       );
-      const paymentAssetPolicyId: ScriptHash = ScriptHash.from_bytes(
-        paymentAssetInfo.policyId
-      );
-      const paymentAssetAssetName: AssetName = AssetName.new(
-        paymentAssetInfo.assetName
-      );
-      const paymentAssets = Assets.new();
+      const paymentAssetPolicyId: CardanoWasm.ScriptHash =
+        CardanoWasm.ScriptHash.from_bytes(paymentAssetInfo.policyId);
+      const paymentAssetAssetName: CardanoWasm.AssetName =
+        CardanoWasm.AssetName.new(paymentAssetInfo.assetName);
+      const paymentAssets = CardanoWasm.Assets.new();
       paymentAssets.insert(
         paymentAssetAssetName,
         CardanoUtils.bigIntToBigNum(token.value)
@@ -145,13 +131,13 @@ class CardanoChain extends AbstractUtxoChain {
     }
 
     value.set_multiasset(paymentMultiAsset);
-    const orderBox = TransactionOutput.new(address, value);
+    const orderBox = CardanoWasm.TransactionOutput.new(address, value);
     txBuilder.add_output(orderBox);
 
     // create change output
     const changeBoxAssets = CardanoUtils.calculateInputBoxesAssets(bankBoxes);
     const changeBoxMultiAsset = changeBoxAssets.assets;
-    let changeBoxLovelace: BigNum = changeBoxAssets.lovelace;
+    let changeBoxLovelace: CardanoWasm.BigNum = changeBoxAssets.lovelace;
     changeBoxLovelace = changeBoxLovelace
       .checked_sub(CardanoUtils.bigIntToBigNum(this.configs.fee))
       .checked_sub(
@@ -160,29 +146,28 @@ class CardanoChain extends AbstractUtxoChain {
 
     // check if payment has assets
     if (Object.keys(paymentAsset).length !== 0) {
-      const paymentAssetPolicyId: ScriptHash = ScriptHash.from_hex(
-        paymentAsset.policy_id!
-      );
-      const paymentAssetAssetName: AssetName = AssetName.from_hex(
-        paymentAsset.asset_name!
-      );
-      const assetPaymentAmount: BigNum = BigNum.from_str(
-        paymentAsset.quantity!
-      );
-      const paymentAssetAmount: BigNum = changeBoxMultiAsset.get_asset(
-        paymentAssetPolicyId,
-        paymentAssetAssetName
-      );
+      const paymentAssetPolicyId: CardanoWasm.ScriptHash =
+        CardanoWasm.ScriptHash.from_hex(paymentAsset.policy_id!);
+      const paymentAssetAssetName: CardanoWasm.AssetName =
+        CardanoWasm.AssetName.from_hex(paymentAsset.asset_name!);
+      const assetPaymentAmount: CardanoWasm.BigNum =
+        CardanoWasm.BigNum.from_str(paymentAsset.quantity!);
+      const paymentAssetAmount: CardanoWasm.BigNum =
+        changeBoxMultiAsset.get_asset(
+          paymentAssetPolicyId,
+          paymentAssetAssetName
+        );
       changeBoxMultiAsset.set_asset(
         paymentAssetPolicyId,
         paymentAssetAssetName,
         paymentAssetAmount.checked_sub(assetPaymentAmount)
       );
     }
-    const changeAmount: Value = Value.new(changeBoxLovelace);
+    const changeAmount: CardanoWasm.Value =
+      CardanoWasm.Value.new(changeBoxLovelace);
     changeAmount.set_multiasset(changeBoxMultiAsset);
-    const changeBox = TransactionOutput.new(
-      Address.from_bech32(this.configs.lockAddress),
+    const changeBox = CardanoWasm.TransactionOutput.new(
+      CardanoWasm.Address.from_bech32(this.configs.lockAddress),
       changeAmount
     );
     txBuilder.add_output(changeBox);
@@ -193,18 +178,16 @@ class CardanoChain extends AbstractUtxoChain {
 
     // create the transaction
     const txBody = txBuilder.build();
-    const tx = Transaction.new(txBody, TransactionWitnessSet.new(), undefined);
+    const tx = CardanoWasm.Transaction.new(
+      txBody,
+      CardanoWasm.TransactionWitnessSet.new(),
+      undefined
+    );
     const txBytes = Serializer.serialize(tx);
-    const txId = Buffer.from(hash_transaction(txBody).to_bytes()).toString(
-      'hex'
-    );
-    const cardanoTx = new CardanoTransaction(
-      eventId,
-      txBytes,
-      txId,
-      txType,
-      bankBoxes.map((box) => box.tx_hash + '.' + box.tx_index)
-    );
+    const txId = Buffer.from(
+      CardanoWasm.hash_transaction(txBody).to_bytes()
+    ).toString('hex');
+    const cardanoTx = new CardanoTransaction(eventId, txBytes, txId, txType);
 
     this.logger.info(
       `Cardano transaction [${txId}] as type [${txType}] generated for event [${eventId}]`
@@ -218,11 +201,13 @@ class CardanoChain extends AbstractUtxoChain {
    * @returns an object containing the box id and assets
    */
   getBoxInfo = (serializedBox: string): BoxInfo => {
-    const box = TransactionOutput.from_bytes(Buffer.from(serializedBox, 'hex'));
+    const box = CardanoWasm.TransactionInput.from_bytes(
+      Buffer.from(serializedBox, 'hex')
+    );
 
     return {
-      id: '1', // TODO: How to get box id?
-      assets: CardanoUtils.getBoxAssets(box),
+      id: CardanoUtils.getBoxId(box),
+      assets: null as any, //TODO: How to get?
     };
   };
 
@@ -270,42 +255,143 @@ class CardanoChain extends AbstractUtxoChain {
   signTransaction = (
     transaction: PaymentTransaction,
     requiredSign: number,
-    signFunction: (...arg: any[]) => any
+    signFunction: (
+      tx: CardanoWasm.Transaction,
+      requiredSign: number
+    ) => Promise<CardanoWasm.Transaction>
   ): Promise<PaymentTransaction> => {
-    return {} as any;
+    const tx = Serializer.deserialize(transaction.txBytes);
+
+    return signFunction(tx, requiredSign).then(
+      (signedTx: CardanoWasm.Transaction) => {
+        const signedTxBytes = Serializer.serialize(signedTx);
+        const signedTxId = Buffer.from(
+          CardanoWasm.hash_transaction(signedTx.body()).to_bytes()
+        ).toString('hex');
+        const signedCardanoTx = new CardanoTransaction(
+          transaction.eventId,
+          signedTxBytes,
+          signedTxId,
+          transaction.txType
+        );
+        return signedCardanoTx;
+      }
+    );
   };
 
-  getColdStorageTxConfirmationStatus = (
-    transactionId: string
-  ): Promise<ConfirmationStatus> => {
-    return {} as any;
-  };
-
-  getMempoolBoxMapping = (
-    address: string,
-    tokenId: string | undefined
-  ): Promise<Map<string, string | undefined>> => {
-    return {} as any;
-  };
-
-  getPaymentTxConfirmationStatus = (
-    transactionId: string
-  ): Promise<ConfirmationStatus> => {
-    return {} as any;
-  };
-
+  /**
+   * gets input and output assets of a payment transaction
+   * @param transaction the payment transaction
+   * @returns true if the transaction verified
+   */
   getTransactionAssets = (
     transaction: PaymentTransaction
   ): TransactionAssetBalance => {
-    return {} as any;
+    const tx = Serializer.deserialize(transaction.txBytes);
+    const txBody = tx.body();
+
+    let inputAssets: AssetBalance = {
+      nativeToken: 0n,
+      tokens: [],
+    };
+    // extract input box assets
+    for (let i = 0; i < txBody.inputs().len(); i++) {
+      const input = txBody.inputs().get(i);
+      const boxAssets = this.getBoxInfo(input.to_hex()).assets;
+      inputAssets = ChainUtils.sumAssetBalance(inputAssets, boxAssets);
+    }
+
+    let outputAssets: AssetBalance = {
+      nativeToken: 0n,
+      tokens: [],
+    };
+    for (let i = 0; i < txBody.inputs().len(); i++) {
+      const output = txBody.outputs().get(i);
+      const boxAssets = CardanoUtils.getBoxAssets(output);
+      outputAssets = ChainUtils.sumAssetBalance(outputAssets, boxAssets);
+    }
+
+    return {
+      inputAssets,
+      outputAssets,
+    };
   };
 
-  isTxInMempool = (transactionId: string): Promise<boolean> => {
-    return {} as any;
+  /**
+   * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
+   * @param address the address
+   * @param tokenId the token id
+   * @returns a Map from input box id to serialized string of output box
+   */
+  getMempoolBoxMapping = async (
+    address: string,
+    tokenId: string | undefined
+  ): Promise<Map<string, string | undefined>> => {
+    const trackMap = new Map<string, string | undefined>();
+
+    const mempoolTxs = await this.network.getMempoolTransactions();
+    mempoolTxs.forEach((serializedTx) => {
+      const tx = CardanoWasm.Transaction.from_bytes(
+        Buffer.from(serializedTx, 'hex')
+      );
+      const txBody = tx.body();
+      for (let i = 0; i < txBody.inputs().len(); i++) {
+        let trackedBox: CardanoWasm.TransactionOutput | undefined;
+        const input = txBody.inputs().get(i);
+        const box = this.getBoxInfo(input.to_hex());
+        if (box.assets && box.assets.tokens) {
+          const token = box.assets.tokens.find((t) => t.id === tokenId);
+          if (token) {
+            const output = txBody.outputs().get(i);
+            if (output.address().to_js_value() === address) {
+              trackedBox = output;
+            }
+          }
+        }
+        trackMap.set(box.id, trackedBox ? trackedBox.to_hex() : undefined);
+      }
+    });
+
+    return trackMap;
   };
 
-  isTxValid = (transaction: PaymentTransaction): Promise<boolean> => {
-    return {} as any;
+  /**
+   * checks if a transaction is in mempool (returns false if the chain has no mempool)
+   * @param transactionId the transaction id
+   * @returns true if the transaction is in mempool
+   */
+  isTxInMempool = async (transactionId: string): Promise<boolean> => {
+    const mempoolTxs = await this.network.getMempoolTransactions();
+    const mempoolTxIds = mempoolTxs.map((serializedTx) => {
+      const tx = CardanoWasm.Transaction.from_bytes(
+        Buffer.from(serializedTx, 'hex')
+      );
+      const txId = Buffer.from(
+        CardanoWasm.hash_transaction(tx.body()).to_bytes()
+      ).toString('hex');
+      return txId;
+    });
+
+    return mempoolTxIds.includes(transactionId);
+  };
+
+  /**
+   * checks if a transaction is still valid and can be sent to the network
+   * @param transaction the transaction
+   * @returns true if the transaction is still valid
+   */
+  isTxValid = async (transaction: PaymentTransaction): Promise<boolean> => {
+    const tx = Serializer.deserialize(transaction.txBytes);
+    const txBody = tx.body();
+
+    let valid = true;
+    for (let i = 0; i < txBody.inputs().len(); i++) {
+      const box = txBody.inputs().get(i);
+      valid =
+        valid &&
+        (await this.network.isBoxUnspentAndValid(CardanoUtils.getBoxId(box)));
+    }
+    return valid;
   };
 
   verifyEvent = (

@@ -1,13 +1,6 @@
 import { AddressUtxo, AssetInfo, UtxoBoxesAssets } from './types';
 import { AssetBalance, TokenInfo } from '@rosen-chains/abstract-chain';
-import {
-  AssetName,
-  Assets,
-  BigNum,
-  MultiAsset,
-  ScriptHash,
-  TransactionOutput,
-} from '@emurgo/cardano-serialization-lib-nodejs';
+import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import { default as CIP14 } from '@emurgo/cip14-js';
 import { TokenMap } from '@rosen-bridge/tokens';
 import { CARDANO_CHAIN } from './constants';
@@ -20,34 +13,40 @@ class CardanoUtils {
   static calculateInputBoxesAssets = (
     boxes: AddressUtxo[]
   ): UtxoBoxesAssets => {
-    const multiAsset = MultiAsset.new();
-    let changeBoxLovelace: BigNum = BigNum.zero();
+    const multiAsset = CardanoWasm.MultiAsset.new();
+    let changeBoxLovelace: CardanoWasm.BigNum = CardanoWasm.BigNum.zero();
     boxes.forEach((box) => {
       changeBoxLovelace = changeBoxLovelace.checked_add(
-        BigNum.from_str(box.value)
+        CardanoWasm.BigNum.from_str(box.value)
       );
 
       box.asset_list.forEach((boxAsset) => {
-        const policyId = ScriptHash.from_bytes(
+        const policyId = CardanoWasm.ScriptHash.from_bytes(
           Buffer.from(boxAsset.policy_id, 'hex')
         );
-        const assetName = AssetName.new(
+        const assetName = CardanoWasm.AssetName.new(
           Buffer.from(boxAsset.asset_name, 'hex')
         );
 
         const policyAssets = multiAsset.get(policyId);
         if (!policyAssets) {
-          const assetList = Assets.new();
-          assetList.insert(assetName, BigNum.from_str(boxAsset.quantity));
+          const assetList = CardanoWasm.Assets.new();
+          assetList.insert(
+            assetName,
+            CardanoWasm.BigNum.from_str(boxAsset.quantity)
+          );
           multiAsset.insert(policyId, assetList);
         } else {
           const asset = policyAssets.get(assetName);
           if (!asset) {
-            policyAssets.insert(assetName, BigNum.from_str(boxAsset.quantity));
+            policyAssets.insert(
+              assetName,
+              CardanoWasm.BigNum.from_str(boxAsset.quantity)
+            );
             multiAsset.insert(policyId, policyAssets);
           } else {
             const amount = asset.checked_add(
-              BigNum.from_str(boxAsset.quantity)
+              CardanoWasm.BigNum.from_str(boxAsset.quantity)
             );
             policyAssets.insert(assetName, amount);
             multiAsset.insert(policyId, policyAssets);
@@ -85,7 +84,7 @@ class CardanoUtils {
    * gets Cardano box assets
    * @param box the Cardano box
    */
-  static getBoxAssets = (box: TransactionOutput): AssetBalance => {
+  static getBoxAssets = (box: CardanoWasm.TransactionOutput): AssetBalance => {
     const tokens: Array<TokenInfo> = [];
     const boxValue = box.amount();
     const boxAssets = boxValue.multiasset();
@@ -114,8 +113,8 @@ class CardanoUtils {
    * converts bigint to BigNum
    * @param value bigint value
    */
-  static bigIntToBigNum = (value: bigint): BigNum => {
-    return BigNum.from_str(value.toString());
+  static bigIntToBigNum = (value: bigint): CardanoWasm.BigNum => {
+    return CardanoWasm.BigNum.from_str(value.toString());
   };
 
   /**
@@ -124,13 +123,18 @@ class CardanoUtils {
    * @param assetName in Uint8Array
    */
   static createFingerprint = (
-    policyId: ScriptHash,
-    assetName: AssetName
+    policyId: CardanoWasm.ScriptHash,
+    assetName: CardanoWasm.AssetName
   ): string => {
     return CIP14.fromParts(
       policyId.to_bytes(),
       Buffer.from(assetName.to_js_value(), 'hex')
     ).fingerprint();
+  };
+
+  static getBoxId = (box: CardanoWasm.TransactionInput): string => {
+    const boxJS = box.to_js_value();
+    return boxJS.transaction_id + '.' + boxJS.index;
   };
 }
 
