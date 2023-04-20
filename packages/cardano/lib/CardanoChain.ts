@@ -319,6 +319,13 @@ class CardanoChain extends AbstractUtxoChain {
   verifyTransactionFee = (transaction: PaymentTransaction): boolean => {
     return false;
   };
+
+  getTxConfirmationStatus = (
+    transactionId: string,
+    transactionType: string
+  ): Promise<ConfirmationStatus> => {
+    return {} as any;
+  };
 }
 
 export default CardanoChain;

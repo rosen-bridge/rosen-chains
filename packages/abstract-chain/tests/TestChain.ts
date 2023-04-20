@@ -16,8 +16,7 @@ class TestUtxoChain extends AbstractChain {
   verifyEvent = this.notImplemented;
   isTxValid = this.notImplemented;
   signTransaction = this.notImplemented;
-  getPaymentTxConfirmationStatus = this.notImplemented;
-  getColdStorageTxConfirmationStatus = this.notImplemented;
+  getTxConfirmationStatus = this.notImplemented;
   submitTransaction = this.notImplemented;
   isTxInMempool = this.notImplemented;
 
