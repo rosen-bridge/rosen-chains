@@ -1,4 +1,4 @@
-import { PaymentOrder } from '@rosen-chains/abstract-chain';
+import { AssetBalance, PaymentOrder } from '@rosen-chains/abstract-chain';
 
 export const testTokenMap = `
 {
@@ -94,6 +94,125 @@ export const testTokenMap = `
   ]
 }
 `;
+
+export const transaction1 = `
+{
+      "body": {
+        "inputs": [
+          {
+            "transaction_id": "3101943d053d487d78578f230518bd7068ad166d1b1b63488ec822cdcff143a8",
+            "index": 0
+          },
+          {
+            "transaction_id": "a878d4560455eff78e9e81721743473b40d55898cb3162dd643d4c4821e05803",
+            "index": 0
+          },
+          {
+            "transaction_id": "b2e02269dba680b63f4ac4dfa9f5c967bc208af685709ab9cc2228839547ae52",
+            "index": 0
+          },
+          {
+            "transaction_id": "bd391046e9cdb40592eae98e2bb65abf75756ae21b4011044b883e7799c68a33",
+            "index": 2
+          }
+        ],
+        "outputs": [
+          {
+            "address": "addr1qxwxpafgqasnddk8et6en0vn74awg4j0n2nfek6e62aywvgcwedk5s2s92dx7msutk33zsl92uh8uhahh305nz7pekjsz5l37w",
+            "amount": {
+              "coin": "2000000",
+              "multiasset": {
+                "ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286": {
+                  "5273744552477654657374": "100"
+                }
+              }
+            },
+            "plutus_data": null,
+            "script_ref": null
+          },
+          {
+            "address": "addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs",
+            "amount": {
+              "coin": "137010000",
+              "multiasset": {
+                "48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b": {
+                  "5273744572676f546f6b656e7654657374": "5000"
+                },
+                "cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be": {
+                  "43617264616e6f546f6b656e7654657374": "100"
+                },
+                "ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286": {
+                  "5273744552477654657374": "900"
+                }
+              }
+            },
+            "plutus_data": null,
+            "script_ref": null
+          }
+        ],
+        "fee": "1000000",
+        "ttl": "164",
+        "certs": null,
+        "withdrawals": null,
+        "update": null,
+        "auxiliary_data_hash": null,
+        "validity_start_interval": null,
+        "mint": null,
+        "script_data_hash": null,
+        "collateral": null,
+        "required_signers": null,
+        "network_id": null,
+        "collateral_return": null,
+        "total_collateral": null,
+        "reference_inputs": null
+      },
+      "witness_set": {
+        "vkeys": null,
+        "native_scripts": null,
+        "bootstraps": null,
+        "plutus_scripts": null,
+        "plutus_data": null,
+        "redeemers": null
+      },
+      "is_valid": true,
+      "auxiliary_data": null
+    }
+`;
+
+export const transaction1InputIds = [
+  '3101943d053d487d78578f230518bd7068ad166d1b1b63488ec822cdcff143a8.0',
+  'a878d4560455eff78e9e81721743473b40d55898cb3162dd643d4c4821e05803.0',
+  'b2e02269dba680b63f4ac4dfa9f5c967bc208af685709ab9cc2228839547ae52.0',
+  'bd391046e9cdb40592eae98e2bb65abf75756ae21b4011044b883e7799c68a33.2',
+];
+
+export const transaction1BoxMapping = [
+  {
+    inputId:
+      '3101943d053d487d78578f230518bd7068ad166d1b1b63488ec822cdcff143a8.0',
+    serializedOutput:
+      '825839019c60f528076136b6c7caf599bd93f57ae4564f9aa69cdb59d2ba473118765b6a41502a9a6f6e1c5da31143e5572e7e5fb7bc5f498bc1cda5821a001e8480a1581cef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286a14b52737445524776546573741864',
+  },
+  {
+    inputId:
+      'a878d4560455eff78e9e81721743473b40d55898cb3162dd643d4c4821e05803.0',
+    serializedOutput:
+      '825839019c60f528076136b6c7caf599bd93f57ae4564f9aa69cdb59d2ba473118765b6a41502a9a6f6e1c5da31143e5572e7e5fb7bc5f498bc1cda5821a001e8480a1581cef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286a14b52737445524776546573741864',
+  },
+  {
+    inputId:
+      'b2e02269dba680b63f4ac4dfa9f5c967bc208af685709ab9cc2228839547ae52.0',
+    serializedOutput:
+      '825839019c60f528076136b6c7caf599bd93f57ae4564f9aa69cdb59d2ba473118765b6a41502a9a6f6e1c5da31143e5572e7e5fb7bc5f498bc1cda5821a001e8480a1581cef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286a14b52737445524776546573741864',
+  },
+  {
+    inputId:
+      'bd391046e9cdb40592eae98e2bb65abf75756ae21b4011044b883e7799c68a33.2',
+    serializedOutput:
+      '825839019c60f528076136b6c7caf599bd93f57ae4564f9aa69cdb59d2ba473118765b6a41502a9a6f6e1c5da31143e5572e7e5fb7bc5f498bc1cda5821a001e8480a1581cef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286a14b52737445524776546573741864',
+  },
+];
+
 export const transaction1Order: PaymentOrder = [
   {
     address:
@@ -119,3 +238,18 @@ export const transaction1PaymentTransaction = `
    "txType":"payment"
 }
 `;
+
+export const transaction1Assets: AssetBalance = {
+  nativeToken: 139010000n,
+  tokens: [
+    {
+      id: 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz',
+      value: 1000n,
+    },
+    {
+      id: 'asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2',
+      value: 5000n,
+    },
+    { id: 'asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7', value: 100n },
+  ],
+};

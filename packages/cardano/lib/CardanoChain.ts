@@ -22,6 +22,7 @@ import CardanoUtils from './CardanoUtils';
 import CardanoTransaction from './CardanoTransaction';
 import Serializer from './Serializer';
 import { BigNum } from '@emurgo/cardano-serialization-lib-nodejs';
+import cardanoUtils from './CardanoUtils';
 
 class CardanoChain extends AbstractUtxoChain {
   declare network: AbstractCardanoNetwork;
@@ -201,7 +202,10 @@ class CardanoChain extends AbstractUtxoChain {
 
     return {
       id: CardanoUtils.getBoxId(box),
-      assets: null as any, //TODO: How to get?
+      assets: {
+        nativeToken: 0n,
+        tokens: [],
+      }, //TODO: How to get?
     };
   };
 
@@ -299,7 +303,7 @@ class CardanoChain extends AbstractUtxoChain {
       nativeToken: 0n,
       tokens: [],
     };
-    for (let i = 0; i < txBody.inputs().len(); i++) {
+    for (let i = 0; i < txBody.outputs().len(); i++) {
       const output = txBody.outputs().get(i);
       const boxAssets = CardanoUtils.getBoxAssets(output);
       outputAssets = ChainUtils.sumAssetBalance(outputAssets, boxAssets);
@@ -319,7 +323,7 @@ class CardanoChain extends AbstractUtxoChain {
    */
   getMempoolBoxMapping = async (
     address: string,
-    tokenId: string | undefined
+    tokenId?: string
   ): Promise<Map<string, string | undefined>> => {
     const trackMap = new Map<string, string | undefined>();
 
@@ -329,20 +333,30 @@ class CardanoChain extends AbstractUtxoChain {
         Buffer.from(serializedTx, 'hex')
       );
       const txBody = tx.body();
+      // iterate over tx inputs
       for (let i = 0; i < txBody.inputs().len(); i++) {
         let trackedBox: CardanoWasm.TransactionOutput | undefined;
-        const input = txBody.inputs().get(i);
-        const box = this.getBoxInfo(input.to_hex());
-        if (box.assets && box.assets.tokens) {
-          const token = box.assets.tokens.find((t) => t.id === tokenId);
-          if (token) {
-            const output = txBody.outputs().get(i);
-            if (output.address().to_js_value() === address) {
-              trackedBox = output;
-            }
+        // iterate over tx outputs
+        for (let j = 0; j < txBody.outputs().len(); j++) {
+          const output = txBody.outputs().get(j);
+          // check if box satisfy conditions
+          if (output.address().to_bech32() !== address) continue;
+          if (tokenId) {
+            const boxTokens = cardanoUtils.getBoxAssets(output).tokens;
+            if (!boxTokens.find((token) => token.id === tokenId)) continue;
           }
+
+          // mark the tracked box
+          trackedBox = output;
+          break;
         }
-        trackMap.set(box.id, trackedBox ? trackedBox.to_hex() : undefined);
+
+        // add input box to trackMap
+        const input = txBody.inputs().get(i);
+        trackMap.set(
+          CardanoUtils.getBoxId(input),
+          trackedBox ? trackedBox.to_hex() : undefined
+        );
       }
     });
 
