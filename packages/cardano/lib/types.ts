@@ -28,7 +28,7 @@ interface AddressUtxo {
 
 interface UtxoBoxesAssets {
   lovelace: BigNum;
-  assets: MultiAsset;
+  assets: Map<string, bigint>;
 }
 
 export { CardanoConfigs, AddressUtxo, Asset, AssetInfo, UtxoBoxesAssets };

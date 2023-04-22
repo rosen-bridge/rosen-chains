@@ -8,6 +8,7 @@ import {
   PaymentOrder,
   PaymentTransaction,
   SinglePayment,
+  TokenInfo,
   TransactionAssetBalance,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
@@ -20,6 +21,7 @@ import { txBuilderConfig } from './constants';
 import CardanoUtils from './CardanoUtils';
 import CardanoTransaction from './CardanoTransaction';
 import Serializer from './Serializer';
+import { BigNum } from '@emurgo/cardano-serialization-lib-nodejs';
 
 class CardanoChain extends AbstractUtxoChain {
   declare network: AbstractCardanoNetwork;
@@ -74,13 +76,53 @@ class CardanoChain extends AbstractUtxoChain {
     order: PaymentOrder,
     bankBoxes: AddressUtxo[]
   ): Promise<PaymentTransaction> => {
-    if (order.length > 1) {
-      throw new Error(
-        'Cardano does not support multiple outputs in a transaction'
-      );
-    }
-    const cardanoOrder = order[0];
     const txBuilder = CardanoWasm.TransactionBuilder.new(txBuilderConfig);
+    let orderValue = BigNum.zero();
+    const orderAssets: Map<string, bigint> = new Map();
+
+    // add outputs
+    order.forEach((order) => {
+      if (order.extra) {
+        throw Error('Cardano does not support extra data in payment order');
+      }
+      // accumulate value
+      orderValue = orderValue.checked_add(
+        CardanoUtils.bigIntToBigNum(order.assets.nativeToken)
+      );
+
+      // create order output
+      const address = CardanoWasm.Address.from_bech32(order.address);
+      const value = CardanoWasm.Value.new(
+        CardanoUtils.bigIntToBigNum(order.assets.nativeToken)
+      );
+      // inserting assets
+      const paymentMultiAsset = CardanoWasm.MultiAsset.new();
+      order.assets.tokens.forEach((asset) => {
+        // accumulate assets
+        if (orderAssets.has(asset.id)) {
+          orderAssets.set(asset.id, orderAssets.get(asset.id)! + asset.value);
+        } else {
+          orderAssets.set(asset.id, asset.value);
+        }
+        const paymentAssetInfo = CardanoUtils.getCardanoAssetInfo(
+          asset.id,
+          this.tokenMap
+        );
+        const paymentAssetPolicyId: CardanoWasm.ScriptHash =
+          CardanoWasm.ScriptHash.from_bytes(paymentAssetInfo.policyId);
+        const paymentAssetAssetName: CardanoWasm.AssetName =
+          CardanoWasm.AssetName.new(paymentAssetInfo.assetName);
+        const paymentAssets = CardanoWasm.Assets.new();
+        paymentAssets.insert(
+          paymentAssetAssetName,
+          CardanoUtils.bigIntToBigNum(asset.value)
+        );
+        paymentMultiAsset.insert(paymentAssetPolicyId, paymentAssets);
+      });
+      value.set_multiasset(paymentMultiAsset);
+      const orderBox = CardanoWasm.TransactionOutput.new(address, value);
+      txBuilder.add_output(orderBox);
+    });
 
     // add inputs
     bankBoxes.forEach((box) => {
@@ -91,78 +133,30 @@ class CardanoChain extends AbstractUtxoChain {
       txBuilder.add_input(
         CardanoWasm.Address.from_bech32(this.configs.lockAddress),
         inputBox,
-        CardanoWasm.Value.new(
-          CardanoUtils.bigIntToBigNum(cardanoOrder.assets.nativeToken)
-        )
+        CardanoWasm.Value.new(orderValue)
       );
     });
 
-    // create order output
-    const address = CardanoWasm.Address.from_bech32(cardanoOrder.address);
-    const value = CardanoWasm.Value.new(
-      CardanoUtils.bigIntToBigNum(cardanoOrder.assets.nativeToken)
-    );
-    const paymentMultiAsset = CardanoWasm.MultiAsset.new();
-    if (cardanoOrder.assets.tokens.length > 1) {
-      throw new Error('Can not send more than one token in an order');
-    }
-    let paymentAsset: Partial<Asset> = {};
-    if (cardanoOrder.assets.tokens.length === 1) {
-      const token = cardanoOrder.assets.tokens[0];
-      const paymentAssetInfo = CardanoUtils.getCardanoAssetInfo(
-        token.id,
-        this.tokenMap
-      );
-      const paymentAssetPolicyId: CardanoWasm.ScriptHash =
-        CardanoWasm.ScriptHash.from_bytes(paymentAssetInfo.policyId);
-      const paymentAssetAssetName: CardanoWasm.AssetName =
-        CardanoWasm.AssetName.new(paymentAssetInfo.assetName);
-      const paymentAssets = CardanoWasm.Assets.new();
-      paymentAssets.insert(
-        paymentAssetAssetName,
-        CardanoUtils.bigIntToBigNum(token.value)
-      );
-      paymentMultiAsset.insert(paymentAssetPolicyId, paymentAssets);
-      paymentAsset = {
-        policy_id: paymentAssetPolicyId.to_hex(),
-        asset_name: paymentAssetAssetName.to_hex(),
-        quantity: token.value.toString(),
-      };
-    }
-
-    value.set_multiasset(paymentMultiAsset);
-    const orderBox = CardanoWasm.TransactionOutput.new(address, value);
-    txBuilder.add_output(orderBox);
-
     // create change output
-    const changeBoxAssets = CardanoUtils.calculateInputBoxesAssets(bankBoxes);
-    const changeBoxMultiAsset = changeBoxAssets.assets;
-    let changeBoxLovelace: CardanoWasm.BigNum = changeBoxAssets.lovelace;
-    changeBoxLovelace = changeBoxLovelace
-      .checked_sub(CardanoUtils.bigIntToBigNum(this.configs.fee))
-      .checked_sub(
-        CardanoUtils.bigIntToBigNum(cardanoOrder.assets.nativeToken)
+    const inputBoxesAssets = CardanoUtils.calculateInputBoxesAssets(bankBoxes);
+    const changeBoxMultiAsset = CardanoWasm.MultiAsset.new();
+    inputBoxesAssets.assets.forEach((value, key) => {
+      const spentValue = orderAssets.get(key) || 0n;
+      const assetInfo = CardanoUtils.getCardanoAssetInfo(key, this.tokenMap);
+      const assets = CardanoWasm.Assets.new();
+      assets.insert(
+        CardanoWasm.AssetName.new(assetInfo.assetName),
+        CardanoUtils.bigIntToBigNum(value - spentValue)
       );
+      changeBoxMultiAsset.insert(
+        CardanoWasm.ScriptHash.from_bytes(assetInfo.policyId),
+        assets
+      );
+    });
+    const changeBoxLovelace = inputBoxesAssets.lovelace
+      .checked_sub(orderValue)
+      .checked_sub(CardanoUtils.bigIntToBigNum(this.configs.fee));
 
-    // check if payment has assets
-    if (Object.keys(paymentAsset).length !== 0) {
-      const paymentAssetPolicyId: CardanoWasm.ScriptHash =
-        CardanoWasm.ScriptHash.from_hex(paymentAsset.policy_id!);
-      const paymentAssetAssetName: CardanoWasm.AssetName =
-        CardanoWasm.AssetName.from_hex(paymentAsset.asset_name!);
-      const assetPaymentAmount: CardanoWasm.BigNum =
-        CardanoWasm.BigNum.from_str(paymentAsset.quantity!);
-      const paymentAssetAmount: CardanoWasm.BigNum =
-        changeBoxMultiAsset.get_asset(
-          paymentAssetPolicyId,
-          paymentAssetAssetName
-        );
-      changeBoxMultiAsset.set_asset(
-        paymentAssetPolicyId,
-        paymentAssetAssetName,
-        paymentAssetAmount.checked_sub(assetPaymentAmount)
-      );
-    }
     const changeAmount: CardanoWasm.Value =
       CardanoWasm.Value.new(changeBoxLovelace);
     changeAmount.set_multiasset(changeBoxMultiAsset);

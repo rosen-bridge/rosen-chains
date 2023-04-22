@@ -13,7 +13,7 @@ class CardanoUtils {
   static calculateInputBoxesAssets = (
     boxes: AddressUtxo[]
   ): UtxoBoxesAssets => {
-    const multiAsset = CardanoWasm.MultiAsset.new();
+    const assets: Map<string, bigint> = new Map();
     let changeBoxLovelace: CardanoWasm.BigNum = CardanoWasm.BigNum.zero();
     boxes.forEach((box) => {
       changeBoxLovelace = changeBoxLovelace.checked_add(
@@ -21,42 +21,16 @@ class CardanoUtils {
       );
 
       box.asset_list.forEach((boxAsset) => {
-        const policyId = CardanoWasm.ScriptHash.from_bytes(
-          Buffer.from(boxAsset.policy_id, 'hex')
+        const currentValue = assets.get(boxAsset.fingerprint) || 0n;
+        assets.set(
+          boxAsset.fingerprint,
+          currentValue + BigInt(boxAsset.quantity)
         );
-        const assetName = CardanoWasm.AssetName.new(
-          Buffer.from(boxAsset.asset_name, 'hex')
-        );
-
-        const policyAssets = multiAsset.get(policyId);
-        if (!policyAssets) {
-          const assetList = CardanoWasm.Assets.new();
-          assetList.insert(
-            assetName,
-            CardanoWasm.BigNum.from_str(boxAsset.quantity)
-          );
-          multiAsset.insert(policyId, assetList);
-        } else {
-          const asset = policyAssets.get(assetName);
-          if (!asset) {
-            policyAssets.insert(
-              assetName,
-              CardanoWasm.BigNum.from_str(boxAsset.quantity)
-            );
-            multiAsset.insert(policyId, policyAssets);
-          } else {
-            const amount = asset.checked_add(
-              CardanoWasm.BigNum.from_str(boxAsset.quantity)
-            );
-            policyAssets.insert(assetName, amount);
-            multiAsset.insert(policyId, policyAssets);
-          }
-        }
       });
     });
     return {
       lovelace: changeBoxLovelace,
-      assets: multiAsset,
+      assets: assets,
     };
   };
 
