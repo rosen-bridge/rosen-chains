@@ -21,8 +21,9 @@ describe('ErgoChain', () => {
   const observationTxConfirmation = 5;
   const paymentTxConfirmation = 9;
   const coldTxConfirmation = 10;
-  const rwtId = 'rwt';
-  const generateChainObject = (network: TestErgoNetwork) => {
+  const rwtId =
+    '9410db5b39388c6b515160e7248346d7ec63d5457292326da12a26cc02efb526';
+  const generateChainObject = (network: TestErgoNetwork, rwt = rwtId) => {
     const config: ErgoConfigs = {
       fee: 100n,
       observationTxConfirmation: observationTxConfirmation,
@@ -30,7 +31,7 @@ describe('ErgoChain', () => {
       coldTxConfirmation: coldTxConfirmation,
       lockAddress: 'lock_addr',
       coldStorageAddress: 'cold_addr',
-      rwtId: rwtId,
+      rwtId: rwt,
       minBoxValue: 1000000n,
       eventTxConfirmation: 18,
     };
@@ -100,6 +101,8 @@ describe('ErgoChain', () => {
         paymentTx.eventId,
         paymentTx.txType,
         order,
+        [],
+        [],
         inputs,
         dataInputs
       );
@@ -303,6 +306,9 @@ describe('ErgoChain', () => {
   });
 
   describe('verifyEvent', () => {
+    const serializedEventBox = Buffer.from(
+      ergoTestUtils.toErgoBox(boxTestData.eventBox).sigma_serialize_bytes()
+    ).toString('hex');
     const feeConfig: Fee = {
       bridgeFee: 0n,
       networkFee: 0n,
@@ -355,7 +361,11 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, rwtId, feeConfig);
+      const result = await ergoChain.verifyEvent(
+        event,
+        serializedEventBox,
+        feeConfig
+      );
 
       // check returned value
       expect(result).toEqual(true);
@@ -381,10 +391,10 @@ describe('ErgoChain', () => {
       const network = new TestErgoNetwork();
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = generateChainObject(network, 'fake_rwt_id');
       const result = await ergoChain.verifyEvent(
         event,
-        'fake_rwt_id',
+        serializedEventBox,
         feeConfig
       );
 
@@ -424,7 +434,11 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, rwtId, feeConfig);
+      const result = await ergoChain.verifyEvent(
+        event,
+        serializedEventBox,
+        feeConfig
+      );
 
       // check returned value
       expect(result).toEqual(false);
@@ -489,7 +503,11 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, rwtId, feeConfig);
+      const result = await ergoChain.verifyEvent(
+        event,
+        serializedEventBox,
+        feeConfig
+      );
 
       // check returned value
       expect(result).toEqual(false);
@@ -542,7 +560,11 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, rwtId, feeConfig);
+      const result = await ergoChain.verifyEvent(
+        event,
+        serializedEventBox,
+        feeConfig
+      );
 
       // check returned value
       expect(result).toEqual(false);
@@ -1127,6 +1149,66 @@ describe('ErgoChain', () => {
 
       // check returned value
       expect(result).toEqual(boxInfo);
+    });
+  });
+
+  describe('getBoxHeight', () => {
+    const network = new TestErgoNetwork();
+
+    /**
+     * @target ErgoChain.getBoxHeight should get box height successfully
+     * @dependencies
+     * @scenario
+     * - mock an ErgoBox and construct serialized box
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return constructed BoxInfo
+     */
+    it('should get box height successfully', () => {
+      // mock an ErgoBox and construct serialized box
+      const box = ergoTestUtils.toErgoBox(boxTestData.ergoBox1);
+      const serializedBox = Buffer.from(box.sigma_serialize_bytes()).toString(
+        'hex'
+      );
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = ergoChain.getBoxHeight(serializedBox);
+
+      // check returned value
+      expect(result).toEqual(box.creation_height());
+    });
+  });
+
+  describe('getBoxWID', () => {
+    const network = new TestErgoNetwork();
+
+    /**
+     * @target ErgoChain.getBoxWID should get box WID successfully
+     * @dependencies
+     * @scenario
+     * - mock an ErgoBox with WID and construct serialized box
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return constructed BoxInfo
+     */
+    it('should get box WID successfully', () => {
+      // mock an ErgoBox with WID and construct serialized box
+      const box = ergoTestUtils.toErgoBox(boxTestData.ergoBox2);
+      const serializedBox = Buffer.from(box.sigma_serialize_bytes()).toString(
+        'hex'
+      );
+      const wid =
+        '97a2dabcd974d69a07c3a03e20d05a36d13b986ffca5670302997484dd87e247';
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = ergoChain.getBoxWID(serializedBox);
+
+      // check returned value
+      expect(result).toEqual(wid);
     });
   });
 });

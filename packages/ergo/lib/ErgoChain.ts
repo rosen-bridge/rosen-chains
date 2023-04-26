@@ -47,6 +47,8 @@ class ErgoChain extends AbstractUtxoChain {
    * @param eventId the id of event
    * @param txType transaction type
    * @param order the payment order (list of single payments)
+   * @param unsignedTransactions ongoing unsigned PaymentTransactions
+   * @param serializedSignedTransactions the serialized string of ongoing signed transactions
    * @param inputs the inputs for transaction
    * @param dataInputs the data inputs for transaction
    * @returns the generated payment transaction
@@ -55,9 +57,12 @@ class ErgoChain extends AbstractUtxoChain {
     eventId: string,
     txType: string,
     order: PaymentOrder,
+    unsignedTransactions: PaymentTransaction[],
+    serializedSignedTransactions: string[],
     inputs: Array<string>,
     dataInputs: Array<string>
   ): Promise<PaymentTransaction> => {
+    // TODO: get more inputs using getCovering
     let remainingAssets: AssetBalance = {
       nativeToken: 0n,
       tokens: [],
@@ -313,20 +318,28 @@ class ErgoChain extends AbstractUtxoChain {
   /**
    * verifies an event data with its corresponding lock transaction
    * @param event the event trigger model
-   * @param RwtId the RWT token id in the event trigger box
+   * @param eventSerializedBox the serialized string of the event trigger box
    * @param feeConfig minimum fee and rsn ratio config for the event
    * @returns true if the event verified
    */
   verifyEvent = async (
     event: EventTrigger,
-    RwtId: string,
+    eventSerializedBox: string,
     feeConfig: Fee
   ): Promise<boolean> => {
     const eventId = Buffer.from(
       blake2b(event.sourceTxId, undefined, 32)
     ).toString('hex');
+
     // Verifying watcher RWTs
-    if (RwtId !== this.configs.rwtId) {
+    const rwtId = wasm.ErgoBox.sigma_parse_bytes(
+      Buffer.from(eventSerializedBox, 'hex')
+    )
+      .tokens()
+      .get(0)
+      .id()
+      .to_str();
+    if (rwtId !== this.configs.rwtId) {
       this.logger.info(
         `event [${eventId}] is not valid, event RWT is not compatible with the ergo RWT id`
       );
@@ -550,6 +563,14 @@ class ErgoChain extends AbstractUtxoChain {
   };
 
   /**
+   * gets the minimum amount of native token for assetTransfer
+   * @returns the minimum amount
+   */
+  getMinimumNativeToken = (): bigint => {
+    return this.configs.minBoxValue;
+  };
+
+  /**
    * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
    * @param address the address
    * @param tokenId the token id
@@ -623,6 +644,40 @@ class ErgoChain extends AbstractUtxoChain {
       id: box.box_id().to_str(),
       assets: ErgoUtils.getBoxAssets(box),
     };
+  };
+
+  /**
+   * extracts box height
+   * @param serializedBox the serialized string of the box
+   * @returns the box height
+   */
+  getBoxHeight = (serializedBox: string): number => {
+    // deserialize box
+    const box = wasm.ErgoBox.sigma_parse_bytes(
+      Buffer.from(serializedBox, 'hex')
+    );
+
+    return box.creation_height();
+  };
+
+  /**
+   * extracts watcher id from R4 of the box
+   * @param serializedBox the serialized string of the box
+   * @returns watcher id
+   */
+  getBoxWID = (serializedBox: string): string => {
+    // deserialize box
+    const box = wasm.ErgoBox.sigma_parse_bytes(
+      Buffer.from(serializedBox, 'hex')
+    );
+
+    // extract wid
+    const wid = box.register_value(4)?.to_coll_coll_byte()[0];
+    if (wid === undefined) {
+      const boxId = box.box_id().to_str();
+      throw new Error(`failed to read WID from register R4 of box [${boxId}]`);
+    }
+    return Buffer.from(wid).toString('hex');
   };
 }
 
