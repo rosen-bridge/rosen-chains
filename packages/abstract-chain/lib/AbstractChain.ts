@@ -33,13 +33,16 @@ abstract class AbstractChain {
    * @param eventId the id of event
    * @param txType transaction type
    * @param order the payment order (list of single payments)
-   * @param inputs the inputs for transaction
+   * @param unsignedTransactions ongoing unsigned PaymentTransactions
+   * @param serializedSignedTransactions the serialized string of ongoing signed transactions
    * @returns the generated PaymentTransaction
    */
   abstract generateTransaction: (
     eventId: string,
     txType: string,
     order: PaymentOrder,
+    unsignedTransactions: PaymentTransaction[],
+    serializedSignedTransactions: string[],
     ...extra: Array<any>
   ) => Promise<PaymentTransaction>;
 
@@ -95,13 +98,13 @@ abstract class AbstractChain {
   /**
    * verifies an event data with its corresponding lock transaction
    * @param event the event trigger model
-   * @param RwtId the RWT token id in the event trigger box
+   * @param eventSerializedBox the serialized string of the event trigger box
    * @param feeConfig minimum fee and rsn ratio config for the event
    * @returns true if the event verified
    */
   abstract verifyEvent: (
     event: EventTrigger,
-    RwtId: string,
+    eventSerializedBox: string,
     feeConfig: Fee
   ) => Promise<boolean>;
 
@@ -182,6 +185,12 @@ abstract class AbstractChain {
     }
     return true;
   };
+
+  /**
+   * gets the minimum amount of native token for assetTransfer
+   * @returns the minimum amount
+   */
+  abstract getMinimumNativeToken: () => bigint;
 }
 
 export default AbstractChain;
