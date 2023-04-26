@@ -1210,5 +1210,28 @@ describe('ErgoChain', () => {
       // check returned value
       expect(result).toEqual(wid);
     });
+
+    /**
+     * @target ErgoChain.getBoxWID should throw Error when box has no WID
+     * @dependencies
+     * @scenario
+     * - mock an ErgoBox without WID and construct serialized box
+     * - run test and expect exception thrown
+     * @expected
+     * - it should throw Error
+     */
+    it('should throw Error when box has no WID', () => {
+      // mock an ErgoBox without WID and construct serialized box
+      const box = ergoTestUtils.toErgoBox(boxTestData.ergoBox1);
+      const serializedBox = Buffer.from(box.sigma_serialize_bytes()).toString(
+        'hex'
+      );
+
+      // run test and expect exception thrown
+      const ergoChain = generateChainObject(network);
+      expect(() => {
+        ergoChain.getBoxWID(serializedBox);
+      }).toThrow(Error);
+    });
   });
 });
