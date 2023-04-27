@@ -3,8 +3,11 @@ import * as transactionTestData from './transactionTestData';
 import * as ergoTestUtils from './ergoTestUtils';
 import { ErgoChain } from '../lib';
 import {
+  AssetBalance,
   BoxInfo,
   ConfirmationStatus,
+  NotEnoughAssetsError,
+  NotEnoughValidBoxesError,
   TransactionTypes,
 } from '@rosen-chains/abstract-chain';
 import TestErgoNetwork from './network/TestErgoNetwork';
@@ -45,9 +48,14 @@ describe('ErgoChain', () => {
      * @dependencies
      * @scenario
      * - mock transaction order, input and data input boxes
-     * - mock a network object with mocked 'getHeight' and 'getStateContext'
-     *   functions
+     * - mock an AssetBalance as lock address assets with enough assets
+     * - mock a network object
+     * --- mock 'getHeight'
+     * --- mock 'getStateContext'
+     * --- mock 'getAddressAssets' to return mocked assets
+     * --- mock 'getMempoolTransactions' to return empty list
      * - mock chain config
+     * - mock getCoveringBoxes
      * - run test
      * - check attributes of returned value
      * @expected
@@ -63,12 +71,25 @@ describe('ErgoChain', () => {
         transactionTestData.transaction3PaymentTransaction
       );
       const order = transactionTestData.transaction3Order;
-      const inputs = paymentTx.inputBoxes.map((serializedBox) =>
-        Buffer.from(serializedBox).toString('hex')
-      );
+      const inputs = [Buffer.from(paymentTx.inputBoxes[0]).toString('hex')];
       const dataInputs = paymentTx.dataInputs.map((serializedBox) =>
         Buffer.from(serializedBox).toString('hex')
       );
+
+      // mock an AssetBalance as lock address assets with enough assets
+      const mockedLockAssets = {
+        nativeToken: 50000000n,
+        tokens: [
+          {
+            id: '10278c102bf890fdab8ef5111e94053c90b3541bc25b0de2ee8aa6305ccec3de',
+            value: 5000n,
+          },
+          {
+            id: ergoTestUtils.generateRandomId(),
+            value: 100000n,
+          },
+        ],
+      };
 
       // mock a network object
       const network = new TestErgoNetwork();
@@ -80,6 +101,15 @@ describe('ErgoChain', () => {
       getStateContextSpy.mockResolvedValue(
         transactionTestData.mockedStateContext
       );
+      // mock 'getAddressAssets' to return mocked assets
+      const getAddressAssetsSpy = spyOn(network, 'getAddressAssets');
+      getAddressAssetsSpy.mockResolvedValue(mockedLockAssets);
+      // mock 'getMempoolTransactions'
+      const getMempoolTransactionsSpy = spyOn(
+        network,
+        'getMempoolTransactions'
+      );
+      getMempoolTransactionsSpy.mockResolvedValue([]);
 
       // mock chain config
       const config: ErgoConfigs = {
@@ -95,8 +125,17 @@ describe('ErgoChain', () => {
         eventTxConfirmation: 18,
       };
 
-      // run test
+      // mock getCoveringBoxes
       const ergoChain = new ErgoChain(network, config);
+      const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
+      getCoveringBoxesSpy.mockResolvedValue({
+        covered: true,
+        boxes: paymentTx.inputBoxes
+          .slice(1)
+          .map((serializedBox) => Buffer.from(serializedBox).toString('hex')),
+      });
+
+      // run test
       const result = await ergoChain.generateTransaction(
         paymentTx.eventId,
         paymentTx.txType,
@@ -134,6 +173,319 @@ describe('ErgoChain', () => {
         }
       }
       expect(boxChecked).toEqual(true);
+    });
+
+    /**
+     * @target ErgoChain.getTransactionAssets should throw appropriate
+     * error when locked assets are not enough to generate transaction
+     * @dependencies
+     * @scenario
+     * - mock transaction order, input and data input boxes
+     * - mock an AssetBalance as lock address assets lacking enough assets
+     * - mock a network object
+     * --- mock 'getHeight'
+     * --- mock 'getStateContext'
+     * --- mock 'getAddressAssets' to return mocked assets
+     * - mock chain config
+     * - run test and expect exception thrown
+     * @expected
+     * - it should thrown NotEnoughAssetsError
+     */
+    it('should throw appropriate error when locked assets are not enough to generate transaction', async () => {
+      // mock transaction order, input and data input boxes
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction3PaymentTransaction
+      );
+      const order = transactionTestData.transaction3Order;
+      const inputs = [Buffer.from(paymentTx.inputBoxes[0]).toString('hex')];
+      const dataInputs = paymentTx.dataInputs.map((serializedBox) =>
+        Buffer.from(serializedBox).toString('hex')
+      );
+
+      // mock an AssetBalance as lock address assets lacking enough assets
+      const mockedLockAssets = {
+        nativeToken: 1000000n,
+        tokens: [],
+      };
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getHeight'
+      const getHeightSpy = spyOn(network, 'getHeight');
+      getHeightSpy.mockResolvedValue(966000);
+      // mock 'getStateContext'
+      const getStateContextSpy = spyOn(network, 'getStateContext');
+      getStateContextSpy.mockResolvedValue(
+        transactionTestData.mockedStateContext
+      );
+      // mock 'getAddressAssets' to return mocked assets
+      const getAddressAssetsSpy = spyOn(network, 'getAddressAssets');
+      getAddressAssetsSpy.mockResolvedValue(mockedLockAssets);
+
+      // mock chain config
+      const config: ErgoConfigs = {
+        fee: 1100000n,
+        observationTxConfirmation: observationTxConfirmation,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress:
+          'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 300000n,
+        eventTxConfirmation: 18,
+      };
+
+      // run test and expect exception thrown
+      const ergoChain = new ErgoChain(network, config);
+      await expect(async () => {
+        await ergoChain.generateTransaction(
+          paymentTx.eventId,
+          paymentTx.txType,
+          order,
+          [],
+          [],
+          inputs,
+          dataInputs
+        );
+      }).rejects.toThrow(NotEnoughAssetsError);
+    });
+
+    /**
+     * @target ErgoChain.getTransactionAssets should throw appropriate
+     * error when available boxes cannot cover required assets to generate
+     * transaction
+     * @dependencies
+     * @scenario
+     * - mock transaction order, input and data input boxes
+     * - mock an AssetBalance as lock address assets with enough assets
+     * - mock a network object
+     * --- mock 'getHeight'
+     * --- mock 'getStateContext'
+     * --- mock 'getAddressAssets' to return mocked assets
+     * --- mock 'getMempoolTransactions' to return empty list
+     * - mock chain config
+     * - mock getCoveringBoxes to return NOT covered
+     * - run test and expect exception thrown
+     * @expected
+     * - it should thrown NotEnoughValidBoxesError
+     */
+    it('should throw appropriate error when available boxes cannot cover required assets to generate transaction', async () => {
+      // mock transaction order, input and data input boxes
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction3PaymentTransaction
+      );
+      const order = transactionTestData.transaction3Order;
+      const inputs = [Buffer.from(paymentTx.inputBoxes[0]).toString('hex')];
+      const dataInputs = paymentTx.dataInputs.map((serializedBox) =>
+        Buffer.from(serializedBox).toString('hex')
+      );
+
+      // mock an AssetBalance as lock address assets with enough assets
+      const mockedLockAssets = {
+        nativeToken: 50000000n,
+        tokens: [
+          {
+            id: '10278c102bf890fdab8ef5111e94053c90b3541bc25b0de2ee8aa6305ccec3de',
+            value: 5000n,
+          },
+          {
+            id: ergoTestUtils.generateRandomId(),
+            value: 100000n,
+          },
+        ],
+      };
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getHeight'
+      const getHeightSpy = spyOn(network, 'getHeight');
+      getHeightSpy.mockResolvedValue(966000);
+      // mock 'getStateContext'
+      const getStateContextSpy = spyOn(network, 'getStateContext');
+      getStateContextSpy.mockResolvedValue(
+        transactionTestData.mockedStateContext
+      );
+      // mock 'getAddressAssets' to return mocked assets
+      const getAddressAssetsSpy = spyOn(network, 'getAddressAssets');
+      getAddressAssetsSpy.mockResolvedValue(mockedLockAssets);
+      // mock 'getMempoolTransactions'
+      const getMempoolTransactionsSpy = spyOn(
+        network,
+        'getMempoolTransactions'
+      );
+      getMempoolTransactionsSpy.mockResolvedValue([]);
+
+      // mock chain config
+      const config: ErgoConfigs = {
+        fee: 1100000n,
+        observationTxConfirmation: observationTxConfirmation,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress:
+          'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 300000n,
+        eventTxConfirmation: 18,
+      };
+
+      // mock getCoveringBoxes
+      const ergoChain = new ErgoChain(network, config);
+      const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
+      getCoveringBoxesSpy.mockResolvedValue({
+        covered: false,
+        boxes: paymentTx.inputBoxes
+          .slice(1, 2)
+          .map((serializedBox) => Buffer.from(serializedBox).toString('hex')),
+      });
+
+      // run test and expect exception thrown
+      await expect(async () => {
+        await ergoChain.generateTransaction(
+          paymentTx.eventId,
+          paymentTx.txType,
+          order,
+          [],
+          [],
+          inputs,
+          dataInputs
+        );
+      }).rejects.toThrow(NotEnoughValidBoxesError);
+    });
+
+    /**
+     * @target ErgoChain.getTransactionAssets should filter boxes that
+     * are used in unsigned transactions successfully
+     * @dependencies
+     * @scenario
+     * - mock transaction order, input and data input boxes
+     * - mock an unsigned transaction with it's input boxes
+     * - mock an AssetBalance as lock address assets with enough assets
+     * - mock a network object
+     * --- mock 'getHeight'
+     * --- mock 'getStateContext'
+     * --- mock 'getAddressAssets' to return mocked assets
+     * --- mock 'getMempoolTransactions' to return empty list
+     * - mock chain config
+     * - mock getCoveringBoxes
+     * --- returns NOT covered when forbiddenBoxIds argument contains
+     *     right ids
+     * --- otherwise returns covered
+     * - run test and expect exception thrown
+     * @expected
+     * - it should thrown NotEnoughValidBoxesError
+     */
+    it('should throw appropriate error when available boxes cannot cover required assets to generate transaction', async () => {
+      // mock transaction order, input and data input boxes
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction3PaymentTransaction
+      );
+      const order = transactionTestData.transaction3Order;
+      const inputs = [Buffer.from(paymentTx.inputBoxes[0]).toString('hex')];
+      const dataInputs = paymentTx.dataInputs.map((serializedBox) =>
+        Buffer.from(serializedBox).toString('hex')
+      );
+
+      // mock an unsigned transaction with it's input boxess
+      const unsignedTransaction = ErgoTransaction.fromJson(
+        transactionTestData.transaction2PartialUnsignedPaymentTransaction
+      );
+      const unsignedTxInputBoxIds = transactionTestData.transaction2InputBoxIds;
+
+      // mock an AssetBalance as lock address assets with enough assets
+      const mockedLockAssets = {
+        nativeToken: 50000000n,
+        tokens: [
+          {
+            id: '10278c102bf890fdab8ef5111e94053c90b3541bc25b0de2ee8aa6305ccec3de',
+            value: 5000n,
+          },
+          {
+            id: ergoTestUtils.generateRandomId(),
+            value: 100000n,
+          },
+        ],
+      };
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getHeight'
+      const getHeightSpy = spyOn(network, 'getHeight');
+      getHeightSpy.mockResolvedValue(966000);
+      // mock 'getStateContext'
+      const getStateContextSpy = spyOn(network, 'getStateContext');
+      getStateContextSpy.mockResolvedValue(
+        transactionTestData.mockedStateContext
+      );
+      // mock 'getAddressAssets' to return mocked assets
+      const getAddressAssetsSpy = spyOn(network, 'getAddressAssets');
+      getAddressAssetsSpy.mockResolvedValue(mockedLockAssets);
+      // mock 'getMempoolTransactions'
+      const getMempoolTransactionsSpy = spyOn(
+        network,
+        'getMempoolTransactions'
+      );
+      getMempoolTransactionsSpy.mockResolvedValue([]);
+
+      // mock chain config
+      const config: ErgoConfigs = {
+        fee: 1100000n,
+        observationTxConfirmation: observationTxConfirmation,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress:
+          'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 300000n,
+        eventTxConfirmation: 18,
+      };
+
+      // mock getCoveringBoxes
+      const ergoChain = new ErgoChain(network, config);
+      const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
+      getCoveringBoxesSpy.mockImplementation(
+        async (
+          address: string,
+          requiredAssets: AssetBalance,
+          forbiddenBoxIds: Array<string>,
+          trackMap: Map<string, string | undefined>
+        ) => {
+          // returns NOT covered when forbiddenBoxIds argument equals to expected value
+          if (
+            forbiddenBoxIds.length === 1 &&
+            forbiddenBoxIds[0] === unsignedTxInputBoxIds[0]
+          )
+            return {
+              covered: false,
+              boxes: [],
+            };
+          // otherwise returns covered
+          else
+            return {
+              covered: true,
+              boxes: paymentTx.inputBoxes
+                .slice(1)
+                .map((serializedBox) =>
+                  Buffer.from(serializedBox).toString('hex')
+                ),
+            };
+        }
+      );
+
+      // run test and expect exception thrown
+      await expect(async () => {
+        await ergoChain.generateTransaction(
+          paymentTx.eventId,
+          paymentTx.txType,
+          order,
+          [unsignedTransaction],
+          [],
+          inputs,
+          dataInputs
+        );
+      }).rejects.toThrow(NotEnoughValidBoxesError);
     });
   });
 
@@ -307,7 +659,7 @@ describe('ErgoChain', () => {
 
   describe('verifyEvent', () => {
     const serializedEventBox = Buffer.from(
-      ergoTestUtils.toErgoBox(boxTestData.eventBox).sigma_serialize_bytes()
+      ergoTestUtils.toErgoBox(boxTestData.eventBox1).sigma_serialize_bytes()
     ).toString('hex');
     const feeConfig: Fee = {
       bridgeFee: 0n,

@@ -73,7 +73,7 @@ export const ergoBox2 = `{
   "mainChain": true
 }`;
 
-export const eventBox = `{
+export const eventBox1 = `{
   "boxId": "3875b8e8016e3bb5cfc8f5c9f471e08bd576df650497f407c1c54fb09fb2161f",
   "transactionId": "0a3b5e75c6935e7c1969d2e436473e3251bde4c27dde6ccfd9e6982bc12f282c",
   "blockId": "a10d363d37418aa623e3631deca6677a737a4199c62ced217ad89971d055eb3e",
