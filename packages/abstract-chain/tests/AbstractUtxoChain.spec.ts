@@ -584,5 +584,62 @@ describe('AbstractUtxoChain', () => {
       expect(result.covered).toEqual(true);
       expect(result.boxes).toEqual(['serialized-box-2']);
     });
+
+    /**
+     * @target AbstractUtxoChain.getCoveringBoxes should return no boxes as
+     * NOT covered when tracking ends to no box
+     * @dependencies
+     * @scenario
+     * - mock a network object to return one box
+     * - mock a Map to track first box to a new box
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets
+     * - mock an AssetBalance object with assets less than box assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the correct value
+     */
+    it('should return no boxes as NOT covered when tracking ends to no box', async () => {
+      // Mock a network object to return one box
+      const network = new TestUtxoChainNetwork();
+      spyOn(network, 'getAddressBoxes')
+        .mockResolvedValue([])
+        .mockResolvedValueOnce(['serialized-box-1']);
+
+      // Mock a Map to track first box to a new box
+      const trackMap = new Map<string, string | undefined>();
+      trackMap.set('box1', undefined);
+
+      // Mock chain 'getBoxInfo' function to return mocked boxes assets
+      const chain = generateChainObject(network);
+      const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
+      when(getBoxInfoSpy)
+        .calledWith('serialized-box-1')
+        .mockReturnValueOnce({
+          id: 'box1',
+          assets: {
+            nativeToken: 100000n,
+            tokens: [{ id: 'token1', value: 200n }],
+          },
+        });
+
+      // Mock an AssetBalance object with assets less than box assets
+      const requiredAssets: AssetBalance = {
+        nativeToken: 50000n,
+        tokens: [{ id: 'token1', value: 100n }],
+      };
+
+      // Run test
+      const result = await chain.getCoveringBoxes(
+        '',
+        requiredAssets,
+        [],
+        trackMap
+      );
+
+      // Check returned value
+      expect(result.covered).toEqual(false);
+      expect(result.boxes).toEqual([]);
+    });
   });
 });
