@@ -591,7 +591,7 @@ describe('AbstractUtxoChain', () => {
      * @dependencies
      * @scenario
      * - mock a network object to return one box
-     * - mock a Map to track first box to a new box
+     * - mock a Map to track first box to no box
      * - mock chain 'getBoxInfo' function to return mocked boxes assets
      * - mock an AssetBalance object with assets less than box assets
      * - run test
@@ -606,7 +606,7 @@ describe('AbstractUtxoChain', () => {
         .mockResolvedValue([])
         .mockResolvedValueOnce(['serialized-box-1']);
 
-      // Mock a Map to track first box to a new box
+      // Mock a Map to track first box to no box
       const trackMap = new Map<string, string | undefined>();
       trackMap.set('box1', undefined);
 
