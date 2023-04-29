@@ -33,7 +33,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return first serialized box
      */
     it('should return enough boxes as covered when boxes cover required assets', async () => {
       // Mock a network object to return 2 boxes
@@ -94,7 +94,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return both serialized boxes
      */
     it('should return all boxes as NOT covered when boxes do NOT cover required assets', async () => {
       // Mock a network object to return 2 boxes
@@ -156,7 +156,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return first serialized box
      */
     it('should return all useful boxes as NOT covered when boxes do NOT cover required tokens', async () => {
       // Mock a network object to return 2 boxes
@@ -218,7 +218,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return all serialized boxes except the last one
      */
     it('should return enough boxes as covered when two pages boxes cover required assets', async () => {
       // Mock a network object to return 12 boxes
@@ -281,7 +281,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return all 12 serialized boxes
      */
     it('should return all boxes as NOT covered when two pages boxes do NOT cover required assets', async () => {
       // Mock a network object to return 12 boxes
@@ -340,7 +340,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return empty list
      */
     it('should return no boxes as NOT covered when address has no boxes', async () => {
       // Mock a network object to return NO boxes
@@ -379,7 +379,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return serialized tracked box
      */
     it('should return enough boxes as covered when tracked boxes cover required assets', async () => {
       // Mock a network object to return 2 boxes
@@ -454,7 +454,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return serialized tracked boxes
      */
     it('should return all boxes as NOT covered when tracked boxes do NOT cover required assets', async () => {
       // Mock a network object to return 2 boxes
@@ -532,7 +532,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return second serialized box
      */
     it('should return second box as covered when first box is not allowed', async () => {
       // Mock a network object to return 2 boxes
@@ -583,6 +583,63 @@ describe('AbstractUtxoChain', () => {
       // Check returned value
       expect(result.covered).toEqual(true);
       expect(result.boxes).toEqual(['serialized-box-2']);
+    });
+
+    /**
+     * @target AbstractUtxoChain.getCoveringBoxes should return no boxes as
+     * NOT covered when tracking ends to no box
+     * @dependencies
+     * @scenario
+     * - mock a network object to return one box
+     * - mock a Map to track first box to no box
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets
+     * - mock an AssetBalance object with assets less than box assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return empty list
+     */
+    it('should return no boxes as NOT covered when tracking ends to no box', async () => {
+      // Mock a network object to return one box
+      const network = new TestUtxoChainNetwork();
+      spyOn(network, 'getAddressBoxes')
+        .mockResolvedValue([])
+        .mockResolvedValueOnce(['serialized-box-1']);
+
+      // Mock a Map to track first box to no box
+      const trackMap = new Map<string, string | undefined>();
+      trackMap.set('box1', undefined);
+
+      // Mock chain 'getBoxInfo' function to return mocked boxes assets
+      const chain = generateChainObject(network);
+      const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
+      when(getBoxInfoSpy)
+        .calledWith('serialized-box-1')
+        .mockReturnValueOnce({
+          id: 'box1',
+          assets: {
+            nativeToken: 100000n,
+            tokens: [{ id: 'token1', value: 200n }],
+          },
+        });
+
+      // Mock an AssetBalance object with assets less than box assets
+      const requiredAssets: AssetBalance = {
+        nativeToken: 50000n,
+        tokens: [{ id: 'token1', value: 100n }],
+      };
+
+      // Run test
+      const result = await chain.getCoveringBoxes(
+        '',
+        requiredAssets,
+        [],
+        trackMap
+      );
+
+      // Check returned value
+      expect(result.covered).toEqual(false);
+      expect(result.boxes).toEqual([]);
     });
   });
 });

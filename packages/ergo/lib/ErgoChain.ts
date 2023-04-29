@@ -16,6 +16,8 @@ import {
   SinglePayment,
   ImpossibleBehavior,
   TransactionTypes,
+  NotEnoughValidBoxesError,
+  NotEnoughAssetsError,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import * as wasm from 'ergo-lib-wasm-nodejs';
@@ -47,6 +49,8 @@ class ErgoChain extends AbstractUtxoChain {
    * @param eventId the id of event
    * @param txType transaction type
    * @param order the payment order (list of single payments)
+   * @param unsignedTransactions ongoing unsigned PaymentTransactions (used for preventing double spend)
+   * @param serializedSignedTransactions the serialized string of ongoing signed transactions (used for chainning transaction)
    * @param inputs the inputs for transaction
    * @param dataInputs the data inputs for transaction
    * @returns the generated payment transaction
@@ -55,15 +59,75 @@ class ErgoChain extends AbstractUtxoChain {
     eventId: string,
     txType: string,
     order: PaymentOrder,
+    unsignedTransactions: PaymentTransaction[],
+    serializedSignedTransactions: string[],
     inputs: Array<string>,
     dataInputs: Array<string>
   ): Promise<PaymentTransaction> => {
+    // calculate required assets
+    const orderRequiredAssets = order
+      .map((order) => order.assets)
+      .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
+    const inputAssets = inputs
+      .map((serializedBox) => this.getBoxInfo(serializedBox).assets)
+      .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
+    const requiredAssets = ChainUtils.subtractAssetBalance(
+      orderRequiredAssets,
+      inputAssets
+    );
+
+    // check if there are enough assets in address
+    if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
+      const neededErgs = requiredAssets.nativeToken.toString();
+      const neededTokens = ErgoUtils.JsonBI.stringify(requiredAssets.tokens);
+      throw new NotEnoughAssetsError(
+        `Locked assets cannot cover required assets. Erg: ${neededErgs}, Tokens: ${neededTokens}`
+      );
+    }
+
+    // extract input boxIds from unsigned transactions to prevent double spend
+    const forbiddenBoxIds = unsignedTransactions.flatMap((paymentTx) => {
+      const tx = Serializer.deserialize(paymentTx.txBytes).unsigned_tx();
+      const ids: string[] = [];
+      for (let i = 0; i < tx.inputs().len(); i++)
+        ids.push(tx.inputs().get(i).box_id().to_str());
+      return ids;
+    });
+
+    // generate box tracking map from mempool and signed transactions
+    const trackMap = this.getTransactionsBoxMapping(
+      serializedSignedTransactions,
+      this.configs.lockAddress
+    );
+    (await this.getMempoolBoxMapping(this.configs.lockAddress)).forEach(
+      (value, key) => trackMap.set(key, value)
+    );
+
+    // call getCovering to get enough boxes
+    const coveredBoxes = await this.getCoveringBoxes(
+      this.configs.lockAddress,
+      requiredAssets,
+      forbiddenBoxIds,
+      trackMap
+    );
+
+    // check if boxes covered requirements
+    if (!coveredBoxes.covered) {
+      const neededErgs = requiredAssets.nativeToken.toString();
+      const neededTokens = ErgoUtils.JsonBI.stringify(requiredAssets.tokens);
+      throw new NotEnoughValidBoxesError(
+        `Available boxes didn't cover required assets. Erg: ${neededErgs}, Tokens: ${neededTokens}`
+      );
+    }
+
+    // add boxes to input list
+    inputs.push(...coveredBoxes.boxes);
+
+    // generate input boxes objects
     let remainingAssets: AssetBalance = {
       nativeToken: 0n,
       tokens: [],
     };
-
-    // generate input boxes objects
     const inBoxes = inputs.map((serializedBox) =>
       wasm.ErgoBox.sigma_parse_bytes(Buffer.from(serializedBox, 'hex'))
     );
@@ -120,7 +184,7 @@ class ErgoChain extends AbstractUtxoChain {
       outBoxCandidates.add(box);
 
       // reduce box assets from `remainingAssets`
-      remainingAssets = ChainUtils.reduceAssetBalance(
+      remainingAssets = ChainUtils.subtractAssetBalance(
         remainingAssets,
         ErgoUtils.getBoxAssets(box),
         this.configs.minBoxValue
@@ -313,20 +377,28 @@ class ErgoChain extends AbstractUtxoChain {
   /**
    * verifies an event data with its corresponding lock transaction
    * @param event the event trigger model
-   * @param RwtId the RWT token id in the event trigger box
+   * @param eventSerializedBox the serialized string of the event trigger box
    * @param feeConfig minimum fee and rsn ratio config for the event
    * @returns true if the event verified
    */
   verifyEvent = async (
     event: EventTrigger,
-    RwtId: string,
+    eventSerializedBox: string,
     feeConfig: Fee
   ): Promise<boolean> => {
     const eventId = Buffer.from(
       blake2b(event.sourceTxId, undefined, 32)
     ).toString('hex');
+
     // Verifying watcher RWTs
-    if (RwtId !== this.configs.rwtId) {
+    const rwtId = wasm.ErgoBox.sigma_parse_bytes(
+      Buffer.from(eventSerializedBox, 'hex')
+    )
+      .tokens()
+      .get(0)
+      .id()
+      .to_str();
+    if (rwtId !== this.configs.rwtId) {
       this.logger.info(
         `event [${eventId}] is not valid, event RWT is not compatible with the ergo RWT id`
       );
@@ -550,6 +622,14 @@ class ErgoChain extends AbstractUtxoChain {
   };
 
   /**
+   * gets the minimum amount of native token for assetTransfer
+   * @returns the minimum amount
+   */
+  getMinimumNativeToken = (): bigint => {
+    return this.configs.minBoxValue;
+  };
+
+  /**
    * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
    * @param address the address
    * @param tokenId the token id
@@ -559,6 +639,80 @@ class ErgoChain extends AbstractUtxoChain {
     address: string,
     tokenId?: string
   ): Promise<Map<string, string | undefined>> => {
+    // iterate over mempool transactions
+    const mempoolTxs = await this.network.getMempoolTransactions();
+    const trackMap = this.getTransactionsBoxMapping(
+      mempoolTxs,
+      address,
+      tokenId
+    );
+
+    return trackMap;
+  };
+
+  /**
+   * extracts box id and assets of a box
+   * @param serializedBox the serialized string of the box
+   * @returns an object containing the box id and assets
+   */
+  getBoxInfo = (serializedBox: string): BoxInfo => {
+    // deserialize box
+    const box = wasm.ErgoBox.sigma_parse_bytes(
+      Buffer.from(serializedBox, 'hex')
+    );
+
+    return {
+      id: box.box_id().to_str(),
+      assets: ErgoUtils.getBoxAssets(box),
+    };
+  };
+
+  /**
+   * extracts box height
+   * @param serializedBox the serialized string of the box
+   * @returns the box height
+   */
+  getBoxHeight = (serializedBox: string): number => {
+    // deserialize box
+    const box = wasm.ErgoBox.sigma_parse_bytes(
+      Buffer.from(serializedBox, 'hex')
+    );
+
+    return box.creation_height();
+  };
+
+  /**
+   * extracts watcher id from R4 of the box
+   * @param serializedBox the serialized string of the box
+   * @returns watcher id
+   */
+  getBoxWID = (serializedBox: string): string => {
+    // deserialize box
+    const box = wasm.ErgoBox.sigma_parse_bytes(
+      Buffer.from(serializedBox, 'hex')
+    );
+
+    // extract wid
+    const wid = box.register_value(4)?.to_coll_coll_byte()[0];
+    if (wid === undefined) {
+      const boxId = box.box_id().to_str();
+      throw new Error(`failed to read WID from register R4 of box [${boxId}]`);
+    }
+    return Buffer.from(wid).toString('hex');
+  };
+
+  /**
+   * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
+   * @param serializedTransactions list of serialized string of the transactions
+   * @param address the address
+   * @param tokenId the token id
+   * @returns a Map from input box id to serialized string of output box
+   */
+  protected getTransactionsBoxMapping = (
+    serializedTransactions: string[],
+    address: string,
+    tokenId?: string
+  ): Map<string, string | undefined> => {
     // initialize variables
     const ergoTree = wasm.Address.from_base58(address)
       .to_ergo_tree()
@@ -566,8 +720,7 @@ class ErgoChain extends AbstractUtxoChain {
     const trackMap = new Map<string, string | undefined>();
 
     // iterate over mempool transactions
-    const mempoolTxs = await this.network.getMempoolTransactions();
-    mempoolTxs.forEach((serializedTx) => {
+    serializedTransactions.forEach((serializedTx) => {
       // deserialize transaction
       const tx = wasm.Transaction.sigma_parse_bytes(
         Buffer.from(serializedTx, 'hex')
@@ -609,20 +762,19 @@ class ErgoChain extends AbstractUtxoChain {
   };
 
   /**
-   * extracts box id and assets of a box
-   * @param serializedBox the serialized string of the box
-   * @returns an object containing the box id and assets
+   * gets the guards config box which contains all guards public keys
+   * @param guardNFT the guard NFT tokenId
+   * @return the serialized string of guard box
    */
-  getBoxInfo = (serializedBox: string): BoxInfo => {
-    // deserialize box
-    const box = wasm.ErgoBox.sigma_parse_bytes(
-      Buffer.from(serializedBox, 'hex')
-    );
-
-    return {
-      id: box.box_id().to_str(),
-      assets: ErgoUtils.getBoxAssets(box),
-    };
+  getGuardsConfigBox = async (guardNFT: string): Promise<string> => {
+    const guardBox = await this.network.getBoxesByTokenId(guardNFT);
+    if (guardBox.length === 0)
+      throw new Error(`no guards config box found with NFT [${guardNFT}]`);
+    else if (guardBox.length > 1)
+      throw new Error(
+        `Found [${guardBox.length}] guards config box with NFT [${guardNFT}]`
+      );
+    else return guardBox[0];
   };
 }
 

@@ -4,7 +4,6 @@
     "outDir": "dist",
     "rootDir": "./"
   },
-  "exclude": ["tests"],
-  "include": ["lib/**/*"],
+  "include": ["tests", "lib/**/*"],
   "references": [{ "path": "../abstract-chain" }]
 }
