@@ -766,6 +766,22 @@ class ErgoChain extends AbstractUtxoChain {
 
     return trackMap;
   };
+
+  /**
+   * gets the guards config box which contains all guards public keys
+   * @param guardNFT the guard NFT tokenId
+   * @return the serialized string of guard box
+   */
+  getGuardsConfigBox = async (guardNFT: string): Promise<string> => {
+    const guardBox = await this.network.getBoxesByTokenId(guardNFT);
+    if (guardBox.length === 0)
+      throw new Error(`no guards config box found with NFT [${guardNFT}]`);
+    else if (guardBox.length > 1)
+      throw new Error(
+        `Found [${guardBox.length}] guards config box with NFT [${guardNFT}]`
+      );
+    else return guardBox[0];
+  };
 }
 
 export default ErgoChain;

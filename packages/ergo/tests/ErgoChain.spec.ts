@@ -1586,4 +1586,101 @@ describe('ErgoChain', () => {
       }).toThrow(Error);
     });
   });
+
+  describe('getGuardsConfigBox', () => {
+    /**
+     * @target ErgoChain.getGuardsConfigBox should get guard box successfully
+     * @dependencies
+     * @scenario
+     * - mock serialized box and guardNFT
+     * - mock a network object with mocked 'getBoxesByTokenId'
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return mocked serializedBox
+     */
+    it('should get guard box successfully', async () => {
+      // mock serialized box and guardNFT
+      const serializedBox = 'serialized-box';
+      const guardNFT = ergoTestUtils.generateRandomId();
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getBoxesByTokenId'
+      const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
+      when(getBoxesByTokenIdSpy)
+        .calledWith(guardNFT)
+        .mockResolvedValue([serializedBox]);
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.getGuardsConfigBox(guardNFT);
+
+      // check returned value
+      expect(result).toEqual(serializedBox);
+    });
+
+    /**
+     * @target ErgoChain.getGuardsConfigBox should throw error when
+     * no guard box found
+     * @dependencies
+     * @scenario
+     * - mock guardNFT
+     * - mock a network object with mocked 'getBoxesByTokenId'
+     * - run test and expect exception thrown
+     * @expected
+     * - it should return Error
+     */
+    it('should throw error when no guard box found', async () => {
+      // mock guardNFT
+      const guardNFT = ergoTestUtils.generateRandomId();
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getBoxesByTokenId'
+      const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
+      when(getBoxesByTokenIdSpy).calledWith(guardNFT).mockResolvedValue([]);
+
+      // run test and expect exception thrown
+      const ergoChain = generateChainObject(network);
+      await expect(async () => {
+        await ergoChain.getGuardsConfigBox(guardNFT);
+      }).rejects.toThrow(Error);
+    });
+
+    /**
+     * @target ErgoChain.getGuardsConfigBox should throw error when
+     * multiple guard box found
+     * @dependencies
+     * @scenario
+     * - mock guardNFT and multiple serializedBoxes
+     * - mock a network object with mocked 'getBoxesByTokenId'
+     * - run test and expect exception thrown
+     * @expected
+     * - it should return Error
+     */
+    it('should throw error when multiple guard box found', async () => {
+      // mock guardNFT and multiple serializedBoxes
+      const guardNFT = ergoTestUtils.generateRandomId();
+      const serializedBoxes = [
+        'serialized-box-1',
+        'serialized-box-2',
+        'serialized-box-3',
+      ];
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getBoxesByTokenId'
+      const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
+      when(getBoxesByTokenIdSpy)
+        .calledWith(guardNFT)
+        .mockResolvedValue(serializedBoxes);
+
+      // run test and expect exception thrown
+      const ergoChain = generateChainObject(network);
+      await expect(async () => {
+        await ergoChain.getGuardsConfigBox(guardNFT);
+      }).rejects.toThrow(Error);
+    });
+  });
 });
