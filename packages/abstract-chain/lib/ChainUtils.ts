@@ -54,13 +54,13 @@ class ChainUtils {
   };
 
   /**
-   * reduces two AssetBalance
+   * subtracts two AssetBalance
    * @param a first AssetBalance object
    * @param b second AssetBalance object
    * @param minimumNativeToken minimum allowed native token
    * @returns reduced AssetBalance
    */
-  static reduceAssetBalance = (
+  static subtractAssetBalance = (
     a: AssetBalance,
     b: AssetBalance,
     minimumNativeToken = 0n

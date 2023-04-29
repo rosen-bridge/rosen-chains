@@ -49,8 +49,8 @@ class ErgoChain extends AbstractUtxoChain {
    * @param eventId the id of event
    * @param txType transaction type
    * @param order the payment order (list of single payments)
-   * @param unsignedTransactions ongoing unsigned PaymentTransactions
-   * @param serializedSignedTransactions the serialized string of ongoing signed transactions
+   * @param unsignedTransactions ongoing unsigned PaymentTransactions (used for preventing double spend)
+   * @param serializedSignedTransactions the serialized string of ongoing signed transactions (used for chainning transaction)
    * @param inputs the inputs for transaction
    * @param dataInputs the data inputs for transaction
    * @returns the generated payment transaction
@@ -64,18 +64,14 @@ class ErgoChain extends AbstractUtxoChain {
     inputs: Array<string>,
     dataInputs: Array<string>
   ): Promise<PaymentTransaction> => {
-    // sum order assets
+    // calculate required assets
     const orderRequiredAssets = order
       .map((order) => order.assets)
       .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
-
-    // sum inputs assets
     const inputAssets = inputs
       .map((serializedBox) => this.getBoxInfo(serializedBox).assets)
       .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
-
-    // reduce inputs assets from order assets
-    const requiredAssets = ChainUtils.reduceAssetBalance(
+    const requiredAssets = ChainUtils.subtractAssetBalance(
       orderRequiredAssets,
       inputAssets
     );
@@ -89,7 +85,7 @@ class ErgoChain extends AbstractUtxoChain {
       );
     }
 
-    // extract input boxIds from unsignedTransactions
+    // extract input boxIds from unsigned transactions to prevent double spend
     const forbiddenBoxIds = unsignedTransactions.flatMap((paymentTx) => {
       const tx = Serializer.deserialize(paymentTx.txBytes).unsigned_tx();
       const ids: string[] = [];
@@ -98,13 +94,11 @@ class ErgoChain extends AbstractUtxoChain {
       return ids;
     });
 
-    // generate trackMap from serializedSignedTransactions
+    // generate box tracking map from mempool and signed transactions
     const trackMap = this.getTransactionsBoxMapping(
       serializedSignedTransactions,
       this.configs.lockAddress
     );
-
-    // add mapping of mempool transactions to trackMap
     (await this.getMempoolBoxMapping(this.configs.lockAddress)).forEach(
       (value, key) => trackMap.set(key, value)
     );
@@ -127,7 +121,7 @@ class ErgoChain extends AbstractUtxoChain {
     }
 
     // add boxes to input list
-    coveredBoxes.boxes.forEach((serializedBox) => inputs.push(serializedBox));
+    inputs.push(...coveredBoxes.boxes);
 
     // generate input boxes objects
     let remainingAssets: AssetBalance = {
@@ -190,7 +184,7 @@ class ErgoChain extends AbstractUtxoChain {
       outBoxCandidates.add(box);
 
       // reduce box assets from `remainingAssets`
-      remainingAssets = ChainUtils.reduceAssetBalance(
+      remainingAssets = ChainUtils.subtractAssetBalance(
         remainingAssets,
         ErgoUtils.getBoxAssets(box),
         this.configs.minBoxValue

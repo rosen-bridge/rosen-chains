@@ -50,12 +50,13 @@ describe('ErgoChain', () => {
      * - mock transaction order, input and data input boxes
      * - mock an AssetBalance as lock address assets with enough assets
      * - mock a network object
-     * --- mock 'getHeight'
-     * --- mock 'getStateContext'
-     * --- mock 'getAddressAssets' to return mocked assets
-     * --- mock 'getMempoolTransactions' to return empty list
+     *   - mock 'getHeight'
+     *   - mock 'getStateContext'
+     *   - mock 'getAddressAssets' to return mocked assets
+     *   - mock 'getMempoolTransactions' to return empty list
      * - mock chain config
      * - mock getCoveringBoxes
+     * - mock getMempoolBoxMapping
      * - run test
      * - check attributes of returned value
      * @expected
@@ -135,6 +136,12 @@ describe('ErgoChain', () => {
           .map((serializedBox) => Buffer.from(serializedBox).toString('hex')),
       });
 
+      // mock getMempoolBoxMapping
+      const mempoolTrackMap = new Map<string, string | undefined>();
+      mempoolTrackMap.set('boxId', 'serialized-box-1');
+      const getMempoolBoxMappingSpy = spyOn(ergoChain, 'getMempoolBoxMapping');
+      getMempoolBoxMappingSpy.mockResolvedValue(mempoolTrackMap);
+
       // run test
       const result = await ergoChain.generateTransaction(
         paymentTx.eventId,
@@ -183,9 +190,9 @@ describe('ErgoChain', () => {
      * - mock transaction order, input and data input boxes
      * - mock an AssetBalance as lock address assets lacking enough assets
      * - mock a network object
-     * --- mock 'getHeight'
-     * --- mock 'getStateContext'
-     * --- mock 'getAddressAssets' to return mocked assets
+     *   - mock 'getHeight'
+     *   - mock 'getStateContext'
+     *   - mock 'getAddressAssets' to return mocked assets
      * - mock chain config
      * - run test and expect exception thrown
      * @expected
@@ -260,10 +267,10 @@ describe('ErgoChain', () => {
      * - mock transaction order, input and data input boxes
      * - mock an AssetBalance as lock address assets with enough assets
      * - mock a network object
-     * --- mock 'getHeight'
-     * --- mock 'getStateContext'
-     * --- mock 'getAddressAssets' to return mocked assets
-     * --- mock 'getMempoolTransactions' to return empty list
+     *   - mock 'getHeight'
+     *   - mock 'getStateContext'
+     *   - mock 'getAddressAssets' to return mocked assets
+     *   - mock 'getMempoolTransactions' to return empty list
      * - mock chain config
      * - mock getCoveringBoxes to return NOT covered
      * - run test and expect exception thrown
@@ -363,15 +370,15 @@ describe('ErgoChain', () => {
      * - mock an unsigned transaction with it's input boxes
      * - mock an AssetBalance as lock address assets with enough assets
      * - mock a network object
-     * --- mock 'getHeight'
-     * --- mock 'getStateContext'
-     * --- mock 'getAddressAssets' to return mocked assets
-     * --- mock 'getMempoolTransactions' to return empty list
+     *   - mock 'getHeight'
+     *   - mock 'getStateContext'
+     *   - mock 'getAddressAssets' to return mocked assets
+     *   - mock 'getMempoolTransactions' to return empty list
      * - mock chain config
      * - mock getCoveringBoxes
-     * --- returns NOT covered when forbiddenBoxIds argument contains
+     *   - returns NOT covered when forbiddenBoxIds argument contains
      *     right ids
-     * --- otherwise returns covered
+     *   - otherwise returns covered
      * - run test and expect exception thrown
      * @expected
      * - it should thrown NotEnoughValidBoxesError

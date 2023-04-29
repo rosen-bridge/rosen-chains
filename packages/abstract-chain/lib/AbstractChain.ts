@@ -33,8 +33,8 @@ abstract class AbstractChain {
    * @param eventId the id of event
    * @param txType transaction type
    * @param order the payment order (list of single payments)
-   * @param unsignedTransactions ongoing unsigned PaymentTransactions
-   * @param serializedSignedTransactions the serialized string of ongoing signed transactions
+   * @param unsignedTransactions ongoing unsigned PaymentTransactions (used for preventing double spend)
+   * @param serializedSignedTransactions the serialized string of ongoing signed transactions (used for chainning transaction)
    * @returns the generated PaymentTransaction
    */
   abstract generateTransaction: (
@@ -176,7 +176,7 @@ abstract class AbstractChain {
   ): Promise<boolean> => {
     const lockAssets = await this.getLockAddressAssets();
     try {
-      ChainUtils.reduceAssetBalance(lockAssets, required);
+      ChainUtils.subtractAssetBalance(lockAssets, required);
     } catch (e) {
       if (e instanceof ValueError) {
         this.logger.warn(e.message);
@@ -187,7 +187,7 @@ abstract class AbstractChain {
   };
 
   /**
-   * gets the minimum amount of native token for assetTransfer
+   * gets the minimum amount of native token for transferring asset
    * @returns the minimum amount
    */
   abstract getMinimumNativeToken: () => bigint;
