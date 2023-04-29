@@ -33,7 +33,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return first serialized box
      */
     it('should return enough boxes as covered when boxes cover required assets', async () => {
       // Mock a network object to return 2 boxes
@@ -94,7 +94,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return both serialized boxes
      */
     it('should return all boxes as NOT covered when boxes do NOT cover required assets', async () => {
       // Mock a network object to return 2 boxes
@@ -156,7 +156,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return first serialized box
      */
     it('should return all useful boxes as NOT covered when boxes do NOT cover required tokens', async () => {
       // Mock a network object to return 2 boxes
@@ -218,7 +218,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return all serialized boxes except the last one
      */
     it('should return enough boxes as covered when two pages boxes cover required assets', async () => {
       // Mock a network object to return 12 boxes
@@ -281,7 +281,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return all 12 serialized boxes
      */
     it('should return all boxes as NOT covered when two pages boxes do NOT cover required assets', async () => {
       // Mock a network object to return 12 boxes
@@ -340,7 +340,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return empty list
      */
     it('should return no boxes as NOT covered when address has no boxes', async () => {
       // Mock a network object to return NO boxes
@@ -379,7 +379,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return serialized tracked box
      */
     it('should return enough boxes as covered when tracked boxes cover required assets', async () => {
       // Mock a network object to return 2 boxes
@@ -454,7 +454,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return serialized tracked boxes
      */
     it('should return all boxes as NOT covered when tracked boxes do NOT cover required assets', async () => {
       // Mock a network object to return 2 boxes
@@ -532,7 +532,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return second serialized box
      */
     it('should return second box as covered when first box is not allowed', async () => {
       // Mock a network object to return 2 boxes
@@ -597,7 +597,7 @@ describe('AbstractUtxoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the correct value
+     * - it should return empty list
      */
     it('should return no boxes as NOT covered when tracking ends to no box', async () => {
       // Mock a network object to return one box
