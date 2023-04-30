@@ -354,7 +354,7 @@ describe('ChainUtils', () => {
       };
 
       // run test
-      const result = ChainUtils.reduceAssetBalance(a, b);
+      const result = ChainUtils.subtractAssetBalance(a, b);
 
       // check returned value
       expect(result).toEqual({
@@ -395,7 +395,7 @@ describe('ChainUtils', () => {
 
       // run test & check thrown exception
       expect(() => {
-        ChainUtils.reduceAssetBalance(a, b);
+        ChainUtils.subtractAssetBalance(a, b);
       }).toThrow(ValueError);
     });
 
@@ -432,7 +432,7 @@ describe('ChainUtils', () => {
 
       // run test & check thrown exception
       expect(() => {
-        ChainUtils.reduceAssetBalance(a, b);
+        ChainUtils.subtractAssetBalance(a, b);
       }).toThrow(ValueError);
     });
 
@@ -473,7 +473,7 @@ describe('ChainUtils', () => {
 
       // run test & check thrown exception
       expect(() => {
-        ChainUtils.reduceAssetBalance(a, b);
+        ChainUtils.subtractAssetBalance(a, b);
       }).toThrow(ValueError);
     });
 
@@ -509,7 +509,7 @@ describe('ChainUtils', () => {
       };
 
       // run test
-      ChainUtils.reduceAssetBalance(a, b);
+      ChainUtils.subtractAssetBalance(a, b);
 
       // check passed objects
       expect(a).toEqual({

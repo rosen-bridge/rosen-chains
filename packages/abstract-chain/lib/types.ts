@@ -42,6 +42,7 @@ interface SinglePayment {
 type PaymentOrder = Array<SinglePayment>;
 
 interface EventTrigger {
+  height: number;
   fromChain: string;
   toChain: string;
   fromAddress: string;
@@ -52,6 +53,7 @@ interface EventTrigger {
   sourceChainTokenId: string;
   targetChainTokenId: string;
   sourceTxId: string;
+  sourceChainHeight: number;
   sourceBlockId: string;
   WIDs: Array<string>;
 }

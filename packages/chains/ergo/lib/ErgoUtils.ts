@@ -1,7 +1,13 @@
 import { ErgoBox, ErgoBoxCandidate } from 'ergo-lib-wasm-nodejs';
 import { AssetBalance, TokenInfo } from '@rosen-chains/abstract-chain';
+import JSONBigInt from 'json-bigint';
 
 class ErgoUtils {
+  static JsonBI = JSONBigInt({
+    useNativeBigInt: true,
+    alwaysParseAsBig: true,
+  });
+
   /**
    * gets Ergo box assets
    * @param box the Ergo box

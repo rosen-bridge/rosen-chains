@@ -3,8 +3,11 @@ import * as transactionTestData from './transactionTestData';
 import * as ergoTestUtils from './ergoTestUtils';
 import { ErgoChain } from '../lib';
 import {
+  AssetBalance,
   BoxInfo,
   ConfirmationStatus,
+  NotEnoughAssetsError,
+  NotEnoughValidBoxesError,
   TransactionTypes,
 } from '@rosen-chains/abstract-chain';
 import TestErgoNetwork from './network/TestErgoNetwork';
@@ -21,8 +24,9 @@ describe('ErgoChain', () => {
   const observationTxConfirmation = 5;
   const paymentTxConfirmation = 9;
   const coldTxConfirmation = 10;
-  const rwtId = 'rwt';
-  const generateChainObject = (network: TestErgoNetwork) => {
+  const rwtId =
+    '9410db5b39388c6b515160e7248346d7ec63d5457292326da12a26cc02efb526';
+  const generateChainObject = (network: TestErgoNetwork, rwt = rwtId) => {
     const config: ErgoConfigs = {
       fee: 100n,
       observationTxConfirmation: observationTxConfirmation,
@@ -30,7 +34,7 @@ describe('ErgoChain', () => {
       coldTxConfirmation: coldTxConfirmation,
       lockAddress: 'lock_addr',
       coldStorageAddress: 'cold_addr',
-      rwtId: rwtId,
+      rwtId: rwt,
       minBoxValue: 1000000n,
       eventTxConfirmation: 18,
     };
@@ -44,9 +48,15 @@ describe('ErgoChain', () => {
      * @dependencies
      * @scenario
      * - mock transaction order, input and data input boxes
-     * - mock a network object with mocked 'getHeight' and 'getStateContext'
-     *   functions
+     * - mock an AssetBalance as lock address assets with enough assets
+     * - mock a network object
+     *   - mock 'getHeight'
+     *   - mock 'getStateContext'
+     *   - mock 'getAddressAssets' to return mocked assets
+     *   - mock 'getMempoolTransactions' to return empty list
      * - mock chain config
+     * - mock getCoveringBoxes
+     * - mock getMempoolBoxMapping
      * - run test
      * - check attributes of returned value
      * @expected
@@ -62,12 +72,25 @@ describe('ErgoChain', () => {
         transactionTestData.transaction3PaymentTransaction
       );
       const order = transactionTestData.transaction3Order;
-      const inputs = paymentTx.inputBoxes.map((serializedBox) =>
-        Buffer.from(serializedBox).toString('hex')
-      );
+      const inputs = [Buffer.from(paymentTx.inputBoxes[0]).toString('hex')];
       const dataInputs = paymentTx.dataInputs.map((serializedBox) =>
         Buffer.from(serializedBox).toString('hex')
       );
+
+      // mock an AssetBalance as lock address assets with enough assets
+      const mockedLockAssets = {
+        nativeToken: 50000000n,
+        tokens: [
+          {
+            id: '10278c102bf890fdab8ef5111e94053c90b3541bc25b0de2ee8aa6305ccec3de',
+            value: 5000n,
+          },
+          {
+            id: ergoTestUtils.generateRandomId(),
+            value: 100000n,
+          },
+        ],
+      };
 
       // mock a network object
       const network = new TestErgoNetwork();
@@ -79,6 +102,15 @@ describe('ErgoChain', () => {
       getStateContextSpy.mockResolvedValue(
         transactionTestData.mockedStateContext
       );
+      // mock 'getAddressAssets' to return mocked assets
+      const getAddressAssetsSpy = spyOn(network, 'getAddressAssets');
+      getAddressAssetsSpy.mockResolvedValue(mockedLockAssets);
+      // mock 'getMempoolTransactions'
+      const getMempoolTransactionsSpy = spyOn(
+        network,
+        'getMempoolTransactions'
+      );
+      getMempoolTransactionsSpy.mockResolvedValue([]);
 
       // mock chain config
       const config: ErgoConfigs = {
@@ -94,12 +126,29 @@ describe('ErgoChain', () => {
         eventTxConfirmation: 18,
       };
 
-      // run test
+      // mock getCoveringBoxes
       const ergoChain = new ErgoChain(network, config);
+      const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
+      getCoveringBoxesSpy.mockResolvedValue({
+        covered: true,
+        boxes: paymentTx.inputBoxes
+          .slice(1)
+          .map((serializedBox) => Buffer.from(serializedBox).toString('hex')),
+      });
+
+      // mock getMempoolBoxMapping
+      const mempoolTrackMap = new Map<string, string | undefined>();
+      mempoolTrackMap.set('boxId', 'serialized-box-1');
+      const getMempoolBoxMappingSpy = spyOn(ergoChain, 'getMempoolBoxMapping');
+      getMempoolBoxMappingSpy.mockResolvedValue(mempoolTrackMap);
+
+      // run test
       const result = await ergoChain.generateTransaction(
         paymentTx.eventId,
         paymentTx.txType,
         order,
+        [],
+        [],
         inputs,
         dataInputs
       );
@@ -131,6 +180,319 @@ describe('ErgoChain', () => {
         }
       }
       expect(boxChecked).toEqual(true);
+    });
+
+    /**
+     * @target ErgoChain.getTransactionAssets should throw appropriate
+     * error when locked assets are not enough to generate transaction
+     * @dependencies
+     * @scenario
+     * - mock transaction order, input and data input boxes
+     * - mock an AssetBalance as lock address assets lacking enough assets
+     * - mock a network object
+     *   - mock 'getHeight'
+     *   - mock 'getStateContext'
+     *   - mock 'getAddressAssets' to return mocked assets
+     * - mock chain config
+     * - run test and expect exception thrown
+     * @expected
+     * - it should thrown NotEnoughAssetsError
+     */
+    it('should throw appropriate error when locked assets are not enough to generate transaction', async () => {
+      // mock transaction order, input and data input boxes
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction3PaymentTransaction
+      );
+      const order = transactionTestData.transaction3Order;
+      const inputs = [Buffer.from(paymentTx.inputBoxes[0]).toString('hex')];
+      const dataInputs = paymentTx.dataInputs.map((serializedBox) =>
+        Buffer.from(serializedBox).toString('hex')
+      );
+
+      // mock an AssetBalance as lock address assets lacking enough assets
+      const mockedLockAssets = {
+        nativeToken: 1000000n,
+        tokens: [],
+      };
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getHeight'
+      const getHeightSpy = spyOn(network, 'getHeight');
+      getHeightSpy.mockResolvedValue(966000);
+      // mock 'getStateContext'
+      const getStateContextSpy = spyOn(network, 'getStateContext');
+      getStateContextSpy.mockResolvedValue(
+        transactionTestData.mockedStateContext
+      );
+      // mock 'getAddressAssets' to return mocked assets
+      const getAddressAssetsSpy = spyOn(network, 'getAddressAssets');
+      getAddressAssetsSpy.mockResolvedValue(mockedLockAssets);
+
+      // mock chain config
+      const config: ErgoConfigs = {
+        fee: 1100000n,
+        observationTxConfirmation: observationTxConfirmation,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress:
+          'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 300000n,
+        eventTxConfirmation: 18,
+      };
+
+      // run test and expect exception thrown
+      const ergoChain = new ErgoChain(network, config);
+      await expect(async () => {
+        await ergoChain.generateTransaction(
+          paymentTx.eventId,
+          paymentTx.txType,
+          order,
+          [],
+          [],
+          inputs,
+          dataInputs
+        );
+      }).rejects.toThrow(NotEnoughAssetsError);
+    });
+
+    /**
+     * @target ErgoChain.getTransactionAssets should throw appropriate
+     * error when available boxes cannot cover required assets to generate
+     * transaction
+     * @dependencies
+     * @scenario
+     * - mock transaction order, input and data input boxes
+     * - mock an AssetBalance as lock address assets with enough assets
+     * - mock a network object
+     *   - mock 'getHeight'
+     *   - mock 'getStateContext'
+     *   - mock 'getAddressAssets' to return mocked assets
+     *   - mock 'getMempoolTransactions' to return empty list
+     * - mock chain config
+     * - mock getCoveringBoxes to return NOT covered
+     * - run test and expect exception thrown
+     * @expected
+     * - it should thrown NotEnoughValidBoxesError
+     */
+    it('should throw appropriate error when available boxes cannot cover required assets to generate transaction', async () => {
+      // mock transaction order, input and data input boxes
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction3PaymentTransaction
+      );
+      const order = transactionTestData.transaction3Order;
+      const inputs = [Buffer.from(paymentTx.inputBoxes[0]).toString('hex')];
+      const dataInputs = paymentTx.dataInputs.map((serializedBox) =>
+        Buffer.from(serializedBox).toString('hex')
+      );
+
+      // mock an AssetBalance as lock address assets with enough assets
+      const mockedLockAssets = {
+        nativeToken: 50000000n,
+        tokens: [
+          {
+            id: '10278c102bf890fdab8ef5111e94053c90b3541bc25b0de2ee8aa6305ccec3de',
+            value: 5000n,
+          },
+          {
+            id: ergoTestUtils.generateRandomId(),
+            value: 100000n,
+          },
+        ],
+      };
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getHeight'
+      const getHeightSpy = spyOn(network, 'getHeight');
+      getHeightSpy.mockResolvedValue(966000);
+      // mock 'getStateContext'
+      const getStateContextSpy = spyOn(network, 'getStateContext');
+      getStateContextSpy.mockResolvedValue(
+        transactionTestData.mockedStateContext
+      );
+      // mock 'getAddressAssets' to return mocked assets
+      const getAddressAssetsSpy = spyOn(network, 'getAddressAssets');
+      getAddressAssetsSpy.mockResolvedValue(mockedLockAssets);
+      // mock 'getMempoolTransactions'
+      const getMempoolTransactionsSpy = spyOn(
+        network,
+        'getMempoolTransactions'
+      );
+      getMempoolTransactionsSpy.mockResolvedValue([]);
+
+      // mock chain config
+      const config: ErgoConfigs = {
+        fee: 1100000n,
+        observationTxConfirmation: observationTxConfirmation,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress:
+          'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 300000n,
+        eventTxConfirmation: 18,
+      };
+
+      // mock getCoveringBoxes
+      const ergoChain = new ErgoChain(network, config);
+      const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
+      getCoveringBoxesSpy.mockResolvedValue({
+        covered: false,
+        boxes: paymentTx.inputBoxes
+          .slice(1, 2)
+          .map((serializedBox) => Buffer.from(serializedBox).toString('hex')),
+      });
+
+      // run test and expect exception thrown
+      await expect(async () => {
+        await ergoChain.generateTransaction(
+          paymentTx.eventId,
+          paymentTx.txType,
+          order,
+          [],
+          [],
+          inputs,
+          dataInputs
+        );
+      }).rejects.toThrow(NotEnoughValidBoxesError);
+    });
+
+    /**
+     * @target ErgoChain.getTransactionAssets should filter boxes that
+     * are used in unsigned transactions successfully
+     * @dependencies
+     * @scenario
+     * - mock transaction order, input and data input boxes
+     * - mock an unsigned transaction with it's input boxes
+     * - mock an AssetBalance as lock address assets with enough assets
+     * - mock a network object
+     *   - mock 'getHeight'
+     *   - mock 'getStateContext'
+     *   - mock 'getAddressAssets' to return mocked assets
+     *   - mock 'getMempoolTransactions' to return empty list
+     * - mock chain config
+     * - mock getCoveringBoxes
+     *   - returns NOT covered when forbiddenBoxIds argument contains
+     *     right ids
+     *   - otherwise returns covered
+     * - run test and expect exception thrown
+     * @expected
+     * - it should thrown NotEnoughValidBoxesError
+     */
+    it('should throw appropriate error when available boxes cannot cover required assets to generate transaction', async () => {
+      // mock transaction order, input and data input boxes
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction3PaymentTransaction
+      );
+      const order = transactionTestData.transaction3Order;
+      const inputs = [Buffer.from(paymentTx.inputBoxes[0]).toString('hex')];
+      const dataInputs = paymentTx.dataInputs.map((serializedBox) =>
+        Buffer.from(serializedBox).toString('hex')
+      );
+
+      // mock an unsigned transaction with it's input boxess
+      const unsignedTransaction = ErgoTransaction.fromJson(
+        transactionTestData.transaction2PartialUnsignedPaymentTransaction
+      );
+      const unsignedTxInputBoxIds = transactionTestData.transaction2InputBoxIds;
+
+      // mock an AssetBalance as lock address assets with enough assets
+      const mockedLockAssets = {
+        nativeToken: 50000000n,
+        tokens: [
+          {
+            id: '10278c102bf890fdab8ef5111e94053c90b3541bc25b0de2ee8aa6305ccec3de',
+            value: 5000n,
+          },
+          {
+            id: ergoTestUtils.generateRandomId(),
+            value: 100000n,
+          },
+        ],
+      };
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getHeight'
+      const getHeightSpy = spyOn(network, 'getHeight');
+      getHeightSpy.mockResolvedValue(966000);
+      // mock 'getStateContext'
+      const getStateContextSpy = spyOn(network, 'getStateContext');
+      getStateContextSpy.mockResolvedValue(
+        transactionTestData.mockedStateContext
+      );
+      // mock 'getAddressAssets' to return mocked assets
+      const getAddressAssetsSpy = spyOn(network, 'getAddressAssets');
+      getAddressAssetsSpy.mockResolvedValue(mockedLockAssets);
+      // mock 'getMempoolTransactions'
+      const getMempoolTransactionsSpy = spyOn(
+        network,
+        'getMempoolTransactions'
+      );
+      getMempoolTransactionsSpy.mockResolvedValue([]);
+
+      // mock chain config
+      const config: ErgoConfigs = {
+        fee: 1100000n,
+        observationTxConfirmation: observationTxConfirmation,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress:
+          'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 300000n,
+        eventTxConfirmation: 18,
+      };
+
+      // mock getCoveringBoxes
+      const ergoChain = new ErgoChain(network, config);
+      const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
+      getCoveringBoxesSpy.mockImplementation(
+        async (
+          address: string,
+          requiredAssets: AssetBalance,
+          forbiddenBoxIds: Array<string>,
+          trackMap: Map<string, string | undefined>
+        ) => {
+          // returns NOT covered when forbiddenBoxIds argument equals to expected value
+          if (
+            forbiddenBoxIds.length === 1 &&
+            forbiddenBoxIds[0] === unsignedTxInputBoxIds[0]
+          )
+            return {
+              covered: false,
+              boxes: [],
+            };
+          // otherwise returns covered
+          else
+            return {
+              covered: true,
+              boxes: paymentTx.inputBoxes
+                .slice(1)
+                .map((serializedBox) =>
+                  Buffer.from(serializedBox).toString('hex')
+                ),
+            };
+        }
+      );
+
+      // run test and expect exception thrown
+      await expect(async () => {
+        await ergoChain.generateTransaction(
+          paymentTx.eventId,
+          paymentTx.txType,
+          order,
+          [unsignedTransaction],
+          [],
+          inputs,
+          dataInputs
+        );
+      }).rejects.toThrow(NotEnoughValidBoxesError);
     });
   });
 
@@ -303,6 +665,9 @@ describe('ErgoChain', () => {
   });
 
   describe('verifyEvent', () => {
+    const serializedEventBox = Buffer.from(
+      ergoTestUtils.toErgoBox(boxTestData.eventBox1).sigma_serialize_bytes()
+    ).toString('hex');
     const feeConfig: Fee = {
       bridgeFee: 0n,
       networkFee: 0n,
@@ -355,7 +720,11 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, rwtId, feeConfig);
+      const result = await ergoChain.verifyEvent(
+        event,
+        serializedEventBox,
+        feeConfig
+      );
 
       // check returned value
       expect(result).toEqual(true);
@@ -381,10 +750,10 @@ describe('ErgoChain', () => {
       const network = new TestErgoNetwork();
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = generateChainObject(network, 'fake_rwt_id');
       const result = await ergoChain.verifyEvent(
         event,
-        'fake_rwt_id',
+        serializedEventBox,
         feeConfig
       );
 
@@ -424,7 +793,11 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, rwtId, feeConfig);
+      const result = await ergoChain.verifyEvent(
+        event,
+        serializedEventBox,
+        feeConfig
+      );
 
       // check returned value
       expect(result).toEqual(false);
@@ -489,7 +862,11 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, rwtId, feeConfig);
+      const result = await ergoChain.verifyEvent(
+        event,
+        serializedEventBox,
+        feeConfig
+      );
 
       // check returned value
       expect(result).toEqual(false);
@@ -542,7 +919,11 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, rwtId, feeConfig);
+      const result = await ergoChain.verifyEvent(
+        event,
+        serializedEventBox,
+        feeConfig
+      );
 
       // check returned value
       expect(result).toEqual(false);
@@ -1127,6 +1508,186 @@ describe('ErgoChain', () => {
 
       // check returned value
       expect(result).toEqual(boxInfo);
+    });
+  });
+
+  describe('getBoxHeight', () => {
+    const network = new TestErgoNetwork();
+
+    /**
+     * @target ErgoChain.getBoxHeight should get box height successfully
+     * @dependencies
+     * @scenario
+     * - mock an ErgoBox and construct serialized box
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return constructed BoxInfo
+     */
+    it('should get box height successfully', () => {
+      // mock an ErgoBox and construct serialized box
+      const box = ergoTestUtils.toErgoBox(boxTestData.ergoBox1);
+      const serializedBox = Buffer.from(box.sigma_serialize_bytes()).toString(
+        'hex'
+      );
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = ergoChain.getBoxHeight(serializedBox);
+
+      // check returned value
+      expect(result).toEqual(box.creation_height());
+    });
+  });
+
+  describe('getBoxWID', () => {
+    const network = new TestErgoNetwork();
+
+    /**
+     * @target ErgoChain.getBoxWID should get box WID successfully
+     * @dependencies
+     * @scenario
+     * - mock an ErgoBox with WID and construct serialized box
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return constructed BoxInfo
+     */
+    it('should get box WID successfully', () => {
+      // mock an ErgoBox with WID and construct serialized box
+      const box = ergoTestUtils.toErgoBox(boxTestData.ergoBox2);
+      const serializedBox = Buffer.from(box.sigma_serialize_bytes()).toString(
+        'hex'
+      );
+      const wid =
+        '97a2dabcd974d69a07c3a03e20d05a36d13b986ffca5670302997484dd87e247';
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = ergoChain.getBoxWID(serializedBox);
+
+      // check returned value
+      expect(result).toEqual(wid);
+    });
+
+    /**
+     * @target ErgoChain.getBoxWID should throw Error when box has no WID
+     * @dependencies
+     * @scenario
+     * - mock an ErgoBox without WID and construct serialized box
+     * - run test and expect exception thrown
+     * @expected
+     * - it should throw Error
+     */
+    it('should throw Error when box has no WID', () => {
+      // mock an ErgoBox without WID and construct serialized box
+      const box = ergoTestUtils.toErgoBox(boxTestData.ergoBox1);
+      const serializedBox = Buffer.from(box.sigma_serialize_bytes()).toString(
+        'hex'
+      );
+
+      // run test and expect exception thrown
+      const ergoChain = generateChainObject(network);
+      expect(() => {
+        ergoChain.getBoxWID(serializedBox);
+      }).toThrow(Error);
+    });
+  });
+
+  describe('getGuardsConfigBox', () => {
+    /**
+     * @target ErgoChain.getGuardsConfigBox should get guard box successfully
+     * @dependencies
+     * @scenario
+     * - mock serialized box and guardNFT
+     * - mock a network object with mocked 'getBoxesByTokenId'
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return mocked serializedBox
+     */
+    it('should get guard box successfully', async () => {
+      // mock serialized box and guardNFT
+      const serializedBox = 'serialized-box';
+      const guardNFT = ergoTestUtils.generateRandomId();
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getBoxesByTokenId'
+      const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
+      when(getBoxesByTokenIdSpy)
+        .calledWith(guardNFT)
+        .mockResolvedValue([serializedBox]);
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.getGuardsConfigBox(guardNFT);
+
+      // check returned value
+      expect(result).toEqual(serializedBox);
+    });
+
+    /**
+     * @target ErgoChain.getGuardsConfigBox should throw error when
+     * no guard box found
+     * @dependencies
+     * @scenario
+     * - mock guardNFT
+     * - mock a network object with mocked 'getBoxesByTokenId'
+     * - run test and expect exception thrown
+     * @expected
+     * - it should return Error
+     */
+    it('should throw error when no guard box found', async () => {
+      // mock guardNFT
+      const guardNFT = ergoTestUtils.generateRandomId();
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getBoxesByTokenId'
+      const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
+      when(getBoxesByTokenIdSpy).calledWith(guardNFT).mockResolvedValue([]);
+
+      // run test and expect exception thrown
+      const ergoChain = generateChainObject(network);
+      await expect(async () => {
+        await ergoChain.getGuardsConfigBox(guardNFT);
+      }).rejects.toThrow(Error);
+    });
+
+    /**
+     * @target ErgoChain.getGuardsConfigBox should throw error when
+     * multiple guard box found
+     * @dependencies
+     * @scenario
+     * - mock guardNFT and multiple serializedBoxes
+     * - mock a network object with mocked 'getBoxesByTokenId'
+     * - run test and expect exception thrown
+     * @expected
+     * - it should return Error
+     */
+    it('should throw error when multiple guard box found', async () => {
+      // mock guardNFT and multiple serializedBoxes
+      const guardNFT = ergoTestUtils.generateRandomId();
+      const serializedBoxes = [
+        'serialized-box-1',
+        'serialized-box-2',
+        'serialized-box-3',
+      ];
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getBoxesByTokenId'
+      const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
+      when(getBoxesByTokenIdSpy)
+        .calledWith(guardNFT)
+        .mockResolvedValue(serializedBoxes);
+
+      // run test and expect exception thrown
+      const ergoChain = generateChainObject(network);
+      await expect(async () => {
+        await ergoChain.getGuardsConfigBox(guardNFT);
+      }).rejects.toThrow(Error);
     });
   });
 });
