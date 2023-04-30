@@ -1,14 +1,14 @@
 import { randomBytes } from 'crypto';
-import { AddressUtxo } from '../lib/types';
+import { CardanoUtxo } from '../lib/types';
 import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 
 class TestUtils {
-  static mockBankBoxes = (): AddressUtxo[] => {
-    const box1: AddressUtxo = {
-      tx_hash: this.generateRandomId(),
-      tx_index: 0,
+  static mockBankBoxes = (): CardanoUtxo[] => {
+    const box1: CardanoUtxo = {
+      txId: this.generateRandomId(),
+      index: 0,
       value: this.adaToLovelaceString(30),
-      asset_list: [
+      assets: [
         {
           policy_id: 'cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be',
           asset_name: '43617264616e6f546f6b656e7654657374',
@@ -23,11 +23,11 @@ class TestUtils {
         },
       ],
     };
-    const box2: AddressUtxo = {
-      tx_hash: this.generateRandomId(),
-      tx_index: 0,
+    const box2: CardanoUtxo = {
+      txId: this.generateRandomId(),
+      index: 0,
       value: this.adaToLovelaceString(100),
-      asset_list: [
+      assets: [
         {
           policy_id: 'cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be',
           asset_name: '43617264616e6f546f6b656e7654657374',
@@ -36,18 +36,18 @@ class TestUtils {
         },
       ],
     };
-    const box3: AddressUtxo = {
-      tx_hash: this.generateRandomId(),
-      tx_index: 2,
+    const box3: CardanoUtxo = {
+      txId: this.generateRandomId(),
+      index: 2,
       value: this.adaToLovelaceString(10),
-      asset_list: [],
+      assets: [],
     };
 
-    const box4: AddressUtxo = {
-      tx_hash: this.generateRandomId(),
-      tx_index: 0,
+    const box4: CardanoUtxo = {
+      txId: this.generateRandomId(),
+      index: 0,
       value: '10000',
-      asset_list: [
+      assets: [
         {
           policy_id: 'ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286',
           asset_name: '5273744552477654657374',
@@ -61,12 +61,12 @@ class TestUtils {
   };
 
   static AddressUtxoToTransactionOutput = (
-    box: AddressUtxo,
+    box: CardanoUtxo,
     address: string
   ): CardanoWasm.TransactionOutput => {
     const value = CardanoWasm.Value.new(CardanoWasm.BigNum.from_str(box.value));
     const multiAsset = CardanoWasm.MultiAsset.new();
-    box.asset_list.forEach((asset) => {
+    box.assets.forEach((asset) => {
       const assets = CardanoWasm.Assets.new();
       assets.insert(
         CardanoWasm.AssetName.new(Buffer.from(asset.asset_name, 'hex')),
@@ -87,11 +87,11 @@ class TestUtils {
   };
 
   static AddressUtxoToTransactionInput = (
-    box: AddressUtxo
+    box: CardanoUtxo
   ): CardanoWasm.TransactionInput => {
     const input = CardanoWasm.TransactionInput.new(
-      CardanoWasm.TransactionHash.from_bytes(Buffer.from(box.tx_hash, 'hex')),
-      box.tx_index
+      CardanoWasm.TransactionHash.from_bytes(Buffer.from(box.txId, 'hex')),
+      box.index
     );
     return input;
   };

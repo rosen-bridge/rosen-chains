@@ -14,7 +14,14 @@ import {
 import { Fee } from '@rosen-bridge/minimum-fee';
 import AbstractCardanoNetwork from './network/AbstractCardanoNetwork';
 import { AbstractLogger } from '@rosen-bridge/logger-interface';
-import { AddressUtxo, Asset, CardanoConfigs } from './types';
+import {
+  CardanoUtxo,
+  CardanoAsset,
+  CardanoConfigs,
+  CardanoTx,
+  SignedCardanoTx,
+  CardanoBoxCandidate,
+} from './types';
 import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import { TokenMap } from '@rosen-bridge/tokens';
 import { txBuilderConfig } from './constants';
@@ -48,14 +55,14 @@ class CardanoChain extends AbstractUtxoChain {
     const tx = Serializer.deserialize(transaction.txBytes);
 
     const order: PaymentOrder = [];
-    for (let i = 0; i < tx.body().outputs().len(); i++) {
-      const output = tx.body().outputs().get(i);
+    for (let i = 0; i < tx.outputs.length; i++) {
+      const output = tx.outputs[i];
 
       // skip change box
-      if (output.address().to_bech32() === this.configs.lockAddress) continue;
+      if (output.address === this.configs.lockAddress) continue;
 
       const payment: SinglePayment = {
-        address: output.address().to_bech32(),
+        address: output.address,
         assets: CardanoUtils.getBoxAssets(output),
       };
       order.push(payment);
@@ -198,16 +205,14 @@ class CardanoChain extends AbstractUtxoChain {
    * @returns an object containing the box id and assets
    */
   getBoxInfo = (serializedBox: string): BoxInfo => {
-    const box = CardanoWasm.TransactionInput.from_bytes(
-      Buffer.from(serializedBox, 'hex')
-    );
+    // const box = CardanoWasm.TransactionInput.from_bytes(
+    //   Buffer.from(serializedBox, 'hex')
+    // );
+    const box: CardanoUtxo = JSON.parse(serializedBox);
 
     return {
       id: CardanoUtils.getBoxId(box),
-      assets: {
-        nativeToken: 0n,
-        tokens: [],
-      }, //TODO: How to get?
+      assets: CardanoUtils.getBoxAssets(box),
     };
   };
 
@@ -231,7 +236,7 @@ class CardanoChain extends AbstractUtxoChain {
 
     // send transaction
     try {
-      const response = await this.network.submitTransaction(tx.to_json());
+      const response = await this.network.submitTransaction(JSON.stringify(tx));
       this.logger.info(
         `Cardano Transaction [${transaction.txId}] submitted. Response: ${response}`
       );
@@ -256,27 +261,22 @@ class CardanoChain extends AbstractUtxoChain {
     transaction: PaymentTransaction,
     requiredSign: number,
     signFunction: (
-      tx: CardanoWasm.Transaction,
+      tx: CardanoTx,
       requiredSign: number
-    ) => Promise<CardanoWasm.Transaction>
+    ) => Promise<SignedCardanoTx>
   ): Promise<PaymentTransaction> => {
     const tx = Serializer.deserialize(transaction.txBytes);
 
-    return signFunction(tx, requiredSign).then(
-      (signedTx: CardanoWasm.Transaction) => {
-        const signedTxBytes = Serializer.serialize(signedTx);
-        const signedTxId = Buffer.from(
-          CardanoWasm.hash_transaction(signedTx.body()).to_bytes()
-        ).toString('hex');
-        const signedCardanoTx = new CardanoTransaction(
-          transaction.eventId,
-          signedTxBytes,
-          signedTxId,
-          transaction.txType
-        );
-        return signedCardanoTx;
-      }
-    );
+    return signFunction(tx, requiredSign).then((signedTx: SignedCardanoTx) => {
+      const signedTxBytes = Serializer.serialize(signedTx);
+      const signedCardanoTx = new CardanoTransaction(
+        transaction.eventId,
+        signedTxBytes,
+        signedTx.id,
+        transaction.txType
+      );
+      return signedCardanoTx;
+    });
   };
 
   /**
@@ -288,16 +288,14 @@ class CardanoChain extends AbstractUtxoChain {
     transaction: PaymentTransaction
   ): TransactionAssetBalance => {
     const tx = Serializer.deserialize(transaction.txBytes);
-    const txBody = tx.body();
 
     let inputAssets: AssetBalance = {
       nativeToken: 0n,
       tokens: [],
     };
     // extract input box assets
-    for (let i = 0; i < txBody.inputs().len(); i++) {
-      const input = txBody.inputs().get(i);
-      const boxAssets = this.getBoxInfo(input.to_hex()).assets;
+    for (const input of tx.inputs) {
+      const boxAssets = this.getBoxInfo(JSON.stringify(input)).assets;
       inputAssets = ChainUtils.sumAssetBalance(inputAssets, boxAssets);
     }
 
@@ -305,8 +303,7 @@ class CardanoChain extends AbstractUtxoChain {
       nativeToken: 0n,
       tokens: [],
     };
-    for (let i = 0; i < txBody.outputs().len(); i++) {
-      const output = txBody.outputs().get(i);
+    for (const output of tx.outputs) {
       const boxAssets = CardanoUtils.getBoxAssets(output);
       outputAssets = ChainUtils.sumAssetBalance(outputAssets, boxAssets);
     }
@@ -331,18 +328,15 @@ class CardanoChain extends AbstractUtxoChain {
 
     const mempoolTxs = await this.network.getMempoolTransactions();
     mempoolTxs.forEach((serializedTx) => {
-      const tx = CardanoWasm.Transaction.from_bytes(
-        Buffer.from(serializedTx, 'hex')
-      );
-      const txBody = tx.body();
+      const tx = Serializer.deserialize(Buffer.from(serializedTx));
       // iterate over tx inputs
-      for (let i = 0; i < txBody.inputs().len(); i++) {
-        let trackedBox: CardanoWasm.TransactionOutput | undefined;
+      for (let i = 0; i < tx.inputs.length; i++) {
+        let trackedBox: CardanoBoxCandidate | undefined;
         // iterate over tx outputs
-        for (let j = 0; j < txBody.outputs().len(); j++) {
-          const output = txBody.outputs().get(j);
+        for (let j = 0; j < tx.outputs.length; j++) {
+          const output = tx.outputs[j];
           // check if box satisfy conditions
-          if (output.address().to_bech32() !== address) continue;
+          if (output.address !== address) continue;
           if (tokenId) {
             const boxTokens = cardanoUtils.getBoxAssets(output).tokens;
             if (!boxTokens.find((token) => token.id === tokenId)) continue;
@@ -354,10 +348,10 @@ class CardanoChain extends AbstractUtxoChain {
         }
 
         // add input box to trackMap
-        const input = txBody.inputs().get(i);
+        const input = tx.inputs[i];
         trackMap.set(
           CardanoUtils.getBoxId(input),
-          trackedBox ? trackedBox.to_hex() : undefined
+          trackedBox ? JSON.stringify(trackedBox) : undefined
         );
       }
     });
@@ -392,11 +386,9 @@ class CardanoChain extends AbstractUtxoChain {
    */
   isTxValid = async (transaction: PaymentTransaction): Promise<boolean> => {
     const tx = Serializer.deserialize(transaction.txBytes);
-    const txBody = tx.body();
 
     let valid = true;
-    for (let i = 0; i < txBody.inputs().len(); i++) {
-      const box = txBody.inputs().get(i);
+    for (const box of tx.inputs) {
       valid =
         valid &&
         (await this.network.isBoxUnspentAndValid(CardanoUtils.getBoxId(box)));

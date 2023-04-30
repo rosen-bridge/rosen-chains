@@ -1,4 +1,9 @@
-import { AddressUtxo, AssetInfo, UtxoBoxesAssets } from './types';
+import {
+  CardanoUtxo,
+  CardanoAssetInfo,
+  UtxoBoxesAssets,
+  CardanoBoxCandidate,
+} from './types';
 import { AssetBalance, TokenInfo } from '@rosen-chains/abstract-chain';
 import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import { default as CIP14 } from '@emurgo/cip14-js';
@@ -11,7 +16,7 @@ class CardanoUtils {
    * @param boxes the utxogenerateTransaction boxes
    */
   static calculateInputBoxesAssets = (
-    boxes: AddressUtxo[]
+    boxes: CardanoUtxo[]
   ): UtxoBoxesAssets => {
     const assets: Map<string, bigint> = new Map();
     let changeBoxLovelace: CardanoWasm.BigNum = CardanoWasm.BigNum.zero();
@@ -20,7 +25,7 @@ class CardanoUtils {
         CardanoWasm.BigNum.from_str(box.value)
       );
 
-      box.asset_list.forEach((boxAsset) => {
+      box.assets.forEach((boxAsset) => {
         const currentValue = assets.get(boxAsset.fingerprint) || 0n;
         assets.set(
           boxAsset.fingerprint,
@@ -42,7 +47,7 @@ class CardanoUtils {
   static getCardanoAssetInfo = (
     fingerprint: string,
     tokenMap: TokenMap
-  ): AssetInfo => {
+  ): CardanoAssetInfo => {
     const token = tokenMap.search(CARDANO_CHAIN, {
       [tokenMap.getIdKey(CARDANO_CHAIN)]: fingerprint,
     });
@@ -58,27 +63,21 @@ class CardanoUtils {
    * gets Cardano box assets
    * @param box the Cardano box
    */
-  static getBoxAssets = (box: CardanoWasm.TransactionOutput): AssetBalance => {
+  static getBoxAssets = (
+    box: CardanoBoxCandidate | CardanoUtxo
+  ): AssetBalance => {
     const tokens: Array<TokenInfo> = [];
-    const boxValue = box.amount();
-    const boxAssets = boxValue.multiasset();
-    if (boxAssets) {
-      for (let i = 0; i < boxAssets.keys().len(); i++) {
-        const scriptHash = boxAssets.keys().get(i);
-        const asset = boxAssets.get(scriptHash)!;
-        for (let j = 0; j < asset.keys().len(); j++) {
-          const assetName = asset.keys().get(j);
-          const assetAmount = asset.get(assetName)!;
-          const fingerprint = this.createFingerprint(scriptHash, assetName);
-          tokens.push({
-            id: fingerprint,
-            value: BigInt(assetAmount.to_str()),
-          });
-        }
-      }
+    for (const asset of box.assets) {
+      const policyId = CardanoWasm.ScriptHash.from_hex(asset.policy_id);
+      const assetName = CardanoWasm.AssetName.from_hex(asset.asset_name);
+      const fingerprint = this.createFingerprint(policyId, assetName);
+      tokens.push({
+        id: fingerprint,
+        value: BigInt(asset.quantity),
+      });
     }
     return {
-      nativeToken: BigInt(boxValue.coin().to_str()),
+      nativeToken: BigInt(box.value),
       tokens: tokens,
     };
   };
@@ -106,9 +105,8 @@ class CardanoUtils {
     ).fingerprint();
   };
 
-  static getBoxId = (box: CardanoWasm.TransactionInput): string => {
-    const boxJS = box.to_js_value();
-    return boxJS.transaction_id + '.' + boxJS.index;
+  static getBoxId = (box: CardanoUtxo): string => {
+    return box.txId + '.' + box.index;
   };
 }
 

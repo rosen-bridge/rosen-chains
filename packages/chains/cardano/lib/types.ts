@@ -7,23 +7,40 @@ interface CardanoConfigs extends ChainConfigs {
   txTtl: number;
 }
 
-interface Asset {
+interface CardanoAsset {
   policy_id: string;
   asset_name: string;
   quantity: string;
   fingerprint: string;
 }
 
-interface AssetInfo {
+interface CardanoAssetInfo {
   policyId: Uint8Array;
   assetName: Uint8Array;
 }
 
-interface AddressUtxo {
-  tx_hash: string;
-  tx_index: number;
+interface CardanoUtxo {
+  txId: string;
+  index: number;
   value: string;
-  asset_list: Array<Asset>;
+  assets: Array<CardanoAsset>;
+}
+
+interface CardanoBoxCandidate {
+  address: string;
+  value: string;
+  assets: Array<CardanoAsset>;
+}
+
+interface CardanoTx {
+  id: string;
+  inputs: CardanoUtxo[];
+  outputs: CardanoBoxCandidate[];
+  // What else?!
+}
+
+interface SignedCardanoTx extends CardanoTx {
+  witnesses: string[];
 }
 
 interface UtxoBoxesAssets {
@@ -31,4 +48,13 @@ interface UtxoBoxesAssets {
   assets: Map<string, bigint>;
 }
 
-export { CardanoConfigs, AddressUtxo, Asset, AssetInfo, UtxoBoxesAssets };
+export {
+  CardanoConfigs,
+  CardanoAsset,
+  CardanoAssetInfo,
+  CardanoUtxo,
+  CardanoBoxCandidate,
+  CardanoTx,
+  UtxoBoxesAssets,
+  SignedCardanoTx,
+};

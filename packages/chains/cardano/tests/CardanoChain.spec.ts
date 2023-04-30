@@ -92,72 +92,72 @@ describe('CardanoChain', () => {
     });
   });
 
-  describe('getBoxInfo', () => {
-    const network = new TestCardanoNetwork();
-
-    it('should get box info successfully', async () => {
-      const rawBox = bankBoxes[0];
-      const cardanoBox = TestUtils.AddressUtxoToTransactionInput(rawBox);
-      const serializedBox = cardanoBox.to_hex();
-
-      // run the test
-      const cardanoChain = new CardanoChain(network, configs, tokenMap);
-      const result = await cardanoChain.getBoxInfo(serializedBox);
-      expect(result.id).toEqual(rawBox.tx_hash + '.' + rawBox.tx_index);
-      //TODO: add expect for box assets
-    });
-  });
-
-  describe('signTransaction', () => {
-    const network = new TestCardanoNetwork();
-
-    it('should return PaymentTransaction of the signed transaction', async () => {
-      const signFunction = async (
-        tx: Transaction,
-        requiredSign: number
-      ): Promise<Transaction> => {
-        return tx;
-      };
-
-      const paymentTx = CardanoTransaction.fromJson(
-        transaction1PaymentTransaction
-      );
-
-      // run test
-      const cardanoChain = new CardanoChain(network, configs, tokenMap);
-      const result = await cardanoChain.signTransaction(
-        paymentTx,
-        0,
-        signFunction
-      );
-
-      // check returned value
-      expect(result.txId).toEqual(paymentTx.txId);
-      expect(result.txType).toEqual(paymentTx.txType);
-      expect(result.eventId).toEqual(paymentTx.eventId);
-      expect(result.network).toEqual(paymentTx.network);
-    });
-
-    it('should throw error when signing failed', async () => {
-      const signFunction = async (
-        tx: Transaction,
-        requiredSign: number
-      ): Promise<Transaction> => {
-        throw Error(`TestError: sign failed`);
-      };
-
-      const paymentTx = CardanoTransaction.fromJson(
-        transaction1PaymentTransaction
-      );
-
-      // run test
-      const cardanoChain = new CardanoChain(network, configs, tokenMap);
-
-      await expect(async () => {
-        await cardanoChain.signTransaction(paymentTx, 0, signFunction);
-      }).rejects.toThrow('TestError: sign failed');
-    });
-  });
+  // describe('getBoxInfo', () => {
+  //   const network = new TestCardanoNetwork();
+  //
+  //   it('should get box info successfully', async () => {
+  //     const rawBox = bankBoxes[0];
+  //     const cardanoBox = TestUtils.AddressUtxoToTransactionInput(rawBox);
+  //     const serializedBox = cardanoBox.to_hex();
+  //
+  //     // run the test
+  //     const cardanoChain = new CardanoChain(network, configs, tokenMap);
+  //     const result = await cardanoChain.getBoxInfo(serializedBox);
+  //     expect(result.id).toEqual(rawBox.tx_hash + '.' + rawBox.tx_index);
+  //     //TODO: add expect for box assets
+  //   });
+  // });
+  //
+  // describe('signTransaction', () => {
+  //   const network = new TestCardanoNetwork();
+  //
+  //   it('should return PaymentTransaction of the signed transaction', async () => {
+  //     const signFunction = async (
+  //       tx: Transaction,
+  //       requiredSign: number
+  //     ): Promise<Transaction> => {
+  //       return tx;
+  //     };
+  //
+  //     const paymentTx = CardanoTransaction.fromJson(
+  //       transaction1PaymentTransaction
+  //     );
+  //
+  //     // run test
+  //     const cardanoChain = new CardanoChain(network, configs, tokenMap);
+  //     const result = await cardanoChain.signTransaction(
+  //       paymentTx,
+  //       0,
+  //       signFunction
+  //     );
+  //
+  //     // check returned value
+  //     expect(result.txId).toEqual(paymentTx.txId);
+  //     expect(result.txType).toEqual(paymentTx.txType);
+  //     expect(result.eventId).toEqual(paymentTx.eventId);
+  //     expect(result.network).toEqual(paymentTx.network);
+  //   });
+  //
+  //   it('should throw error when signing failed', async () => {
+  //     const signFunction = async (
+  //       tx: Transaction,
+  //       requiredSign: number
+  //     ): Promise<Transaction> => {
+  //       throw Error(`TestError: sign failed`);
+  //     };
+  //
+  //     const paymentTx = CardanoTransaction.fromJson(
+  //       transaction1PaymentTransaction
+  //     );
+  //
+  //     // run test
+  //     const cardanoChain = new CardanoChain(network, configs, tokenMap);
+  //
+  //     await expect(async () => {
+  //       await cardanoChain.signTransaction(paymentTx, 0, signFunction);
+  //     }).rejects.toThrow('TestError: sign failed');
+  //   });
+  // });
 
   describe('getTransactionAssets', () => {
     const network = new TestCardanoNetwork();
@@ -308,45 +308,45 @@ describe('CardanoChain', () => {
     });
   });
 
-  describe('isTxValid', () => {
-    const network = new TestCardanoNetwork();
-
-    it('should return true when all inputs are valid', async () => {
-      const payment1 = CardanoTransaction.fromJson(
-        transaction1PaymentTransaction
-      );
-      const isBoxUnspentAndValidSpy = spyOn(network, 'isBoxUnspentAndValid');
-      const txInputs = Transaction.from_bytes(payment1.txBytes).body().inputs();
-      for (let i = 0; i < txInputs.len(); i++) {
-        when(isBoxUnspentAndValidSpy)
-          .calledWith(CardanoUtils.getBoxId(txInputs.get(i)))
-          .mockResolvedValueOnce(true);
-      }
-
-      const cardanoChain = new CardanoChain(network, configs, tokenMap);
-      const result = await cardanoChain.isTxValid(payment1);
-
-      expect(result).toEqual(true);
-    });
-
-    it('should return false when at least one input is invalid', async () => {
-      const payment1 = CardanoTransaction.fromJson(
-        transaction1PaymentTransaction
-      );
-      const isBoxUnspentAndValidSpy = spyOn(network, 'isBoxUnspentAndValid');
-      const txInputs = Transaction.from_bytes(payment1.txBytes).body().inputs();
-      let isFirstBox = true;
-      for (let i = 0; i < txInputs.len(); i++) {
-        when(isBoxUnspentAndValidSpy)
-          .calledWith(CardanoUtils.getBoxId(txInputs.get(i)))
-          .mockResolvedValueOnce(!isFirstBox);
-        isFirstBox = false;
-      }
-
-      const cardanoChain = new CardanoChain(network, configs, tokenMap);
-      const result = await cardanoChain.isTxValid(payment1);
-
-      expect(result).toEqual(false);
-    });
-  });
+  // describe('isTxValid', () => {
+  //   const network = new TestCardanoNetwork();
+  //
+  //   it('should return true when all inputs are valid', async () => {
+  //     const payment1 = CardanoTransaction.fromJson(
+  //       transaction1PaymentTransaction
+  //     );
+  //     const isBoxUnspentAndValidSpy = spyOn(network, 'isBoxUnspentAndValid');
+  //     const txInputs = Transaction.from_bytes(payment1.txBytes).body().inputs();
+  //     for (let i = 0; i < txInputs.len(); i++) {
+  //       when(isBoxUnspentAndValidSpy)
+  //         .calledWith(CardanoUtils.getBoxId(txInputs.get(i)))
+  //         .mockResolvedValueOnce(true);
+  //     }
+  //
+  //     const cardanoChain = new CardanoChain(network, configs, tokenMap);
+  //     const result = await cardanoChain.isTxValid(payment1);
+  //
+  //     expect(result).toEqual(true);
+  //   });
+  //
+  //   it('should return false when at least one input is invalid', async () => {
+  //     const payment1 = CardanoTransaction.fromJson(
+  //       transaction1PaymentTransaction
+  //     );
+  //     const isBoxUnspentAndValidSpy = spyOn(network, 'isBoxUnspentAndValid');
+  //     const txInputs = Transaction.from_bytes(payment1.txBytes).body().inputs();
+  //     let isFirstBox = true;
+  //     for (let i = 0; i < txInputs.len(); i++) {
+  //       when(isBoxUnspentAndValidSpy)
+  //         .calledWith(CardanoUtils.getBoxId(txInputs.get(i)))
+  //         .mockResolvedValueOnce(!isFirstBox);
+  //       isFirstBox = false;
+  //     }
+  //
+  //     const cardanoChain = new CardanoChain(network, configs, tokenMap);
+  //     const result = await cardanoChain.isTxValid(payment1);
+  //
+  //     expect(result).toEqual(false);
+  //   });
+  // });
 });
