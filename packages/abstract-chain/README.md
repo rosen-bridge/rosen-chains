@@ -37,8 +37,8 @@ class, some network functions may be added to this network class.
 
 ```typescript
 // Ergo is an UTxO-based blockchain, so class inherits `AbstractUtxoChainNetwork`
-// <chain_name>Network
-class ErgoNetwork extends AbstractUtxoChainNetwork {
+// Abstract<chain_name>Network
+class AbstractErgoNetwork extends AbstractUtxoChainNetwork {
   ...
 }
 ```
@@ -59,8 +59,8 @@ class ErgoChain extends AbstractUtxoChain {
 }
 ```
 
-Note that implementing chain class is independent of implementing network class and only
-defining the network class is required.
+Note that implementing chain class is independent of implementing it's network class and only
+defining it is required.
 
 ## Add New Network
 
@@ -87,28 +87,40 @@ Note that network class should be developed in a separate package, independent o
 Required functions are as follows:
 
 - `generatePaymentTransaction`
-  - generates unsigned payment transaction of the event using lock address
-  - **@param** `event` the event trigger model
-  - **@param** `feeConfig` minimum fee and rsn ratio config for the event
-  - **@returns** the generated payment transaction
-- `generateColdStorageTransaction`
-  - generates unsigned transaction to transfer assets to cold storage
-  - **@param** `transferringAssets` an object containing the amount of each asset to transfer
-  - **@returns** the generated asset transfer transaction
-- `verifyPaymentTransaction`
-  - verifies a payment transaction for an event
-  - **@param** `transaction` the payment transaction
-  - **@param** `event` the event trigger model
-  - **@param** `feeConfig ` minimum fee and rsn ratio config for the event
-  - **@returns** the generated asset transfer transaction
-- `verifyColdStorageTransaction`
-  - verifies an asset transfer transaction
-  - **@param** `transaction` the asset transfer transaction
+  - generates unsigned PaymentTransaction for payment order
+  - **@param** `eventId` the id of event
+  - **@param** `txType` transaction type
+  - **@param** `order` the payment order (list of single payments)
+  - **@param** `unsignedTransactions` ongoing unsigned PaymentTransactions which will be used to prevent double spend (gathered from database and guard TxAgreement process)
+  - **@param** `serializedSignedTransactions` the serialized string of ongoing signed transactions which will be used to chain transactions (gathered from database and mempool)
+  - **@returns** the generated PaymentTransaction
+- `getTransactionAssets`
+  - gets input and output assets of a PaymentTransaction
+  - **@param** `transaction` the PaymentTransaction
+  - **@returns** an object containing the amount of input and output assets
+- `extractTransactionOrder`
+  - extracts payment order of a PaymentTransaction
+  - **@param** `transaction` the PaymentTransaction
+  - **@returns** the transaction payment order (list of single payments)
+- `verifyTransactionFee`
+  - verifies transaction fee for a PaymentTransaction
+  - **@param** `transaction` the PaymentTransaction
+  - **@returns** true if the transaction fee verified
+- `verifyNoTokenBurned`
+  - verifies no token burned in a PaymentTransaction
+  - **@param** `transaction` the PaymentTransaction
+  - **@returns** true if not token burned
+- `verifyTransactionExtraConditions`
+  - verifies additional conditions for a PaymentTransaction
+  - **@param** `transaction` the PaymentTransaction
   - **@returns** true if the transaction verified
+  - **NOTE**: This function is implemented in AbstarctChain and will return true. In any chain
+    that requires extra check to verify the transaction, this function should be overrided.
 - `verifyEvent`
   - verifies an event data with its corresponding lock transaction
   - **@param** `event` the event trigger model
-  - **@param** `RwtId` the RWT token id in the event trigger box
+  - **@param** `eventSerializedBox` the serialized string of the event trigger box
+  - **@param** `feeConfig` minimum fee and rsn ratio config for the event
   - **@returns** true if the event verified
 - `isTxValid`
   - checks if a transaction is still valid and can be sent to the network
@@ -117,14 +129,13 @@ Required functions are as follows:
 - `signTransaction`
   - requests the corresponding signer service to sign the transaction
   - **@param** `transaction` the transaction
+  - **@param** `requiredSign` the required number of sign
+  - **@param** `signFunction` the function to sign transaction (provided in guard process)
   - **@returns** the signed transaction
-- `getPaymentTxConfirmationStatus`
-  - extracts confirmation status for a payment transaction
-  - **@param** `transactionId` the payment transaction id
-  - **@returns** the transaction confirmation status
-- `getColdStorageTxConfirmationStatus`
-  - extracts confirmation status for an asset transfer transaction
-  - **@param** `transactionId` the asset transfer transaction id
+- `getTxConfirmationStatus`
+  - extracts confirmation status for a transaction
+  - **@param** `transactionId` the transaction id
+  - **@param** `transactionType` type of the transaction
   - **@returns** the transaction confirmation status
 - `getLockAddressAssets`
   - gets the amount of each asset in the lock address
@@ -132,6 +143,9 @@ Required functions are as follows:
 - `getHeight`
   - gets the blockchain height
   - **@returns** the blockchain height
+  - **NOTE**: This function is implemented in AbstarctChain and will redirect request to
+    network class `getHeight` function. If process is different in the chain, this function
+    should be overrided.
 - `submitTransaction`
   - submits a transaction to the blockchain
   - **@param** `transaction` the transaction
@@ -139,6 +153,13 @@ Required functions are as follows:
   - checks if a transaction is in mempool (returns false if the chain has no mempool)
   - **@param** `transactionId` the transaction id
   - **@returns** true if the transaction is in mempool
+- `hasLockAddressEnoughAssets`
+  - checks if lock address assets are more than required assets or not
+  - **@param** `required` required amount of assets
+  - **@returns** true if lock assets are more than required assets
+- `getMinimumNativeToken`
+  - gets the minimum amount of native token for transferring asset
+  - **@returns** the minimum amount
 
 ### `AbstractUtxoChain`
 
@@ -171,9 +192,14 @@ Required functions are as follows:
   - gets the amount of each asset in an address
   - **@param** `address` the address
   - **@returns** an object containing the amount of each asset
+- `getBlockTransactionIds`
+  - gets id of all transactions in the given block
+  - **@param** `blockId` the block id
+  - **@returns** list of the transaction ids in the block
 - `getTransaction`
   - gets a transaction
   - **@param** `transactionId` the transaction id
+  - **@param** `blockId` the block id
   - **@returns** the serialized string of the transaction
 - `submitTransaction`
   - submits a transaction
