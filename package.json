@@ -3,7 +3,9 @@
   "private": true,
   "workspaces": {
     "packages": [
-      "packages/*"
+      "packages/abstract-chain",
+      "packages/chains/*",
+      "packages/networks/*"
     ]
   },
   "scripts": {

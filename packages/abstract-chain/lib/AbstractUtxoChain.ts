@@ -14,8 +14,8 @@ abstract class AbstractUtxoChain extends AbstractChain {
    */
   abstract getMempoolBoxMapping: (
     address: string,
-    tokenId: string
-  ) => Promise<Map<string, string>>;
+    tokenId?: string
+  ) => Promise<Map<string, string | undefined>>;
 
   /**
    * extracts box id and assets of a box
@@ -35,8 +35,8 @@ abstract class AbstractUtxoChain extends AbstractChain {
   getCoveringBoxes = async (
     address: string,
     requiredAssets: AssetBalance,
-    forbiddenBoxIds: string[],
-    trackMap: Map<string, string>
+    forbiddenBoxIds: Array<string>,
+    trackMap: Map<string, string | undefined>
   ): Promise<CoveringBoxes> => {
     let uncoveredNativeToken = requiredAssets.nativeToken;
     const uncoveredTokens = requiredAssets.tokens.filter(
@@ -48,7 +48,7 @@ abstract class AbstractUtxoChain extends AbstractChain {
     };
 
     let offset = 0;
-    const result: string[] = [];
+    const result: Array<string> = [];
 
     // get boxes until requirements are satisfied
     while (isRequirementRemaining()) {
@@ -64,17 +64,22 @@ abstract class AbstractUtxoChain extends AbstractChain {
 
       // process received boxes
       for (const box of boxes) {
-        let trackedBox = box;
+        let trackedBox: string | undefined = box;
         let boxInfo = this.getBoxInfo(box);
 
         // track boxes
+        let skipBox = false;
         while (trackMap.has(boxInfo.id)) {
-          trackedBox = trackMap.get(boxInfo.id)!;
+          trackedBox = trackMap.get(boxInfo.id);
+          if (!trackedBox) {
+            skipBox = true;
+            break;
+          }
           boxInfo = this.getBoxInfo(trackedBox);
         }
 
-        // exclude forbidden boxes
-        if (forbiddenBoxIds.includes(boxInfo.id)) continue;
+        // if tracked to no box or forbidden box, skip it
+        if (skipBox || forbiddenBoxIds.includes(boxInfo.id)) continue;
 
         // check and add if box assets are useful to requirements
         let isUseful = false;
@@ -94,7 +99,7 @@ abstract class AbstractUtxoChain extends AbstractChain {
             uncoveredNativeToken >= boxInfo.assets.nativeToken
               ? boxInfo.assets.nativeToken
               : uncoveredNativeToken;
-          result.push(trackedBox);
+          result.push(trackedBox!);
         }
 
         // end process if requirements are satisfied

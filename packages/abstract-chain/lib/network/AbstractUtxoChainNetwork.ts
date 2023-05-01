@@ -10,7 +10,7 @@ abstract class AbstractUtxoChainNetwork extends AbstractChainNetwork {
     address: string,
     offset: number,
     limit: number
-  ) => Promise<string[]>;
+  ) => Promise<Array<string>>;
 
   /**
    * checks if a box is still unspent and valid
