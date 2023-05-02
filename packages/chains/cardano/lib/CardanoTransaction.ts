@@ -1,5 +1,6 @@
 import { PaymentTransaction } from '@rosen-chains/abstract-chain';
 import { CARDANO_CHAIN } from './constants';
+import * as JSONBigInt from 'json-bigint';
 
 class CardanoTransaction implements PaymentTransaction {
   eventId: string;
@@ -29,7 +30,7 @@ class CardanoTransaction implements PaymentTransaction {
     const obj = JSON.parse(jsonString);
     return new CardanoTransaction(
       obj.eventId,
-      obj.txBytes,
+      Buffer.from(obj.txBytes, 'hex'),
       obj.txId,
       obj.txType
     );
@@ -43,7 +44,7 @@ class CardanoTransaction implements PaymentTransaction {
     return JSON.stringify({
       network: this.network,
       eventId: this.eventId,
-      txBytes: this.txBytes,
+      txBytes: this.getTxHexString(),
       txId: this.txId,
       txType: this.txType,
     });
@@ -52,8 +53,8 @@ class CardanoTransaction implements PaymentTransaction {
   /**
    * @returns transaction hex string
    */
-  getTxString = (): string => {
-    return Buffer.from(this.txBytes).toString();
+  getTxHexString = () => {
+    return Buffer.from(this.txBytes).toString('hex');
   };
 }
 

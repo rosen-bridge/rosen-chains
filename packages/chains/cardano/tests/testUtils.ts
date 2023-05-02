@@ -1,13 +1,14 @@
 import { randomBytes } from 'crypto';
 import { CardanoUtxo } from '../lib/types';
 import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
+import CardanoUtils from '../lib/CardanoUtils';
 
 class TestUtils {
   static mockBankBoxes = (): CardanoUtxo[] => {
     const box1: CardanoUtxo = {
       txId: this.generateRandomId(),
       index: 0,
-      value: this.adaToLovelaceString(30),
+      value: this.adaToLovelace(30),
       assets: [
         {
           policy_id: 'cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be',
@@ -26,7 +27,7 @@ class TestUtils {
     const box2: CardanoUtxo = {
       txId: this.generateRandomId(),
       index: 0,
-      value: this.adaToLovelaceString(100),
+      value: this.adaToLovelace(1234567891011),
       assets: [
         {
           policy_id: 'cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be',
@@ -39,14 +40,13 @@ class TestUtils {
     const box3: CardanoUtxo = {
       txId: this.generateRandomId(),
       index: 2,
-      value: this.adaToLovelaceString(10),
+      value: this.adaToLovelace(10),
       assets: [],
     };
-
     const box4: CardanoUtxo = {
       txId: this.generateRandomId(),
       index: 0,
-      value: '10000',
+      value: 10000n,
       assets: [
         {
           policy_id: 'ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286',
@@ -64,7 +64,7 @@ class TestUtils {
     box: CardanoUtxo,
     address: string
   ): CardanoWasm.TransactionOutput => {
-    const value = CardanoWasm.Value.new(CardanoWasm.BigNum.from_str(box.value));
+    const value = CardanoWasm.Value.new(CardanoUtils.bigIntToBigNum(box.value));
     const multiAsset = CardanoWasm.MultiAsset.new();
     box.assets.forEach((asset) => {
       const assets = CardanoWasm.Assets.new();
@@ -96,8 +96,8 @@ class TestUtils {
     return input;
   };
 
-  static adaToLovelaceString = (ada: number): string =>
-    (ada * 1000000).toString();
+  static adaToLovelace = (ada: number): bigint =>
+    BigInt((ada * 1000000).toString());
 
   static generateRandomId = (): string => randomBytes(32).toString('hex');
 }

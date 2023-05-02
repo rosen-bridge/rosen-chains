@@ -1,8 +1,16 @@
 import { AbstractCardanoNetwork } from '../../lib';
 import { ConfirmationStatus } from '@rosen-chains/abstract-chain';
+import { CardanoUtxo } from '../../lib/types';
+import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
 class TestCardanoNetwork extends AbstractCardanoNetwork {
-  extractor = null as any; // TODO: Replace with Cardano | Ogmios extractor
+  extractor = new ErgoRosenExtractor(
+    '9es3xKFSehNNwCpuNpY31ScAubDqeLbSWwaCysjN1ee51bgHKTq',
+    {
+      idKeys: {},
+      tokens: [],
+    }
+  );
   notImplemented = () => {
     throw Error('Not implemented');
   };
@@ -43,6 +51,10 @@ class TestCardanoNetwork extends AbstractCardanoNetwork {
   };
 
   isBoxUnspentAndValid = (boxId: string): Promise<boolean> => {
+    throw Error('Not mocked');
+  };
+
+  getUtxo = (tx_hash: string, index: number): CardanoUtxo => {
     throw Error('Not mocked');
   };
 }

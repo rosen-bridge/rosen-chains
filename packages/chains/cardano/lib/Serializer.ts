@@ -1,40 +1,22 @@
-import { CardanoTx, SignedCardanoTx } from './types';
+import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 
 class Serializer {
   /**
-   * converts the transaction model in the CardanoTx to byteArray
-   * @param tx the transaction model in the CardanoTx format
-   * @returns byteArray representation of the transaction
-   */
-  static serialize = (tx: CardanoTx): Uint8Array => {
-    return Buffer.from(JSON.stringify(tx));
-  };
-
-  /**
-   * converts bytearray representation of the transaction to the CardanoTx format
-   * @param txBytes bytearray representation of the transaction
-   * @returns the transaction model in the CardanoTx format
-   */
-  static deserialize = (txBytes: Uint8Array): CardanoTx => {
-    return JSON.parse(Buffer.from(txBytes).toString());
-  };
-
-  /**
-   * converts the signed CardanoTx to bytearray
-   * @param tx the transaction model in the SignedCardanoTx format
+   * converts the transaction model in the chain to bytearray
+   * @param tx the transaction model in the chain library
    * @returns bytearray representation of the transaction
    */
-  static signedSerialize = (tx: SignedCardanoTx): Uint8Array => {
-    return Buffer.from(JSON.stringify(tx));
+  static serialize = (tx: Transaction): Uint8Array => {
+    return tx.to_bytes();
   };
 
   /**
-   * converts bytearray representation of the signed transaction to the SignedCardanoTx type
+   * converts bytearray representation of the unsigned transaction to the transaction model in the chain
    * @param txBytes bytearray representation of the transaction
-   * @returns the transaction model in the SignedCardanoTx format
+   * @returns the transaction model in the chain library
    */
-  static signedDeserialize = (txBytes: Uint8Array): SignedCardanoTx => {
-    return JSON.parse(Buffer.from(txBytes).toString());
+  static deserialize = (txBytes: Uint8Array): Transaction => {
+    return Transaction.from_bytes(txBytes);
   };
 }
 

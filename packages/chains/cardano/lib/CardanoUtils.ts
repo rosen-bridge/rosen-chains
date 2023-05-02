@@ -1,9 +1,4 @@
-import {
-  CardanoUtxo,
-  CardanoAssetInfo,
-  UtxoBoxesAssets,
-  CardanoBoxCandidate,
-} from './types';
+import { CardanoUtxo, CardanoAssetInfo, UtxoBoxesAssets } from './types';
 import { AssetBalance, TokenInfo } from '@rosen-chains/abstract-chain';
 import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import { default as CIP14 } from '@emurgo/cip14-js';
@@ -22,7 +17,7 @@ class CardanoUtils {
     let changeBoxLovelace: CardanoWasm.BigNum = CardanoWasm.BigNum.zero();
     boxes.forEach((box) => {
       changeBoxLovelace = changeBoxLovelace.checked_add(
-        CardanoWasm.BigNum.from_str(box.value)
+        this.bigIntToBigNum(box.value)
       );
 
       box.assets.forEach((boxAsset) => {
@@ -63,21 +58,27 @@ class CardanoUtils {
    * gets Cardano box assets
    * @param box the Cardano box
    */
-  static getBoxAssets = (
-    box: CardanoBoxCandidate | CardanoUtxo
-  ): AssetBalance => {
+  static getBoxAssets = (box: CardanoWasm.TransactionOutput): AssetBalance => {
     const tokens: Array<TokenInfo> = [];
-    for (const asset of box.assets) {
-      const policyId = CardanoWasm.ScriptHash.from_hex(asset.policy_id);
-      const assetName = CardanoWasm.AssetName.from_hex(asset.asset_name);
-      const fingerprint = this.createFingerprint(policyId, assetName);
-      tokens.push({
-        id: fingerprint,
-        value: BigInt(asset.quantity),
-      });
+    const boxValue = box.amount();
+    const boxAssets = boxValue.multiasset();
+    if (boxAssets) {
+      for (let i = 0; i < boxAssets.keys().len(); i++) {
+        const scriptHash = boxAssets.keys().get(i);
+        const asset = boxAssets.get(scriptHash)!;
+        for (let j = 0; j < asset.keys().len(); j++) {
+          const assetName = asset.keys().get(j);
+          const assetAmount = asset.get(assetName)!;
+          const fingerprint = this.createFingerprint(scriptHash, assetName);
+          tokens.push({
+            id: fingerprint,
+            value: BigInt(assetAmount.to_str()),
+          });
+        }
+      }
     }
     return {
-      nativeToken: BigInt(box.value),
+      nativeToken: BigInt(boxValue.coin().to_str()),
       tokens: tokens,
     };
   };
@@ -105,7 +106,13 @@ class CardanoUtils {
     ).fingerprint();
   };
 
-  static getBoxId = (box: CardanoUtxo): string => {
+  static getBoxId = (
+    box: CardanoUtxo | CardanoWasm.TransactionInput
+  ): string => {
+    if (box instanceof CardanoWasm.TransactionInput) {
+      const boxJS = box.to_js_value();
+      return boxJS.transaction_id + '.' + boxJS.index;
+    }
     return box.txId + '.' + box.index;
   };
 }

@@ -5,6 +5,7 @@ interface CardanoConfigs extends ChainConfigs {
   minBoxValue: bigint;
   lockAddress: string;
   txTtl: number;
+  aggregatedPublicKey: string;
 }
 
 interface CardanoAsset {
@@ -22,13 +23,13 @@ interface CardanoAssetInfo {
 interface CardanoUtxo {
   txId: string;
   index: number;
-  value: string;
+  value: bigint;
   assets: Array<CardanoAsset>;
 }
 
 interface CardanoBoxCandidate {
   address: string;
-  value: string;
+  value: bigint;
   assets: Array<CardanoAsset>;
 }
 
@@ -36,11 +37,8 @@ interface CardanoTx {
   id: string;
   inputs: CardanoUtxo[];
   outputs: CardanoBoxCandidate[];
-  // What else?!
-}
-
-interface SignedCardanoTx extends CardanoTx {
-  witnesses: string[];
+  ttl: number;
+  fee: bigint;
 }
 
 interface UtxoBoxesAssets {
@@ -56,5 +54,4 @@ export {
   CardanoBoxCandidate,
   CardanoTx,
   UtxoBoxesAssets,
-  SignedCardanoTx,
 };
