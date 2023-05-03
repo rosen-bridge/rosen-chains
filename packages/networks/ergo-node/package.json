@@ -1,0 +1,55 @@
+{
+  "name": "@rosen-chains/ergo-node-network",
+  "version": "0.1.0",
+  "description": "ergo node network package for rosen ergo chain",
+  "main": "dist/lib/index.js",
+  "types": "dist/lib/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "prettify": "prettier --write . --ignore-path .gitignore",
+    "lint": "eslint --fix . && npm run prettify",
+    "build": "tsc --build tsconfig.build.json",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "coverage": "npm run test -- --coverage",
+    "release": "npm run test && npm run build && npm publish --access public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rosen-bridge/rosen-chains.git"
+  },
+  "license": "GPL-3.0",
+  "dependencies": {
+    "@rosen-bridge/logger-interface": "^0.1.0",
+    "@rosen-bridge/rosen-extractor": "^0.1.5",
+    "@rosen-chains/abstract-chain": "^0.1.4",
+    "@rosen-clients/ergo-node": "^0.3.1",
+    "ergo-lib-wasm-nodejs": "^0.23.0",
+    "it-all": "^3.0.1",
+    "json-bigint": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/json-bigint": "^1.0.1",
+    "@types/node": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.30.7",
+    "@typescript-eslint/parser": "^5.26.0",
+    "@vitest/coverage-c8": "^0.30.1",
+    "eslint": "^8.16.0",
+    "eslint-config-prettier": "^8.5.0",
+    "prettier": "^2.7.1",
+    "typescript": "^5.0.4",
+    "vite-plugin-top-level-await": "^1.3.0",
+    "vite-plugin-wasm": "^3.2.2",
+    "vitest": "^0.30.1"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "tests"
+  },
+  "keywords": [
+    "rosen"
+  ],
+  "peerDependencies": {
+    "@rosen-chains/ergo": "^0.1.2"
+  }
+}
