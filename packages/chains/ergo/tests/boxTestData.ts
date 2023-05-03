@@ -156,6 +156,29 @@ export const validEvent: EventTrigger = {
   ],
 };
 
+export const validEventWithHighFee: EventTrigger = {
+  height: 200,
+  fromChain: 'ergo',
+  toChain: 'cardano',
+  fromAddress: 'fromAddress',
+  toAddress: 'toAddress',
+  amount: '1000000',
+  bridgeFee: '1000',
+  networkFee: '900000',
+  sourceChainTokenId: 'sourceTokenId',
+  targetChainTokenId: 'targetTokenId',
+  sourceTxId:
+    '6e3dbf41a8e3dbf41a8cd0fe059a54cef8bb140322503d0555a9851f056825ba',
+  sourceChainHeight: 1000,
+  sourceBlockId:
+    '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ea',
+  WIDs: [
+    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6e',
+    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b90',
+    'ebc091d854e83a8fdc0e51936923171fc74895715591be81b8d286888d877e70',
+  ],
+};
+
 export const invalidEvent: EventTrigger = {
   height: 200,
   fromChain: 'ergo',

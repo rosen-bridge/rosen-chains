@@ -1009,6 +1009,154 @@ describe('ErgoChain', () => {
       // check returned value
       expect(result).toEqual(false);
     });
+
+    /**
+     * @target ErgoChain.verifyEvent should return false when sum of event fees
+     * is less than event amount while bridgeFee is less than minimum-fee
+     * @dependencies
+     * @scenario
+     * - mock feeConfig
+     * - mock an event
+     * - mock a network object
+     *   - mock 'getBlockTransactionIds'
+     *   - mock 'getBlockInfo'
+     *   - mock 'getTransaction'
+     * - mock network extractor to return event data
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when sum of event fees is less than event amount while bridgeFee is less than minimum-fee', async () => {
+      // mock feeConfig
+      const fee: Fee = {
+        bridgeFee: 1200000n,
+        networkFee: 0n,
+        rsnRatio: 0n,
+        feeRatio: 0n,
+      };
+
+      // mock an event
+      const event = boxTestData.validEventWithHighFee;
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getBlockTransactionIds'
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([
+          ergoTestUtils.generateRandomId(),
+          event.sourceTxId,
+          ergoTestUtils.generateRandomId(),
+        ]);
+      // mock 'getBlockInfo'
+      const blockInfo: BlockInfo = {
+        hash: event.sourceBlockId,
+        parentHash: ergoTestUtils.generateRandomId(),
+        height: event.sourceChainHeight,
+      };
+      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
+      when(getBlockInfoSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce(blockInfo);
+      // mock 'getTransaction'
+      const serializedTx = 'serializedTransaction';
+      const getTransactionSpy = spyOn(network, 'getTransaction');
+      when(getTransactionSpy)
+        .calledWith(event.sourceTxId, event.sourceBlockId)
+        .mockResolvedValueOnce(serializedTx);
+
+      // mock network extractor to return event data
+      const extractorSpy = spyOn(network.extractor, 'get');
+      when(extractorSpy)
+        .calledWith(serializedTx)
+        .mockReturnValueOnce(event as unknown as RosenData);
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.verifyEvent(event, fee);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target ErgoChain.verifyEvent should return false when sum of event fees
+     * is less than event amount while bridgeFee is less than expected value
+     * @dependencies
+     * @scenario
+     * - mock feeConfig
+     * - mock an event
+     * - mock a network object
+     *   - mock 'getBlockTransactionIds'
+     *   - mock 'getBlockInfo'
+     *   - mock 'getTransaction'
+     * - mock network extractor to return event data
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when sum of event fees is less than event amount while bridgeFee is less than expected value', async () => {
+      // mock feeConfig
+      const fee: Fee = {
+        bridgeFee: 0n,
+        networkFee: 0n,
+        rsnRatio: 0n,
+        feeRatio: 1200n,
+      };
+
+      // mock an event
+      const event = boxTestData.validEventWithHighFee;
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getBlockTransactionIds'
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([
+          ergoTestUtils.generateRandomId(),
+          event.sourceTxId,
+          ergoTestUtils.generateRandomId(),
+        ]);
+      // mock 'getBlockInfo'
+      const blockInfo: BlockInfo = {
+        hash: event.sourceBlockId,
+        parentHash: ergoTestUtils.generateRandomId(),
+        height: event.sourceChainHeight,
+      };
+      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
+      when(getBlockInfoSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce(blockInfo);
+      // mock 'getTransaction'
+      const serializedTx = 'serializedTransaction';
+      const getTransactionSpy = spyOn(network, 'getTransaction');
+      when(getTransactionSpy)
+        .calledWith(event.sourceTxId, event.sourceBlockId)
+        .mockResolvedValueOnce(serializedTx);
+
+      // mock network extractor to return event data
+      const extractorSpy = spyOn(network.extractor, 'get');
+      when(extractorSpy)
+        .calledWith(serializedTx)
+        .mockReturnValueOnce(event as unknown as RosenData);
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.verifyEvent(event, fee);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
   });
 
   describe('isTxValid', () => {
