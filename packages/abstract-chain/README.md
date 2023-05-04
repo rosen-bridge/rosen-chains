@@ -14,24 +14,24 @@
 
 ## Description
 
-Every blockchain supported by [guard-service](https://github.com/rosen-bridge/ts-guard-service)
-in the bridge requires some actions which are defined in abstract classes and structures
+Every blockchain supported by the [guard-service](https://github.com/rosen-bridge/ts-guard-service)
+in the bridge has some requirements that are defined in abstract classes and structures
 in this project.
 
 `AbstractChain` is an abstract class containing all actions required by guard-service to
-support a blockchain in rosen-bridge. Each chain required some actions to communicate with
+support a blockchain in rosen-bridge. Each chain requires some actions to communicate with
 the blockchain APIs to get/send data from/to the blockchain. These actions are defined in
 `AbstractChainNetwork` and a single object of it will be initiated in `AbstractChain` constructor.
 
-As UTxO-based blockchains require some additional and common actions such as getting boxes
-(UTxOs), `AbstractUtxoChain` and `AbstractUtxoChainNetwork` class are provided.
+Since UTxO-based blockchains require some additional and common actions such as getting boxes
+(UTxOs), `AbstractUtxoChain` and `AbstractUtxoChainNetwork` class are provided too.
 
 ## Add New Chain
 
-Implementing new chain to guard is done in two steps and is independent of implementing a
+Adding a new chain to the guard-service is being done in two steps and is independent of implementing a
 required network package.
 
-the first step is to define an **abstract** network class inheriting `AbstractChain` (or
+The first step is to define an **abstract** network class inheriting `AbstractChain` (or
 `AbstractUtxoChain` if the blockchain is UTxO-based). Based on the implementation of chain
 class, some network functions may be added to this network class.
 
@@ -46,7 +46,7 @@ class AbstractErgoNetwork extends AbstractUtxoChainNetwork {
 After defining network class, a chain class should be implemented, inheriting `AbstractChain`
 (or `AbstractUtxoChain` if the blockchain is UTxO-based) which implements all required functions.
 The functions will be explained in the [Chain Class Document](#chain-class-document) section. Any required
-actions found in this step which relates directly to blockchain network should be added to the
+actions found in this step which relates directly to the blockchain network should be added to the
 network class. Also `network` variable type should be declared as the network class type.
 
 ```typescript
@@ -59,8 +59,8 @@ class ErgoChain extends AbstractUtxoChain {
 }
 ```
 
-Note that implementing chain class is independent of implementing it's network class and only
-defining it is required.
+Note that implementing chain class is independent of implementing its network class and only
+its definition is required.
 
 ## Add New Network
 
@@ -88,11 +88,11 @@ Required functions are as follows:
 
 - `generatePaymentTransaction`
   - generates unsigned PaymentTransaction for payment order
-  - **@param** `eventId` the id of event
+  - **@param** `eventId` the event id
   - **@param** `txType` transaction type
   - **@param** `order` the payment order (list of single payments)
-  - **@param** `unsignedTransactions` ongoing unsigned PaymentTransactions which will be used to prevent double spend (gathered from database and guard TxAgreement process)
-  - **@param** `serializedSignedTransactions` the serialized string of ongoing signed transactions which will be used to chain transactions (gathered from database and mempool)
+  - **@param** `unsignedTransactions` ongoing unsigned PaymentTransactions which will be used to prevent double spending (gathered from database and guard TxAgreement process)
+  - **@param** `serializedSignedTransactions` the serialized string of ongoing signed transactions which will be used for chained transactions (gathered from database and mempool)
   - **@returns** the generated PaymentTransaction
 - `getTransactionAssets`
   - gets input and output assets of a PaymentTransaction
@@ -210,7 +210,7 @@ Required functions are as follows:
 
 ### `AbstractUtxoChainNetwork`
 
-Required functions which only are needed in UTxO-based chains are as follows:
+Required functions that are only needed in UTxO-based chains are as follows:
 
 - `getAddressBoxes`
   - gets confirmed and unspent boxes of an address
