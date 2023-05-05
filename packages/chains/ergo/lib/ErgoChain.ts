@@ -622,6 +622,14 @@ class ErgoChain extends AbstractUtxoChain {
   };
 
   /**
+   * gets the RWT token id
+   * @returns RWT token id
+   */
+  getRWTToken = (): string => {
+    return this.configs.rwtId;
+  };
+
+  /**
    * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
    * @param address the address
    * @param tokenId the token id
@@ -767,6 +775,24 @@ class ErgoChain extends AbstractUtxoChain {
         `Found [${guardBox.length}] guards config box with NFT [${guardNFT}]`
       );
     else return guardBox[0];
+  };
+
+  /**
+   * verifies rwt token of event box
+   * @param eventSerializedBox serialized string of the event box
+   * @param expectedRWT event fromChain RWT tokenId
+   */
+  verifyEventRWT = (
+    eventSerializedBox: string,
+    expectedRWT: string
+  ): boolean => {
+    const eventBox = wasm.ErgoBox.sigma_parse_bytes(
+      Buffer.from(eventSerializedBox, 'hex')
+    );
+    return (
+      eventBox.tokens().len() !== 0 &&
+      eventBox.tokens().get(0).id().to_str() === expectedRWT
+    );
   };
 }
 

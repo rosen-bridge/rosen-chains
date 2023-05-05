@@ -189,6 +189,12 @@ abstract class AbstractChain {
    * @returns the minimum amount
    */
   abstract getMinimumNativeToken: () => bigint;
+
+  /**
+   * gets the RWT token id
+   * @returns RWT token id
+   */
+  abstract getRWTToken: () => string;
 }
 
 export default AbstractChain;

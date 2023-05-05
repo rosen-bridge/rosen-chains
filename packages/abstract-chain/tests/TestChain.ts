@@ -20,6 +20,7 @@ class TestUtxoChain extends AbstractChain {
   submitTransaction = this.notImplemented;
   isTxInMempool = this.notImplemented;
   getMinimumNativeToken = this.notImplemented;
+  getRWTToken = this.notImplemented;
 
   getTransactionAssets = (
     transaction: PaymentTransaction

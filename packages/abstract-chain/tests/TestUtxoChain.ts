@@ -18,6 +18,7 @@ class TestUtxoChain extends AbstractUtxoChain {
   isTxInMempool = this.notImplemented;
   getMempoolBoxMapping = this.notImplemented;
   getMinimumNativeToken = this.notImplemented;
+  getRWTToken = this.notImplemented;
 
   getBoxInfo = (serializedBox: string): BoxInfo => {
     throw Error('Not mocked');

@@ -739,33 +739,6 @@ describe('ErgoChain', () => {
     });
 
     /**
-     * @target ErgoChain.verifyEvent should return false when rwt token id is
-     * invalid
-     * @dependencies
-     * @scenario
-     * - mock an event
-     * - mock a network object
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when rwt token id is invalid', async () => {
-      // mock an event
-      const event = boxTestData.validEvent;
-
-      // mock a network object
-      const network = new TestErgoNetwork();
-
-      // run test
-      const ergoChain = generateChainObject(network, 'fake_rwt_id');
-      const result = await ergoChain.verifyEvent(event, feeConfig);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
      * @target ErgoChain.verifyEvent should return false when event transaction
      * is not in event block
      * @dependencies
@@ -1917,6 +1890,81 @@ describe('ErgoChain', () => {
       await expect(async () => {
         await ergoChain.getGuardsConfigBox(guardNFT);
       }).rejects.toThrow(Error);
+    });
+  });
+
+  describe('verifyEventRWT', () => {
+    const network = new TestErgoNetwork();
+    const serializedEventBox = Buffer.from(
+      ergoTestUtils.toErgoBox(boxTestData.eventBox1).sigma_serialize_bytes()
+    ).toString('hex');
+    const eventRwtId =
+      '9410db5b39388c6b515160e7248346d7ec63d5457292326da12a26cc02efb526';
+
+    /**
+     * @target ErgoChain.verifyEventRWT should return true
+     * when RWT token is correct
+     * @dependencies
+     * @scenario
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return true
+     */
+    it('should return true when RWT token is correct', async () => {
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = ergoChain.verifyEventRWT(serializedEventBox, eventRwtId);
+
+      // check returned value
+      expect(result).toEqual(true);
+    });
+
+    /**
+     * @target ErgoChain.verifyEventRWT should return false
+     * when box has no token
+     * @dependencies
+     * @scenario
+     * - mock an ergo box with no token
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when box has no token', async () => {
+      // mock an ergo box with no token
+      const serializedBox = Buffer.from(
+        ergoTestUtils.toErgoBox(boxTestData.ergoBox3).sigma_serialize_bytes()
+      ).toString('hex');
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = ergoChain.verifyEventRWT(serializedBox, eventRwtId);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target ErgoChain.verifyEventRWT should return false
+     * when rwt token id is wrong
+     * @dependencies
+     * @scenario
+     * - run test with wrong rwt token id
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when rwt token id is wrong', async () => {
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = ergoChain.verifyEventRWT(
+        serializedEventBox,
+        'fake_rwt_id'
+      );
+
+      // check returned value
+      expect(result).toEqual(false);
     });
   });
 });
