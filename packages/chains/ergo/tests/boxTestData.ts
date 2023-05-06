@@ -73,6 +73,29 @@ export const ergoBox2 = `{
   "mainChain": true
 }`;
 
+export const ergoBox3 = `{
+  "boxId": "b726e6a3b54a372a96da1e8b5ae2f05bbf8eb143e2235de562cf3a2b54a82b65",
+  "transactionId": "70c904dd828dd1f70523dcdffa44ff45c22365d70bf869f370870e650acd5312",
+  "blockId": "2ffbea7c4084241c67ca39454643ab44488867d7b46653505a91052aa723bca8",
+  "value": 549205010,
+  "index": 0,
+  "globalIndex": 27724360,
+  "creationHeight": 966947,
+  "settlementHeight": 966949,
+  "ergoTree": "100304000e20a96b8049f0741c7255b60cf01954439d2e4b2d19ae7d8ebc688ecb190a33b5380400d801d601b2db6501fe730000ea02d1aedb63087201d901024d0e938c720201730198b2e4c672010510730200ade4c67201041ad901020ecdee7202",
+  "address": "nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4",
+  "assets": [],
+  "additionalRegisters": {
+    "R4": {
+      "serializedValue": "1a050763617264616e6f67616464723171796470643565676472766671396836613071736837356e7373746d766b617a3061646a766d64363837636735796a77676e6866643373636d6a616d32783666336b7075746367743470357168353973336b777761366564786a78733468733768780731303030303030093230303030303030303339677864333139696d5336444b6f66377a4a3164525269424d5973745359367a50484e506f534c364a74694c7a6b3154574d33",
+      "sigmaType": "Coll[Coll[SByte]]",
+      "renderedValue": "[63617264616e6f,616464723171796470643565676472766671396836613071736837356e7373746d766b617a3061646a766d64363837636735796a77676e6866643373636d6a616d32783666336b7075746367743470357168353973336b777761366564786a7873346873376878,31303030303030,323030303030303030,39677864333139696d5336444b6f66377a4a3164525269424d5973745359367a50484e506f534c364a74694c7a6b3154574d33]"
+    }
+  },
+  "spentTransactionId": null,
+  "mainChain": true
+}`;
+
 export const eventBox1 = `{
   "boxId": "3875b8e8016e3bb5cfc8f5c9f471e08bd576df650497f407c1c54fb09fb2161f",
   "transactionId": "0a3b5e75c6935e7c1969d2e436473e3251bde4c27dde6ccfd9e6982bc12f282c",
@@ -142,6 +165,29 @@ export const validEvent: EventTrigger = {
   amount: '1000000',
   bridgeFee: '1000',
   networkFee: '5000',
+  sourceChainTokenId: 'sourceTokenId',
+  targetChainTokenId: 'targetTokenId',
+  sourceTxId:
+    '6e3dbf41a8e3dbf41a8cd0fe059a54cef8bb140322503d0555a9851f056825ba',
+  sourceChainHeight: 1000,
+  sourceBlockId:
+    '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ea',
+  WIDs: [
+    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6e',
+    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b90',
+    'ebc091d854e83a8fdc0e51936923171fc74895715591be81b8d286888d877e70',
+  ],
+};
+
+export const validEventWithHighFee: EventTrigger = {
+  height: 200,
+  fromChain: 'ergo',
+  toChain: 'cardano',
+  fromAddress: 'fromAddress',
+  toAddress: 'toAddress',
+  amount: '1000000',
+  bridgeFee: '1000',
+  networkFee: '900000',
   sourceChainTokenId: 'sourceTokenId',
   targetChainTokenId: 'targetTokenId',
   sourceTxId:

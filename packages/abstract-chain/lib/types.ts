@@ -33,6 +33,12 @@ interface BoxInfo {
   assets: AssetBalance;
 }
 
+interface BlockInfo {
+  hash: string;
+  parentHash: string;
+  height: number;
+}
+
 interface SinglePayment {
   address: string;
   assets: AssetBalance;
@@ -94,6 +100,7 @@ export {
   AssetBalance,
   TransactionAssetBalance,
   BoxInfo,
+  BlockInfo,
   SinglePayment,
   PaymentOrder,
   EventTrigger,

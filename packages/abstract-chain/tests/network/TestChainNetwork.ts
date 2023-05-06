@@ -13,6 +13,7 @@ class TestUtxoChainNetwork extends AbstractChainNetwork {
   getAddressAssets = this.notImplemented;
   getTransaction = this.notImplemented;
   getBlockTransactionIds = this.notImplemented;
+  getBlockInfo = this.notImplemented;
   submitTransaction = this.notImplemented;
   getMempoolTransactions = this.notImplemented;
 }
