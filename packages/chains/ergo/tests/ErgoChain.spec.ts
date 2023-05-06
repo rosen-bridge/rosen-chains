@@ -129,7 +129,7 @@ describe('ErgoChain', () => {
       };
 
       // mock getCoveringBoxes
-      const ergoChain = new ErgoChain(network, config, 10000n);
+      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
       const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
       getCoveringBoxesSpy.mockResolvedValue({
         covered: true,
@@ -246,7 +246,7 @@ describe('ErgoChain', () => {
       };
 
       // run test and expect exception thrown
-      const ergoChain = new ErgoChain(network, config, 10000n);
+      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
       await expect(async () => {
         await ergoChain.generateTransaction(
           paymentTx.eventId,
@@ -340,7 +340,7 @@ describe('ErgoChain', () => {
       };
 
       // mock getCoveringBoxes
-      const ergoChain = new ErgoChain(network, config, 10000n);
+      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
       const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
       getCoveringBoxesSpy.mockResolvedValue({
         covered: false,
@@ -452,7 +452,7 @@ describe('ErgoChain', () => {
       };
 
       // mock getCoveringBoxes
-      const ergoChain = new ErgoChain(network, config, 10000n);
+      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
       const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
       getCoveringBoxesSpy.mockImplementation(
         async (
@@ -562,7 +562,7 @@ describe('ErgoChain', () => {
       };
 
       // run test
-      const ergoChain = new ErgoChain(network, config, 10000n);
+      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
       const result = ergoChain.extractTransactionOrder(paymentTx);
 
       // check returned value
@@ -612,7 +612,7 @@ describe('ErgoChain', () => {
       };
 
       // run test
-      const ergoChain = new ErgoChain(network, config, 10000n);
+      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
       const result = await ergoChain.verifyTransactionFee(paymentTx);
 
       // check returned value
@@ -658,7 +658,7 @@ describe('ErgoChain', () => {
       };
 
       // run test
-      const ergoChain = new ErgoChain(network, config, 10000n);
+      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
       const result = await ergoChain.verifyTransactionFee(paymentTx);
 
       // check returned value

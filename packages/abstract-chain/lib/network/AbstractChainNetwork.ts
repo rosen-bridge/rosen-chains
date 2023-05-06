@@ -38,7 +38,7 @@ abstract class AbstractChainNetwork {
   abstract getBlockTransactionIds: (blockId: string) => Promise<Array<string>>;
 
   /**
-   * gets info of  the given block
+   * gets info of the given block
    * @param blockId the block id
    * @returns an object containing block info
    */
