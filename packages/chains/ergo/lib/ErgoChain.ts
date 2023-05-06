@@ -263,9 +263,9 @@ class ErgoChain extends AbstractUtxoChain {
    * @param transaction the payment transaction
    * @returns true if the transaction verified
    */
-  getTransactionAssets = (
+  getTransactionAssets = async (
     transaction: PaymentTransaction
-  ): TransactionAssetBalance => {
+  ): Promise<TransactionAssetBalance> => {
     const ergoTx = transaction as ErgoTransaction;
     let inputAssets: AssetBalance = {
       nativeToken: 0n,

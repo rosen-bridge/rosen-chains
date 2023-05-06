@@ -331,9 +331,9 @@ class CardanoChain extends AbstractUtxoChain {
    * @param transaction the payment transaction
    * @returns assets of input and output boxes
    */
-  getTransactionAssets = (
+  getTransactionAssets = async (
     transaction: PaymentTransaction
-  ): TransactionAssetBalance => {
+  ): Promise<TransactionAssetBalance> => {
     const tx = Serializer.deserialize(transaction.txBytes);
     const txBody = tx.body();
 
@@ -345,7 +345,7 @@ class CardanoChain extends AbstractUtxoChain {
     for (let i = 0; i < txBody.inputs().len(); i++) {
       const input = txBody.inputs().get(i);
 
-      const box: CardanoUtxo = this.network.getUtxo(
+      const box: CardanoUtxo = await this.network.getUtxo(
         cardanoUtils.getBoxId(input)
       );
       const boxAssets = this.getBoxInfo(JSONBigInt.stringify(box)).assets;

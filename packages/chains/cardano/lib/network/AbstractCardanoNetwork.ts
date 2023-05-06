@@ -16,7 +16,7 @@ abstract class AbstractCardanoNetwork extends AbstractUtxoChainNetwork {
    * @param boxId the id of Utxo (txId + . + index)
    * @returns the utxo in CardanoUtxo format
    */
-  abstract getUtxo: (boxId: string) => CardanoUtxo;
+  abstract getUtxo: (boxId: string) => Promise<CardanoUtxo>;
 }
 
 export default AbstractCardanoNetwork;

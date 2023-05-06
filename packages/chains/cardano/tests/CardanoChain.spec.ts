@@ -254,7 +254,7 @@ describe('CardanoChain', () => {
      * @expected
      * - it should return mocked transaction assets (both input and output assets)
      */
-    it('should get transaction assets successfully', () => {
+    it('should get transaction assets successfully', async () => {
       // mock PaymentTransaction
       const paymentTx = CardanoTransaction.fromJson(
         TestData.transaction1PaymentTransaction
@@ -262,13 +262,13 @@ describe('CardanoChain', () => {
 
       // mock getUtxo of cardano network
       const getUtxSpy = spyOn(network, 'getUtxo');
-      getUtxSpy.mockReturnValue(bankBoxes[3]);
+      getUtxSpy.mockResolvedValue(bankBoxes[3]);
 
       // run test
       const cardanoChain = new CardanoChain(network, configs, tokenMap);
 
       // check returned value
-      const result = cardanoChain.getTransactionAssets(paymentTx);
+      const result = await cardanoChain.getTransactionAssets(paymentTx);
       expect(result.inputAssets).toEqual(TestData.transaction1InputAssets);
       expect(result.outputAssets).toEqual(TestData.transaction1Assets);
     });

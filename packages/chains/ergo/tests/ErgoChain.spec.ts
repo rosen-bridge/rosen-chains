@@ -510,7 +510,7 @@ describe('ErgoChain', () => {
      * @expected
      * - it should return mocked transaction assets
      */
-    it('should get transaction assets successfully', () => {
+    it('should get transaction assets successfully', async () => {
       // mock PaymentTransaction
       const paymentTx = ErgoTransaction.fromJson(
         transactionTestData.transaction3PaymentTransaction
@@ -519,7 +519,7 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = ergoChain.getTransactionAssets(paymentTx);
+      const result = await ergoChain.getTransactionAssets(paymentTx);
 
       // check returned value
       expect(result).toEqual(expectedAssets);
