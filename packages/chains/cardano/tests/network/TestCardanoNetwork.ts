@@ -1,5 +1,5 @@
 import { AbstractCardanoNetwork } from '../../lib';
-import { ConfirmationStatus } from '@rosen-chains/abstract-chain';
+import { BlockInfo, ConfirmationStatus } from '@rosen-chains/abstract-chain';
 import { CardanoUtxo } from '../../lib/types';
 import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
@@ -55,6 +55,10 @@ class TestCardanoNetwork extends AbstractCardanoNetwork {
   };
 
   getUtxo = (boxId: string): Promise<CardanoUtxo> => {
+    throw Error('Not mocked');
+  };
+
+  getBlockInfo = (blockId: string): Promise<BlockInfo> => {
     throw Error('Not mocked');
   };
 }

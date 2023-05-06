@@ -100,13 +100,11 @@ abstract class AbstractChain {
   /**
    * verifies an event data with its corresponding lock transaction
    * @param event the event trigger model
-   * @param eventSerializedBox the serialized string of the event trigger box
    * @param feeConfig minimum fee and rsn ratio config for the event
    * @returns true if the event verified
    */
   abstract verifyEvent: (
     event: EventTrigger,
-    eventSerializedBox: string,
     feeConfig: Fee
   ) => Promise<boolean>;
 
@@ -193,6 +191,12 @@ abstract class AbstractChain {
    * @returns the minimum amount
    */
   abstract getMinimumNativeToken: () => bigint;
+
+  /**
+   * gets the RWT token id
+   * @returns RWT token id
+   */
+  abstract getRWTToken: () => string;
 }
 
 export default AbstractChain;

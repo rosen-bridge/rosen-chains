@@ -632,6 +632,7 @@ describe('CardanoChain', () => {
     const feeConfig: Fee = {
       bridgeFee: 0n,
       networkFee: 0n,
+      feeRatio: 0n,
       rsnRatio: 0n,
     };
 
@@ -680,11 +681,7 @@ describe('CardanoChain', () => {
 
       // run test
       const cardanoChain = generateChainObject(network);
-      const result = await cardanoChain.verifyEvent(
-        event,
-        TestData.serializedEventBox,
-        feeConfig
-      );
+      const result = await cardanoChain.verifyEvent(event, feeConfig);
 
       // check returned value
       expect(result).toEqual(true);
@@ -721,11 +718,7 @@ describe('CardanoChain', () => {
 
       // run test
       const cardanoChain = generateChainObject(network);
-      const result = await cardanoChain.verifyEvent(
-        event,
-        TestData.serializedEventBox,
-        feeConfig
-      );
+      const result = await cardanoChain.verifyEvent(event, feeConfig);
 
       // check returned value
       expect(result).toEqual(false);
@@ -790,11 +783,7 @@ describe('CardanoChain', () => {
 
       // run test
       const cardanoChain = generateChainObject(network);
-      const result = await cardanoChain.verifyEvent(
-        event,
-        TestData.serializedEventBox,
-        feeConfig
-      );
+      const result = await cardanoChain.verifyEvent(event, feeConfig);
 
       // check returned value
       expect(result).toEqual(false);
@@ -846,11 +835,7 @@ describe('CardanoChain', () => {
 
       // run test
       const cardanoChain = generateChainObject(network);
-      const result = await cardanoChain.verifyEvent(
-        event,
-        TestData.serializedEventBox,
-        feeConfig
-      );
+      const result = await cardanoChain.verifyEvent(event, feeConfig);
 
       // check returned value
       expect(result).toEqual(false);

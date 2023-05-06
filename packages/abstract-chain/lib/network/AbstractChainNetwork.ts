@@ -1,4 +1,4 @@
-import { AssetBalance } from '../types';
+import { AssetBalance, BlockInfo } from '../types';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/logger-interface';
 import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
 
@@ -36,6 +36,13 @@ abstract class AbstractChainNetwork {
    * @returns list of the transaction ids in the block
    */
   abstract getBlockTransactionIds: (blockId: string) => Promise<Array<string>>;
+
+  /**
+   * gets info of the given block
+   * @param blockId the block id
+   * @returns an object containing block info
+   */
+  abstract getBlockInfo: (blockId: string) => Promise<BlockInfo>;
 
   /**
    * gets a transaction

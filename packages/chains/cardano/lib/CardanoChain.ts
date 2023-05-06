@@ -431,13 +431,11 @@ class CardanoChain extends AbstractUtxoChain {
   /**
    * verifies an event data with its corresponding lock transaction
    * @param event the event trigger model
-   * @param eventSerializedBox the serialized string of the event trigger box
    * @param feeConfig minimum fee and rsn ratio config for the event
    * @returns true if the event verified
    */
   verifyEvent = async (
     event: EventTrigger,
-    eventSerializedBox: string,
     feeConfig: Fee
   ): Promise<boolean> => {
     const eventId = Buffer.from(
@@ -609,6 +607,10 @@ class CardanoChain extends AbstractUtxoChain {
    */
   getMinimumNativeToken = () => {
     return this.configs.minBoxValue;
+  };
+
+  getRWTToken = (): string => {
+    return 'TODO';
   };
 
   /**
