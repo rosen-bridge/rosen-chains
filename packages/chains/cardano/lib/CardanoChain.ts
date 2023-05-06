@@ -34,7 +34,6 @@ import {
 import cardanoUtils from './CardanoUtils';
 import * as JSONBigInt from 'json-bigint';
 import { blake2b } from 'blakejs';
-import ErgoUtils from '@rosen-chains/ergo/dist/lib/ErgoUtils';
 
 class CardanoChain extends AbstractUtxoChain {
   declare network: AbstractCardanoNetwork;
@@ -105,9 +104,7 @@ class CardanoChain extends AbstractUtxoChain {
 
     if (!(await this.hasLockAddressEnoughAssets(orderRequiredAssets))) {
       const neededErgs = orderRequiredAssets.nativeToken.toString();
-      const neededTokens = ErgoUtils.JsonBI.stringify(
-        orderRequiredAssets.tokens
-      );
+      const neededTokens = JSONBigInt.stringify(orderRequiredAssets.tokens);
       throw new NotEnoughAssetsError(
         `Locked assets cannot cover required assets. ADA: ${neededErgs}, Tokens: ${neededTokens}`
       );
