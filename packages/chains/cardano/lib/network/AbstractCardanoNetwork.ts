@@ -11,7 +11,12 @@ abstract class AbstractCardanoNetwork extends AbstractUtxoChainNetwork {
    */
   abstract currentSlot: () => Promise<number>;
 
-  abstract getUtxo: (tx_hash: string, index: number) => CardanoUtxo;
+  /**
+   * gets an utxo from the network
+   * @param boxId the id of Utxo (txId + . + index)
+   * @returns the utxo in CardanoUtxo format
+   */
+  abstract getUtxo: (boxId: string) => CardanoUtxo;
 }
 
 export default AbstractCardanoNetwork;

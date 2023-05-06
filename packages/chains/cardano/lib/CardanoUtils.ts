@@ -4,6 +4,7 @@ import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import { default as CIP14 } from '@emurgo/cip14-js';
 import { TokenMap } from '@rosen-bridge/tokens';
 import { CARDANO_CHAIN } from './constants';
+import { BigNum } from '@emurgo/cardano-serialization-lib-nodejs';
 
 class CardanoUtils {
   /**
@@ -13,7 +14,7 @@ class CardanoUtils {
   static calculateInputBoxesAssets = (
     boxes: CardanoUtxo[]
   ): UtxoBoxesAssets => {
-    const assets: Map<string, bigint> = new Map();
+    const assets: Map<CardanoAssetInfo, BigNum> = new Map();
     let changeBoxLovelace: CardanoWasm.BigNum = CardanoWasm.BigNum.zero();
     boxes.forEach((box) => {
       changeBoxLovelace = changeBoxLovelace.checked_add(
@@ -21,10 +22,18 @@ class CardanoUtils {
       );
 
       box.assets.forEach((boxAsset) => {
-        const currentValue = assets.get(boxAsset.fingerprint) || 0n;
+        const assetsInfo: CardanoAssetInfo = {
+          policyId: boxAsset.policy_id,
+          assetName: boxAsset.asset_name,
+        };
+        const currentValue =
+          assets.get(assetsInfo) || CardanoWasm.BigNum.zero();
+
         assets.set(
-          boxAsset.fingerprint,
-          currentValue + BigInt(boxAsset.quantity)
+          assetsInfo,
+          currentValue.checked_add(
+            this.bigIntToBigNum(BigInt(boxAsset.quantity))
+          )
         );
       });
     });
@@ -49,8 +58,8 @@ class CardanoUtils {
     if (token.length === 0)
       throw new Error(`Asset fingerprint [${fingerprint}] not found in config`);
     return {
-      policyId: Buffer.from(token[0][CARDANO_CHAIN]['policyId'], 'hex'),
-      assetName: Buffer.from(token[0][CARDANO_CHAIN]['assetName'], 'hex'),
+      policyId: token[0][CARDANO_CHAIN]['policyId'],
+      assetName: token[0][CARDANO_CHAIN]['assetName'],
     };
   };
 

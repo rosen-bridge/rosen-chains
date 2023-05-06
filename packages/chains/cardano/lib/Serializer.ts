@@ -2,8 +2,8 @@ import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 
 class Serializer {
   /**
-   * converts the transaction model in the chain to bytearray
-   * @param tx the transaction model in the chain library
+   * converts the Cardano Wasm transaction to bytearray
+   * @param tx the transaction in the Cardano Wasm format
    * @returns bytearray representation of the transaction
    */
   static serialize = (tx: Transaction): Uint8Array => {
@@ -11,9 +11,9 @@ class Serializer {
   };
 
   /**
-   * converts bytearray representation of the unsigned transaction to the transaction model in the chain
+   * converts bytearray representation of the transaction to the Cardano Wasm transaction format
    * @param txBytes bytearray representation of the transaction
-   * @returns the transaction model in the chain library
+   * @returns the transaction in the Cardano Wasm format
    */
   static deserialize = (txBytes: Uint8Array): Transaction => {
     return Transaction.from_bytes(txBytes);

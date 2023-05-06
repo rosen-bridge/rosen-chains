@@ -16,8 +16,8 @@ interface CardanoAsset {
 }
 
 interface CardanoAssetInfo {
-  policyId: Uint8Array;
-  assetName: Uint8Array;
+  policyId: string;
+  assetName: string;
 }
 
 interface CardanoUtxo {
@@ -43,7 +43,7 @@ interface CardanoTx {
 
 interface UtxoBoxesAssets {
   lovelace: BigNum;
-  assets: Map<string, bigint>;
+  assets: Map<CardanoAssetInfo, BigNum>;
 }
 
 export {

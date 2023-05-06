@@ -24,7 +24,6 @@
     "@emurgo/cip14-js": "^3.0.1",
     "@rosen-bridge/logger-interface": "^0.1.0",
     "@rosen-chains/abstract-chain": "^0.1.2",
-    "crypto": "^1.0.1",
     "json-bigint": "^1.0.0"
   },
   "devDependencies": {

@@ -54,7 +54,7 @@ class TestCardanoNetwork extends AbstractCardanoNetwork {
     throw Error('Not mocked');
   };
 
-  getUtxo = (tx_hash: string, index: number): CardanoUtxo => {
+  getUtxo = (boxId: string): CardanoUtxo => {
     throw Error('Not mocked');
   };
 }
