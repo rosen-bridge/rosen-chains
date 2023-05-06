@@ -7,6 +7,7 @@ import {
   EventTrigger,
   FailedError,
   NetworkError,
+  NotEnoughAssetsError,
   NotEnoughValidBoxesError,
   NotFoundError,
   PaymentOrder,
@@ -33,21 +34,24 @@ import {
 import cardanoUtils from './CardanoUtils';
 import * as JSONBigInt from 'json-bigint';
 import { blake2b } from 'blakejs';
-import * as wasm from 'ergo-lib-wasm-nodejs';
+import ErgoUtils from '@rosen-chains/ergo/dist/lib/ErgoUtils';
 
 class CardanoChain extends AbstractUtxoChain {
   declare network: AbstractCardanoNetwork;
   declare configs: CardanoConfigs;
   tokenMap: TokenMap;
+  feeRatioDivisor: bigint;
 
   constructor(
     network: AbstractCardanoNetwork,
     configs: CardanoConfigs,
     tokenMap: TokenMap,
+    feeRatioDivisor: bigint,
     logger?: AbstractLogger
   ) {
     super(network, configs, logger);
     this.tokenMap = tokenMap;
+    this.feeRatioDivisor = feeRatioDivisor;
   }
 
   /**
@@ -98,6 +102,16 @@ class CardanoChain extends AbstractUtxoChain {
     const orderRequiredAssets = order
       .map((order) => order.assets)
       .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
+
+    if (!(await this.hasLockAddressEnoughAssets(orderRequiredAssets))) {
+      const neededErgs = orderRequiredAssets.nativeToken.toString();
+      const neededTokens = ErgoUtils.JsonBI.stringify(
+        orderRequiredAssets.tokens
+      );
+      throw new NotEnoughAssetsError(
+        `Locked assets cannot cover required assets. ADA: ${neededErgs}, Tokens: ${neededTokens}`
+      );
+    }
 
     const forbiddenBoxIds = unsignedTransactions.flatMap((paymentTx) => {
       const txBody = Serializer.deserialize(paymentTx.txBytes).body();
@@ -286,7 +300,7 @@ class CardanoChain extends AbstractUtxoChain {
 
     // send transaction
     try {
-      const response = await this.network.submitTransaction(tx.to_json());
+      const response = await this.network.submitTransaction(tx.to_hex());
       this.logger.info(
         `Cardano Transaction [${transaction.txId}] submitted. Response: ${response}`
       );
@@ -430,21 +444,6 @@ class CardanoChain extends AbstractUtxoChain {
       blake2b(event.sourceTxId, undefined, 32)
     ).toString('hex');
 
-    // Verifying watcher RWTs
-    const rwtId = wasm.ErgoBox.sigma_parse_bytes(
-      Buffer.from(eventSerializedBox, 'hex')
-    )
-      .tokens()
-      .get(0)
-      .id()
-      .to_str();
-    if (rwtId !== this.configs.rwtId) {
-      this.logger.info(
-        `event [${eventId}] is not valid, event RWT is not compatible with the ergo RWT id`
-      );
-      return false;
-    }
-
     try {
       const blockTxs = await this.network.getBlockTransactionIds(
         event.sourceBlockId
@@ -475,10 +474,16 @@ class CardanoChain extends AbstractUtxoChain {
         try {
           // check if amount is more than fees
           const eventAmount = BigInt(event.amount);
-          const bridgeFee =
+          const clampedBridgeFee =
             BigInt(event.bridgeFee) > feeConfig.bridgeFee
               ? BigInt(event.bridgeFee)
               : feeConfig.bridgeFee;
+          const calculatedRSNFee =
+            (eventAmount * feeConfig.rsnRatio) / this.feeRatioDivisor;
+          const bridgeFee =
+            clampedBridgeFee > calculatedRSNFee
+              ? clampedBridgeFee
+              : calculatedRSNFee;
           const networkFee =
             BigInt(event.networkFee) > feeConfig.networkFee
               ? BigInt(event.networkFee)
@@ -542,6 +547,11 @@ class CardanoChain extends AbstractUtxoChain {
     return true;
   };
 
+  /**
+   * verifies PaymentTransaction extra conditions like metadata and change box address
+   * @param transaction to verify
+   * @returns true if all conditions are met
+   */
   verifyExtraCondition = (transaction: PaymentTransaction): boolean => {
     const tx = Serializer.deserialize(transaction.txBytes);
 
