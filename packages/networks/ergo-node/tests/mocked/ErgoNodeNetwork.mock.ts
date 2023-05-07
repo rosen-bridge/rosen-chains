@@ -11,13 +11,13 @@ import {
 } from '../testData';
 
 /**
- * mock `getHeight` of ergo node client
+ * mock `getNodeInfo` of ergo node client
  */
-export const mockGetHeight = () =>
+export const mockGetNodeInfo = () =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    blockchain: {
-      getIndexedHeight: async () => ({
-        indexedHeight: BigInt(testHeight),
+    info: {
+      getNodeInfo: async () => ({
+        fullHeight: BigInt(testHeight),
       }),
     },
   } as any);

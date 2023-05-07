@@ -48,8 +48,8 @@ class ErgoNodeNetwork extends AbstractChainNetwork {
    * get current block height
    */
   public getHeight = async () => {
-    const { indexedHeight } = await this.client.blockchain.getIndexedHeight();
-    return Number(indexedHeight);
+    const { fullHeight } = await this.client.info.getNodeInfo();
+    return Number(fullHeight);
   };
 
   /**

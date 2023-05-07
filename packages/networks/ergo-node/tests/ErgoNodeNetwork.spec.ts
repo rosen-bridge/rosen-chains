@@ -6,7 +6,7 @@ import {
   mockGetAddressBalanceTotal,
   mockGetBlockHeaderById,
   mockGetBlockTransactionsById,
-  mockGetHeight,
+  mockGetNodeInfo,
   mockGetTxById,
   mockGetTxByIdAndGetBlockTransactionsById,
   mockGetUnconfirmedTransactions,
@@ -63,12 +63,12 @@ describe('ErgoNodeNetwork', () => {
      * @target `ErgoNodeNetwork.getHeight` should return current height
      * @dependencies
      * @scenario
-     * - mock `getHeight` of ergo node client
+     * - mock `getNodeInfo` of ergo node client
      * @expected
      * - returned height should equal mocked height
      */
     it('should return current height', async () => {
-      mockGetHeight();
+      mockGetNodeInfo();
       const network = getNetwork();
 
       const actualHeight = await network.getHeight();
