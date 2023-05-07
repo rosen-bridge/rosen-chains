@@ -17,7 +17,7 @@ export const mockGetNodeInfo = () =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
     info: {
       getNodeInfo: async () => ({
-        fullHeight: BigInt(testHeight),
+        fullHeight: testHeight,
       }),
     },
   } as any);

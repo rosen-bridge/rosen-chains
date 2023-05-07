@@ -73,7 +73,7 @@ describe('ErgoNodeNetwork', () => {
 
       const actualHeight = await network.getHeight();
 
-      const expectedHeight = testHeight;
+      const expectedHeight = Number(testHeight);
       expect(actualHeight).toEqual(expectedHeight);
     });
   });
@@ -95,7 +95,7 @@ describe('ErgoNodeNetwork', () => {
         testTransaction.id
       );
 
-      const expectedConfirmations = testTransaction.numConfirmations;
+      const expectedConfirmations = Number(testTransaction.numConfirmations);
       expect(actualConfirmations).toEqual(expectedConfirmations);
     });
   });
@@ -235,7 +235,7 @@ describe('ErgoNodeNetwork', () => {
       const expectedInfo = {
         hash: testBlockId,
         parentHash: testBlockHeaders.parentId,
-        height: testBlockHeaders.height,
+        height: Number(testBlockHeaders.height),
       };
       expect(actualInfo).toEqual(expectedInfo);
     });
