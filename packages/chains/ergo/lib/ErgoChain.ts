@@ -35,13 +35,16 @@ class ErgoChain extends AbstractUtxoChain {
     '1005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304';
   declare network: AbstractErgoNetwork;
   declare configs: ErgoConfigs;
+  feeRatioDivisor: bigint;
 
   constructor(
     network: AbstractErgoNetwork,
     configs: ErgoConfigs,
+    feeRatioDivisor: bigint,
     logger?: AbstractLogger
   ) {
     super(network, configs, logger);
+    this.feeRatioDivisor = feeRatioDivisor;
   }
 
   /**
@@ -377,33 +380,17 @@ class ErgoChain extends AbstractUtxoChain {
   /**
    * verifies an event data with its corresponding lock transaction
    * @param event the event trigger model
-   * @param eventSerializedBox the serialized string of the event trigger box
    * @param feeConfig minimum fee and rsn ratio config for the event
    * @returns true if the event verified
    */
   verifyEvent = async (
     event: EventTrigger,
-    eventSerializedBox: string,
     feeConfig: Fee
   ): Promise<boolean> => {
     const eventId = Buffer.from(
       blake2b(event.sourceTxId, undefined, 32)
     ).toString('hex');
 
-    // Verifying watcher RWTs
-    const rwtId = wasm.ErgoBox.sigma_parse_bytes(
-      Buffer.from(eventSerializedBox, 'hex')
-    )
-      .tokens()
-      .get(0)
-      .id()
-      .to_str();
-    if (rwtId !== this.configs.rwtId) {
-      this.logger.info(
-        `event [${eventId}] is not valid, event RWT is not compatible with the ergo RWT id`
-      );
-      return false;
-    }
     try {
       const blockTxs = await this.network.getBlockTransactionIds(
         event.sourceBlockId
@@ -413,6 +400,8 @@ class ErgoChain extends AbstractUtxoChain {
         event.sourceTxId,
         event.sourceBlockId
       );
+      const blockHeight = (await this.network.getBlockInfo(event.sourceBlockId))
+        .height;
       const data = this.network.extractor.get(serializedTx);
       if (!data) {
         this.logger.info(
@@ -429,15 +418,18 @@ class ErgoChain extends AbstractUtxoChain {
         event.sourceChainTokenId == data.sourceChainTokenId &&
         event.targetChainTokenId == data.targetChainTokenId &&
         event.toAddress == data.toAddress &&
-        event.fromAddress == data.fromAddress
+        event.fromAddress == data.fromAddress &&
+        event.sourceChainHeight == blockHeight
       ) {
         try {
           // check if amount is more than fees
           const eventAmount = BigInt(event.amount);
-          const bridgeFee =
-            BigInt(event.bridgeFee) > feeConfig.bridgeFee
-              ? BigInt(event.bridgeFee)
-              : feeConfig.bridgeFee;
+          let bridgeFee = BigInt(event.bridgeFee);
+          if (feeConfig.bridgeFee > bridgeFee) bridgeFee = feeConfig.bridgeFee;
+          const transferringAmountFee =
+            (eventAmount * feeConfig.feeRatio) / this.feeRatioDivisor;
+          if (transferringAmountFee > bridgeFee)
+            bridgeFee = transferringAmountFee;
           const networkFee =
             BigInt(event.networkFee) > feeConfig.networkFee
               ? BigInt(event.networkFee)
@@ -630,6 +622,14 @@ class ErgoChain extends AbstractUtxoChain {
   };
 
   /**
+   * gets the RWT token id
+   * @returns RWT token id
+   */
+  getRWTToken = (): string => {
+    return this.configs.rwtId;
+  };
+
+  /**
    * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
    * @param address the address
    * @param tokenId the token id
@@ -775,6 +775,24 @@ class ErgoChain extends AbstractUtxoChain {
         `Found [${guardBox.length}] guards config box with NFT [${guardNFT}]`
       );
     else return guardBox[0];
+  };
+
+  /**
+   * verifies rwt token of event box
+   * @param eventSerializedBox serialized string of the event box
+   * @param expectedRWT event fromChain RWT tokenId
+   */
+  verifyEventRWT = (
+    eventSerializedBox: string,
+    expectedRWT: string
+  ): boolean => {
+    const eventBox = wasm.ErgoBox.sigma_parse_bytes(
+      Buffer.from(eventSerializedBox, 'hex')
+    );
+    return (
+      eventBox.tokens().len() !== 0 &&
+      eventBox.tokens().get(0).id().to_str() === expectedRWT
+    );
   };
 }
 
