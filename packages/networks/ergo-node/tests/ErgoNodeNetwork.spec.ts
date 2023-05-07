@@ -4,6 +4,7 @@ import ErgoNodeNetwork from '../lib/ErgoNodeNetwork';
 
 import {
   mockGetAddressBalanceTotal,
+  mockGetBlockHeaderById,
   mockGetBlockTransactionsById,
   mockGetHeight,
   mockGetTxById,
@@ -16,6 +17,7 @@ import {
   testAddress,
   testAddressBalance,
   testAddressBalanceWithInvalidTokens,
+  testBlockHeaders,
   testBlockId,
   testHeight,
   testMempoolTransactions,
@@ -215,6 +217,30 @@ describe('ErgoNodeNetwork', () => {
     });
   });
 
+  describe('getBlockInfo', () => {
+    /**
+     * @target `ErgoNodeNetwork.getBlockInfo` should return block info
+     * @dependencies
+     * @scenario
+     * - mock `getBlockHeaderById` of ergo node client
+     * @expected
+     * - returned block info should equal mocked block info
+     */
+    it('should return block info', async () => {
+      mockGetBlockHeaderById();
+      const network = getNetwork();
+
+      const actualInfo = await network.getBlockInfo(testBlockId);
+
+      const expectedInfo = {
+        hash: testBlockId,
+        parentHash: testBlockHeaders.parentId,
+        height: testBlockHeaders.height,
+      };
+      expect(actualInfo).toEqual(expectedInfo);
+    });
+  });
+
   describe('getTransaction', () => {
     /**
      * @target `ErgoNodeNetwork.getTransaction` should return transaction bytes
@@ -274,7 +300,9 @@ describe('ErgoNodeNetwork', () => {
 
       const actualTxs = await network.getMempoolTransactions();
 
-      const expectedTxs = testMempoolTransactions.map(() => testTransactionBytes);
+      const expectedTxs = testMempoolTransactions.map(
+        () => testTransactionBytes
+      );
       expect(actualTxs).toEqual(expectedTxs);
     });
   });

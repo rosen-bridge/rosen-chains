@@ -130,4 +130,9 @@ export const testPartialTransactionsWithAbsentIds = [
   },
 ];
 
+export const testBlockHeaders = {
+  parentId: '',
+  height: 10,
+};
+
 export const testMempoolTransactions = Array(100).fill(testTransaction);

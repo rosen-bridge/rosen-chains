@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 
 import {
   testAddressBalance,
+  testBlockHeaders,
   testHeight,
   testMempoolTransactions,
   testPartialTransactions,
@@ -58,6 +59,17 @@ export const mockGetBlockTransactionsById = (
       getBlockTransactionsById: async () => ({
         transactions: txs,
       }),
+    },
+  } as any);
+
+/**
+ * mock `getBlockHeaderById` of ergo node client
+ * @param txs
+ */
+export const mockGetBlockHeaderById = () =>
+  vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
+    blocks: {
+      getBlockHeaderById: async () => testBlockHeaders,
     },
   } as any);
 

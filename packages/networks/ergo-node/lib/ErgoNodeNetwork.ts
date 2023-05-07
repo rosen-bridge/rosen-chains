@@ -112,6 +112,20 @@ class ErgoNodeNetwork extends AbstractChainNetwork {
   };
 
   /**
+   * get info of a block
+   * @param blockId
+   */
+  public getBlockInfo = async (blockId: string) => {
+    const blockInfo = await this.client.blocks.getBlockHeaderById(blockId);
+
+    return {
+      hash: blockId,
+      parentHash: blockInfo.parentId,
+      height: Number(blockInfo.height),
+    };
+  };
+
+  /**
    * convert a tx string to its bytes representation
    * @param tx
    */
