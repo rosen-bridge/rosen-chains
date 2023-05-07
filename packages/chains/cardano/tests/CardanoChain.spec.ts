@@ -643,6 +643,7 @@ describe('CardanoChain', () => {
      * - mock an event
      * - mock a network object with mocked 'getBlockTransactionIds' and
      *   'getTransaction' functions
+     * - mock getBlockInfo to return event block height
      * - mock network extractor to return event data
      * - run test
      * - check returned value
@@ -672,6 +673,14 @@ describe('CardanoChain', () => {
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
         .mockResolvedValueOnce(serializedTx);
+
+      // mock getBlockInfo to return event block height
+      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
+      when(getBlockInfoSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce({
+          height: event.sourceChainHeight,
+        } as any);
 
       // mock network extractor to return event data
       const extractorSpy = spyOn(network.extractor, 'get');
@@ -732,6 +741,7 @@ describe('CardanoChain', () => {
      * - mock an event
      * - mock a network object with mocked 'getBlockTransactionIds' and
      *   'getTransaction' functions
+     * - mock getBlockInfo to return event block height
      * - mock network extractor to return event data (expect for a key which
      *   should be wrong)
      * - run test
@@ -764,6 +774,7 @@ describe('CardanoChain', () => {
         .calledWith(event.sourceBlockId)
         .mockResolvedValueOnce([
           TestUtils.generateRandomId(),
+          event.sourceTxId,
           TestUtils.generateRandomId(),
         ]);
       const serializedTx = 'serializedTransaction';
@@ -771,6 +782,14 @@ describe('CardanoChain', () => {
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
         .mockResolvedValueOnce(serializedTx);
+
+      // mock getBlockInfo to return event block height
+      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
+      when(getBlockInfoSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce({
+          height: event.sourceChainHeight,
+        } as any);
 
       // mock network extractor to return event data (expect for a key which
       //   should be wrong)

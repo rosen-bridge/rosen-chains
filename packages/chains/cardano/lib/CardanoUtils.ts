@@ -115,6 +115,11 @@ class CardanoUtils {
     ).fingerprint();
   };
 
+  /**
+   * get box id from CardanoWasm.TransactionInput or CardanoUtxo
+   * @param box to fetch d
+   * @returns tx_hash.index as box id
+   */
   static getBoxId = (
     box: CardanoUtxo | CardanoWasm.TransactionInput
   ): string => {

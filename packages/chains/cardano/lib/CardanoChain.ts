@@ -448,6 +448,8 @@ class CardanoChain extends AbstractUtxoChain {
         event.sourceTxId,
         event.sourceBlockId
       );
+      const blockHeight = (await this.network.getBlockInfo(event.sourceBlockId))
+        .height;
       const data = this.network.extractor.get(serializedTx);
       if (!data) {
         this.logger.info(
@@ -464,7 +466,8 @@ class CardanoChain extends AbstractUtxoChain {
         event.sourceChainTokenId == data.sourceChainTokenId &&
         event.targetChainTokenId == data.targetChainTokenId &&
         event.toAddress == data.toAddress &&
-        event.fromAddress == data.fromAddress // TODO: SourceChainHeight
+        event.fromAddress == data.fromAddress &&
+        event.sourceChainHeight == blockHeight
       ) {
         try {
           // check if amount is more than fees
@@ -474,7 +477,7 @@ class CardanoChain extends AbstractUtxoChain {
               ? BigInt(event.bridgeFee)
               : feeConfig.bridgeFee;
           const calculatedRSNFee =
-            (eventAmount * feeConfig.rsnRatio) / this.feeRatioDivisor;
+            (eventAmount * feeConfig.feeRatio) / this.feeRatioDivisor;
           const bridgeFee =
             clampedBridgeFee > calculatedRSNFee
               ? clampedBridgeFee
