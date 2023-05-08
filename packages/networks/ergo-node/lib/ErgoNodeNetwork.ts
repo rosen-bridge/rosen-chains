@@ -11,12 +11,12 @@ import * as ergoLib from 'ergo-lib-wasm-nodejs';
 import all from 'it-all';
 import JsonBigIntFactory from 'json-bigint';
 
-import { TX_FETCHING_PAGE_SIZE } from './constants';
-
 const JsonBigInt = JsonBigIntFactory({
   alwaysParseAsBig: true,
   useNativeBigInt: true,
 });
+
+const TX_FETCHING_PAGE_SIZE = 50;
 
 interface ErgoNodeNetworkOptions {
   logger?: AbstractLogger;
