@@ -11,7 +11,7 @@ import {
   mockGetTxByIdAndGetBlockTransactionsById,
   mockGetUnconfirmedTransactions,
   mockSendTransactionAsBytes,
-} from './mocked/ErgoNodeNetwork.mock';
+} from './mocked/ErgoNodeClient.mock';
 
 import {
   testAddress,
