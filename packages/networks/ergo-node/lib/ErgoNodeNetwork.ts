@@ -106,7 +106,7 @@ class ErgoNodeNetwork extends AbstractChainNetwork {
 
     if (txIds.includes(undefined)) {
       throw new Error(
-        "An error occurred while getting block transaction ids. Some transactions don't have an id."
+        `An error occurred while getting block [${blockId}] transaction ids: Some transactions don't have an id.`
       );
     }
     return txIds as string[];
