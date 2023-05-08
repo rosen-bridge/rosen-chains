@@ -3,6 +3,7 @@ import {
   AbstractRosenDataExtractor,
   ErgoRosenExtractor,
 } from '@rosen-bridge/rosen-extractor';
+import { RosenTokens } from '@rosen-bridge/tokens';
 import { AbstractChainNetwork } from '@rosen-chains/abstract-chain';
 import ergoNodeClientFactory from '@rosen-clients/ergo-node';
 
@@ -10,19 +11,19 @@ import * as ergoLib from 'ergo-lib-wasm-nodejs';
 import all from 'it-all';
 import JsonBigIntFactory from 'json-bigint';
 
+import { TX_FETCHING_PAGE_SIZE } from './constants';
+
 const JsonBigInt = JsonBigIntFactory({
   alwaysParseAsBig: true,
   useNativeBigInt: true,
 });
-
-import { TX_FETCHING_PAGE_SIZE } from './constants';
 
 interface ErgoNodeNetworkOptions {
   logger?: AbstractLogger;
   nodeBaseUrl: string;
   extractorOptions: {
     lockAddress: string;
-    tokens: ConstructorParameters<typeof ErgoRosenExtractor>['1'];
+    tokens: RosenTokens;
   };
 }
 
