@@ -13,10 +13,18 @@ abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork {
 
   /**
    * gets confirmed and unspent boxes by tokenId
-   * @param tokenId the token id
+   * @param tokenId
+   * @param address
+   * @param offset
+   * @param limit
    * @returns list of serialized string of the boxes
    */
-  abstract getBoxesByTokenId: (tokenId: string) => Promise<Array<string>>;
+  abstract getBoxesByTokenId: (
+    tokenId: string,
+    address: string,
+    offset?: number,
+    limit?: number
+  ) => Promise<Array<string>>;
 }
 
 export default AbstractErgoNetwork;
