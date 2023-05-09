@@ -1,13 +1,12 @@
 import { AbstractLogger } from '@rosen-bridge/logger-interface';
-import {
-  AbstractRosenDataExtractor,
-  ErgoRosenExtractor,
-} from '@rosen-bridge/rosen-extractor';
+import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import { RosenTokens } from '@rosen-bridge/tokens';
-import { AbstractChainNetwork } from '@rosen-chains/abstract-chain';
+import { AbstractErgoNetwork } from '@rosen-chains/ergo';
 import ergoNodeClientFactory from '@rosen-clients/ergo-node';
+import { ErgoTransactionOutput } from '@rosen-clients/ergo-node/dist/src/types';
 
 import * as ergoLib from 'ergo-lib-wasm-nodejs';
+import { BlockHeaders, ErgoStateContext } from 'ergo-lib-wasm-nodejs';
 import all from 'it-all';
 import JsonBigIntFactory from 'json-bigint';
 
@@ -27,9 +26,13 @@ interface ErgoNodeNetworkOptions {
   };
 }
 
-class ErgoNodeNetwork extends AbstractChainNetwork {
+interface ErgoLibSerializableObject {
+  sigma_serialize_bytes: () => Uint8Array;
+}
+
+class ErgoNodeNetwork extends AbstractErgoNetwork {
   private client: ReturnType<typeof ergoNodeClientFactory>;
-  extractor: AbstractRosenDataExtractor<string>;
+  extractor: ErgoRosenExtractor;
 
   constructor({
     extractorOptions,
@@ -127,12 +130,26 @@ class ErgoNodeNetwork extends AbstractChainNetwork {
   };
 
   /**
+   * get hex representation of a byte array
+   * @param uint8array
+   */
+  private uint8ArrayToHexString = (uint8array: Uint8Array) =>
+    Buffer.from(uint8array).toString('hex');
+
+  /**
+   * get hex string representation of a serializable ergo lib object
+   * @param serializable an ergo lib object with `sigma_serialize_bytes` prop
+   */
+  private serializableToHexString = (serializable: ErgoLibSerializableObject) =>
+    this.uint8ArrayToHexString(serializable.sigma_serialize_bytes());
+
+  /**
    * convert a tx string to its bytes representation
    * @param tx
    */
   private getTransactionBytes = (tx: string) => {
     const ergoLibTx = ergoLib.Transaction.from_json(tx);
-    return Buffer.from(ergoLibTx.sigma_serialize_bytes()).toString('hex');
+    return this.serializableToHexString(ergoLibTx);
   };
 
   /**
@@ -191,6 +208,117 @@ class ErgoNodeNetwork extends AbstractChainNetwork {
       .filter((tx) => tx.id)
       .map((tx) => JsonBigInt.stringify(tx))
       .map(this.getTransactionBytes);
+  };
+
+  /**
+   * get utxos of an address
+   * @param address
+   * @param offset
+   * @param limit
+   */
+  private getRawAddressBoxes = async (
+    address: string,
+    offset: number,
+    limit: number
+  ) => {
+    const boxes = await this.client.blockchain.getBoxesByAddressUnspent(
+      address,
+      {
+        offset: BigInt(offset),
+        limit: BigInt(limit),
+      }
+    );
+
+    // Type assertion is needed because the types returned by client are wrong
+    return boxes as any;
+  };
+
+  /**
+   * get hex string representation of a box
+   * @param box
+   */
+  private boxToHexString = (box: ErgoTransactionOutput) =>
+    this.serializableToHexString(
+      ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
+    );
+
+  /**
+   * get hex representation of utxos of an address
+   * @param address
+   * @param offset
+   * @param limit
+   */
+  public getAddressBoxes = async (
+    address: string,
+    offset: number,
+    limit: number
+  ) => {
+    const boxes = await this.getRawAddressBoxes(address, offset, limit);
+
+    const boxesBytes = boxes.map(this.boxToHexString);
+
+    return boxesBytes;
+  };
+
+  /**
+   * get hex representation of utxos of an address containing a token
+   * @param tokenId
+   * @param address
+   * @param offset
+   * @param limit
+   */
+  public getBoxesByTokenId = async (
+    tokenId: string,
+    address: string,
+    offset = 0,
+    limit = 5
+  ) => {
+    const allAddressBoxes = await this.getRawAddressBoxes(
+      address,
+      offset,
+      limit
+    );
+
+    const boxHasToken = (box: ErgoTransactionOutput) =>
+      box.assets?.some((asset) => asset.tokenId === tokenId);
+
+    const eligibleBoxes = allAddressBoxes
+      .filter(boxHasToken)
+      .map(this.boxToHexString);
+
+    return eligibleBoxes;
+  };
+
+  /**
+   * get current state context of blockchain using last ten blocks
+   */
+  public getStateContext = async () => {
+    const lastBlocks = await this.client.blocks.getLastHeaders(10n);
+
+    const lastBlocksStrings = lastBlocks.map((header) =>
+      JsonBigInt.stringify(header)
+    );
+    const lastBlocksHeaders = BlockHeaders.from_json(lastBlocksStrings);
+    const lastBlockPreHeader = ergoLib.PreHeader.from_block_header(
+      lastBlocksHeaders.get(0)
+    );
+
+    const stateContext = new ErgoStateContext(
+      lastBlockPreHeader,
+      lastBlocksHeaders
+    );
+
+    return stateContext;
+  };
+
+  /**
+   * check if a box is unspent and valid (that is, exists in the blockchain)
+   * @param boxId
+   */
+  public isBoxUnspentAndValid = async (boxId: string) => {
+    const box = await this.client.blockchain.getBoxById(boxId);
+
+    return !(box as any).spentTransactionId;
   };
 }
 

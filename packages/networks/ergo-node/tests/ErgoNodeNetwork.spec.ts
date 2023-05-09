@@ -6,6 +6,9 @@ import {
   mockGetAddressBalanceTotal,
   mockGetBlockHeaderById,
   mockGetBlockTransactionsById,
+  mockGetBoxById,
+  mockGetBoxesByAddressUnspent,
+  mockGetLastHeaders,
   mockGetNodeInfo,
   mockGetTxById,
   mockGetTxByIdAndGetBlockTransactionsById,
@@ -13,10 +16,13 @@ import {
   mockSendTransactionAsBytes,
 } from './mocked/ErgoNodeClient.mock';
 
+import { ErgoStateContext } from 'ergo-lib-wasm-nodejs';
 import {
   testAddress,
   testAddressBalance,
   testAddressBalanceWithInvalidTokens,
+  testAddressBoxes,
+  testAddressBoxesBytes,
   testBlockHeaders,
   testBlockId,
   testHeight,
@@ -211,8 +217,8 @@ describe('ErgoNodeNetwork', () => {
       mockGetBlockTransactionsById(testPartialTransactionsWithAbsentIds as any);
       const network = getNetwork();
 
-      expect(
-        async () => await network.getBlockTransactionIds(testBlockId)
+      expect(() =>
+        network.getBlockTransactionIds(testBlockId)
       ).rejects.toThrow();
     });
   });
@@ -304,6 +310,103 @@ describe('ErgoNodeNetwork', () => {
         () => testTransactionBytes
       );
       expect(actualTxs).toEqual(expectedTxs);
+    });
+  });
+
+  describe('getAddressBoxes', () => {
+    /**
+     * @target `ErgoNodeNetwork.getAddressBoxes` should return address boxes
+     * @dependencies
+     * @scenario
+     * - mock `getBoxesByAddressUnspent` of ergo node client
+     * @expected
+     * - returned box bytes should equal mocked box bytes
+     */
+    it('should return address boxes', async () => {
+      mockGetBoxesByAddressUnspent();
+      const network = getNetwork();
+
+      const actualBoxBytes = await network.getAddressBoxes(testAddress, 0, 5);
+
+      const expectedBoxBytes = testAddressBoxesBytes.slice(0, 5);
+      expect(actualBoxBytes).toEqual(expectedBoxBytes);
+    });
+  });
+
+  describe('getBoxesByTokenId', () => {
+    /**
+     * @target `ErgoNodeNetwork.getBoxesByTokenId` should return address boxes
+     * by token id
+     * @dependencies
+     * @scenario
+     * - mock `getBoxesByAddressUnspent` of ergo node client
+     * @expected
+     * - returned box bytes should equal mocked box bytes
+     */
+    it('should return address boxes by token id', async () => {
+      mockGetBoxesByAddressUnspent();
+      const network = getNetwork();
+      const testTokenId = testAddressBoxes[0].assets[0].tokenId;
+
+      const actualBoxBytes = await network.getBoxesByTokenId(
+        testTokenId,
+        testAddress,
+        0,
+        5
+      );
+
+      const expectedBoxBytes = testAddressBoxes
+        .reduce(
+          (boxBytes, box, index) =>
+            box.assets.some((asset) => asset.tokenId === testTokenId)
+              ? [...boxBytes, testAddressBoxesBytes[index]]
+              : boxBytes,
+          [] as string[]
+        )
+        .slice(0, 5);
+
+      expect(actualBoxBytes).toEqual(expectedBoxBytes);
+    });
+  });
+
+  describe('getStateContext', () => {
+    /**
+     * @target `ErgoNodeNetwork.getStateContext` should get state context
+     * @dependencies
+     * @scenario
+     * - mock `getLastHeaders` of ergo node client
+     * @expected
+     * - returned state context should be a valid one
+     */
+    it('should get state context', async () => {
+      mockGetLastHeaders();
+      const network = getNetwork();
+
+      const actualStateContext = await network.getStateContext();
+
+      expect(actualStateContext).toBeInstanceOf(ErgoStateContext);
+    });
+  });
+
+  describe('isBoxUnspentAndValid', () => {
+    /**
+     * @target `ErgoNodeNetwork.isBoxUnspentAndValid` should check if box is
+     * unspent and valid
+     * @dependencies
+     * @scenario
+     * - mock `getBoxById` of ergo node client
+     * @expected
+     * - should return true
+     */
+    it('should check if box is unspent and valid', async () => {
+      mockGetBoxById();
+      const network = getNetwork();
+
+      const actualIsValid = await network.isBoxUnspentAndValid(
+        testAddressBoxes[0].boxId
+      );
+
+      expect(actualIsValid).toEqual(true);
     });
   });
 });

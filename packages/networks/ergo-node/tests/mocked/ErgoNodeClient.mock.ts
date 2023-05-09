@@ -3,8 +3,10 @@ import { vi } from 'vitest';
 
 import {
   testAddressBalance,
+  testAddressBoxes,
   testBlockHeaders,
   testHeight,
+  testLastBlockHeaders,
   testMempoolTransactions,
   testPartialTransactions,
   testTransaction,
@@ -118,5 +120,38 @@ export const mockGetUnconfirmedTransactions = () =>
         limit: bigint;
       }) =>
         testMempoolTransactions.slice(Number(offset), Number(offset + limit)),
+    },
+  } as any);
+
+/**
+ * mock `getBoxesByAddressUnspent` of ergo node client
+ */
+export const mockGetBoxesByAddressUnspent = () =>
+  vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
+    blockchain: {
+      getBoxesByAddressUnspent: async (
+        address: string,
+        { offset, limit }: { offset: bigint; limit: bigint }
+      ) => testAddressBoxes.slice(Number(offset), Number(offset + limit)),
+    },
+  } as any);
+
+/**
+ * mock `getLastHeaders` of ergo node client
+ */
+export const mockGetLastHeaders = () =>
+  vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
+    blocks: {
+      getLastHeaders: async () => testLastBlockHeaders,
+    },
+  } as any);
+
+/**
+ * mock `getBoxById` of ergo node client
+ */
+export const mockGetBoxById = () =>
+  vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
+    blockchain: {
+      getBoxById: async () => testAddressBoxes[0],
     },
   } as any);
