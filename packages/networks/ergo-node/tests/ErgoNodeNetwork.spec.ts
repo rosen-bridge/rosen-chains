@@ -191,7 +191,7 @@ describe('ErgoNodeNetwork', () => {
      * @expected
      * - the api call should throw
      */
-    it('should ignore tokens without a `tokenId` or `amount` field', async () => {
+    it("should throw when some tokens don't have a `tokenId` or `amount` field", async () => {
       mockGetAddressBalanceTotal(testAddressBalanceWithInvalidTokens as any);
       const network = getNetwork();
 
