@@ -17,9 +17,9 @@ abstract class AbstractChainNetwork {
   abstract getHeight: () => Promise<number>;
 
   /**
-   * gets confirmation for a transaction
+   * gets confirmation for a transaction or -1 if tx is not in the blockchain
    * @param transactionId the transaction id
-   * @returns the transaction confirmation
+   * @returns the transaction confirmation or -1 if tx is not in the blockchain
    */
   abstract getTxConfirmation: (transactionId: string) => Promise<number>;
 
