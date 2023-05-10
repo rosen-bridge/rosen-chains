@@ -155,3 +155,23 @@ export const mockGetBoxById = () =>
       getBoxById: async () => testAddressBoxes[0],
     },
   } as any);
+
+type ErgoNodeClientSchema = ReturnType<typeof ergoNodeClientFactory>;
+/**
+ * mock an api in a category to throw an error
+ * @param category ergo node api category
+ * @param apiName the name of the api in the category
+ * @param objectToThrow
+ */
+export const mockApiToThrow = <Category extends keyof ErgoNodeClientSchema>(
+  category: Category,
+  apiName: keyof ErgoNodeClientSchema[Category],
+  objectToThrow: {
+    [key: string]: any;
+  }
+) =>
+  vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
+    [category]: {
+      [apiName]: vi.fn().mockRejectedValueOnce(objectToThrow),
+    },
+  } as any);

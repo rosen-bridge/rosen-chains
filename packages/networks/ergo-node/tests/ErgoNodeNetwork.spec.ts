@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import ErgoNodeNetwork from '../lib/ErgoNodeNetwork';
 
 import {
+  mockApiToThrow,
   mockGetAddressBalanceTotal,
   mockGetBlockHeaderById,
   mockGetBlockTransactionsById,
@@ -86,7 +87,8 @@ describe('ErgoNodeNetwork', () => {
 
   describe('getTxConfirmation', () => {
     /**
-     * @target `ErgoNodeNetwork.getTxConfirmation` should return tx confirmations
+     * @target `ErgoNodeNetwork.getTxConfirmation` should return tx
+     * confirmations
      * @dependencies
      * @scenario
      * - mock `getTxById` of ergo node client
@@ -102,6 +104,31 @@ describe('ErgoNodeNetwork', () => {
       );
 
       const expectedConfirmations = Number(testTransaction.numConfirmations);
+      expect(actualConfirmations).toEqual(expectedConfirmations);
+    });
+
+    /**
+     * @target `ErgoNodeNetwork.getTxConfirmation` should return `-1` if tx is
+     * not found in the blockchain
+     * @dependencies
+     * @scenario
+     * - mock `getTxById` of ergo node client to reject with a 404 error
+     * @expected
+     * - returned confirmations should equal -1
+     */
+    it('should return `-1` if tx is not found in the blockchain', async () => {
+      mockApiToThrow('blockchain', 'getTxById', {
+        response: {
+          status: 404,
+        },
+      });
+      const network = getNetwork();
+
+      const actualConfirmations = await network.getTxConfirmation(
+        testTransaction.id
+      );
+
+      const expectedConfirmations = -1;
       expect(actualConfirmations).toEqual(expectedConfirmations);
     });
   });
@@ -155,31 +182,20 @@ describe('ErgoNodeNetwork', () => {
     });
 
     /**
-     * @target `ErgoNodeNetwork.getAddressAssets` should ignore tokens without a
-     * `tokenId` or `amount` field
+     * @target `ErgoNodeNetwork.getAddressAssets` should throw when some tokens
+     * don't have a `tokenId` or `amount` field
      * @dependencies
      * @scenario
      * - mock `getAddressBalanceTotal` of ergo node client to an object
      *   containing invalid tokens
      * @expected
-     * - returned assets should be an array omiting invalid tokens
+     * - the api call should throw
      */
     it('should ignore tokens without a `tokenId` or `amount` field', async () => {
       mockGetAddressBalanceTotal(testAddressBalanceWithInvalidTokens as any);
       const network = getNetwork();
 
-      const actualAssets = await network.getAddressAssets(testAddress);
-
-      const expectedAssets = {
-        nativeToken: testAddressBalanceWithInvalidTokens.nanoErgs,
-        tokens: testAddressBalanceWithInvalidTokens.tokens
-          .filter((token) => token.amount && token.tokenId)
-          .map((token) => ({
-            id: token.tokenId,
-            value: token.amount,
-          })),
-      };
-      expect(actualAssets).toEqual(expectedAssets);
+      expect(() => network.getAddressAssets(testAddress)).rejects.toThrow();
     });
   });
 
@@ -220,6 +236,30 @@ describe('ErgoNodeNetwork', () => {
       expect(() =>
         network.getBlockTransactionIds(testBlockId)
       ).rejects.toThrow();
+    });
+
+    /**
+     * @target `ErgoNodeNetwork.getBlockTransactionIds` should return an empty
+     * array if block is not found in the blockchain
+     * @dependencies
+     * @scenario
+     * - mock `getBlockTransactionsById` of ergo node client to reject with a
+     *   404 error
+     * @expected
+     * - returned tx ids should be an empty array
+     */
+    it('should return an empty array if block is not found in the blockchain', async () => {
+      mockApiToThrow('blocks', 'getBlockTransactionsById', {
+        response: {
+          status: 404,
+        },
+      });
+      const network = getNetwork();
+
+      const actualTxIds = await network.getBlockTransactionIds(testBlockId);
+
+      const expectedTxIds: string[] = [];
+      expect(actualTxIds).toEqual(expectedTxIds);
     });
   });
 
@@ -331,6 +371,30 @@ describe('ErgoNodeNetwork', () => {
       const expectedBoxBytes = testAddressBoxesBytes.slice(0, 5);
       expect(actualBoxBytes).toEqual(expectedBoxBytes);
     });
+
+    /**
+     * @target `ErgoNodeNetwork.getAddressBoxes` should return an empty array if
+     * address is not found or is invalid
+     * @dependencies
+     * @scenario
+     * - mock `getBoxesByAddressUnspent` of ergo node client to reject with a
+     *   400 error
+     * @expected
+     * - returned box bytes should equal an empty array
+     */
+    it('should return an empty array if address is not found or is invalid', async () => {
+      mockApiToThrow('blockchain', 'getBoxesByAddressUnspent', {
+        response: {
+          status: 400,
+        },
+      });
+      const network = getNetwork();
+
+      const actualBoxBytes = await network.getAddressBoxes(testAddress, 0, 5);
+
+      const expectedBoxBytes: string[] = [];
+      expect(actualBoxBytes).toEqual(expectedBoxBytes);
+    });
   });
 
   describe('getBoxesByTokenId', () => {
@@ -365,6 +429,36 @@ describe('ErgoNodeNetwork', () => {
         )
         .slice(0, 5);
 
+      expect(actualBoxBytes).toEqual(expectedBoxBytes);
+    });
+
+    /**
+     * @target `ErgoNodeNetwork.getBoxesByTokenId` should return an empty array
+     * if address is not found or is invalid
+     * @dependencies
+     * @scenario
+     * - mock `getBoxesByAddressUnspent` of ergo node client to reject with a
+     *   400 error
+     * @expected
+     * - returned box bytes should equal an empty array
+     */
+    it('should return an empty array if address is not found or is invalid', async () => {
+      mockApiToThrow('blockchain', 'getBoxesByAddressUnspent', {
+        response: {
+          status: 400,
+        },
+      });
+      const network = getNetwork();
+      const testTokenId = testAddressBoxes[0].assets[0].tokenId;
+
+      const actualBoxBytes = await network.getBoxesByTokenId(
+        testTokenId,
+        testAddress,
+        0,
+        5
+      );
+
+      const expectedBoxBytes: string[] = [];
       expect(actualBoxBytes).toEqual(expectedBoxBytes);
     });
   });
@@ -407,6 +501,30 @@ describe('ErgoNodeNetwork', () => {
       );
 
       expect(actualIsValid).toEqual(true);
+    });
+
+    /**
+     * @target `ErgoNodeNetwork.isBoxUnspentAndValid` should return `false` if
+     * box is not found in the blockchain
+     * @dependencies
+     * @scenario
+     * - mock `getBoxById` of ergo node client to reject with a 404 error
+     * @expected
+     * - should return false
+     */
+    it('should return `false` if box is not found in the blockchain', async () => {
+      mockApiToThrow('blockchain', 'getBoxById', {
+        response: {
+          status: 404,
+        },
+      });
+      const network = getNetwork();
+
+      const actualIsValid = await network.isBoxUnspentAndValid(
+        testAddressBoxes[0].boxId
+      );
+
+      expect(actualIsValid).toEqual(false);
     });
   });
 });

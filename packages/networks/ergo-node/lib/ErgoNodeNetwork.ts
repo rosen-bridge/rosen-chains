@@ -1,6 +1,7 @@
 import { AbstractLogger } from '@rosen-bridge/logger-interface';
 import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import { RosenTokens } from '@rosen-bridge/tokens';
+import { FailedError } from '@rosen-chains/abstract-chain';
 import { AbstractErgoNetwork } from '@rosen-chains/ergo';
 import ergoNodeClientFactory from '@rosen-clients/ergo-node';
 import { ErgoTransactionOutput } from '@rosen-clients/ergo-node/dist/src/types';
@@ -9,6 +10,8 @@ import * as ergoLib from 'ergo-lib-wasm-nodejs';
 import { BlockHeaders, ErgoStateContext } from 'ergo-lib-wasm-nodejs';
 import all from 'it-all';
 import JsonBigIntFactory from 'json-bigint';
+
+import handleApiError from './handleApiError';
 
 const JsonBigInt = JsonBigIntFactory({
   alwaysParseAsBig: true,
@@ -52,17 +55,33 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
    * get current block height
    */
   public getHeight = async () => {
-    const { fullHeight } = await this.client.info.getNodeInfo();
-    return Number(fullHeight);
+    try {
+      const { fullHeight } = await this.client.info.getNodeInfo();
+      return Number(fullHeight);
+    } catch (error: any) {
+      return handleApiError(error, 'Failed to get height from Ergo Node:');
+    }
   };
 
   /**
-   * get confirmations of a tx
+   * get confirmations of a tx or -1 if tx is not in the blockchain
    * @param txId
    */
   public getTxConfirmation = async (txId: string) => {
-    const { numConfirmations } = await this.client.blockchain.getTxById(txId);
-    return Number(numConfirmations);
+    try {
+      const { numConfirmations } = await this.client.blockchain.getTxById(txId);
+      return Number(numConfirmations);
+    } catch (error: any) {
+      const baseError = 'Failed to get tx confirmations from Ergo Node:';
+      return handleApiError(error, baseError, {
+        handleRespondedState: (error) => {
+          if (error.response.status === 404) return -1;
+          throw new FailedError(
+            `${baseError} [${error.response.status}] ${error.response.data.reason}`
+          );
+        },
+      });
+    }
   };
 
   /**
@@ -70,31 +89,43 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
    * @param address
    */
   public getAddressAssets = async (address: string) => {
-    const { confirmed } = await this.client.blockchain.getAddressBalanceTotal(
-      address
-    );
+    try {
+      const { confirmed } = await this.client.blockchain.getAddressBalanceTotal(
+        address
+      );
 
-    if (!confirmed) {
+      if (!confirmed) {
+        return {
+          nativeToken: 0n,
+          tokens: [],
+        };
+      }
+
+      type BalanceInfoTokensItem = (typeof confirmed.tokens)[0];
+      const areAllTokensValid = (
+        tokens: BalanceInfoTokensItem[]
+      ): tokens is Required<BalanceInfoTokensItem>[] =>
+        tokens.every((token) => token.tokenId && token.amount);
+
+      if (!areAllTokensValid(confirmed.tokens)) {
+        throw new FailedError(
+          `An error occurred while getting address [${address}] assets: Some tokens don't have an id or amount.`
+        );
+      }
+
       return {
-        nativeToken: 0n,
-        tokens: [],
+        nativeToken: confirmed.nanoErgs,
+        tokens: confirmed.tokens.map((token) => ({
+          id: token.tokenId,
+          value: token.amount,
+        })),
       };
+    } catch (error) {
+      return handleApiError(
+        error,
+        'Failed to get address assets from Ergo Node:'
+      );
     }
-
-    type BalanceInfoTokensItem = (typeof confirmed.tokens)[0];
-    const hasTokenAndAmount = (
-      token: BalanceInfoTokensItem
-    ): token is Required<BalanceInfoTokensItem> => {
-      return !!token.tokenId && !!token.amount;
-    };
-
-    return {
-      nativeToken: confirmed.nanoErgs,
-      tokens: confirmed.tokens.filter(hasTokenAndAmount).map((token) => ({
-        id: token.tokenId,
-        value: token.amount,
-      })),
-    };
   };
 
   /**
@@ -102,17 +133,28 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
    * @param blockId
    */
   public getBlockTransactionIds = async (blockId: string) => {
-    const { transactions } = await this.client.blocks.getBlockTransactionsById(
-      blockId
-    );
-    const txIds = transactions.map((tx) => tx.id);
+    try {
+      const { transactions } =
+        await this.client.blocks.getBlockTransactionsById(blockId);
+      const txIds = transactions.map((tx) => tx.id);
 
-    if (txIds.includes(undefined)) {
-      throw new Error(
-        `An error occurred while getting block [${blockId}] transaction ids: Some transactions don't have an id.`
-      );
+      if (txIds.includes(undefined)) {
+        throw new FailedError(
+          `An error occurred while getting block [${blockId}] transaction ids: Some transactions don't have an id.`
+        );
+      }
+      return txIds as string[];
+    } catch (error) {
+      const baseError = 'Failed to get block transaction ids from Ergo Node:';
+      return handleApiError(error, baseError, {
+        handleRespondedState: (error) => {
+          if (error.response.status === 404) return [] as string[];
+          throw new FailedError(
+            `${baseError} [${error.response.status}] ${error.response.data.reason}`
+          );
+        },
+      });
     }
-    return txIds as string[];
   };
 
   /**
@@ -120,13 +162,17 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
    * @param blockId
    */
   public getBlockInfo = async (blockId: string) => {
-    const blockInfo = await this.client.blocks.getBlockHeaderById(blockId);
+    try {
+      const blockInfo = await this.client.blocks.getBlockHeaderById(blockId);
 
-    return {
-      hash: blockId,
-      parentHash: blockInfo.parentId,
-      height: Number(blockInfo.height),
-    };
+      return {
+        hash: blockId,
+        parentHash: blockInfo.parentId,
+        height: Number(blockInfo.height),
+      };
+    } catch (error) {
+      return handleApiError(error, 'Failed to get block info from Ergo Node:');
+    }
   };
 
   /**
@@ -159,12 +205,16 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
    * @returns
    */
   public getTransaction = async (txId: string) => {
-    const partialTx = await this.client.blockchain.getTxById(txId);
-    const blockTxs = await this.client.blocks.getBlockTransactionsById(
-      partialTx.blockId
-    );
-    const tx = blockTxs.transactions.find((tx) => tx.id === txId);
-    return this.getTransactionBytes(JsonBigInt.stringify(tx));
+    try {
+      const partialTx = await this.client.blockchain.getTxById(txId);
+      const blockTxs = await this.client.blocks.getBlockTransactionsById(
+        partialTx.blockId
+      );
+      const tx = blockTxs.transactions.find((tx) => tx.id === txId);
+      return this.getTransactionBytes(JsonBigInt.stringify(tx));
+    } catch (error) {
+      return handleApiError(error, 'Failed to get tx from Ergo Node:');
+    }
   };
 
   /**
@@ -172,7 +222,14 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
    * @param tx hex representation of `ergo-lib` tx bytes
    */
   public submitTransaction = async (tx: string) => {
-    this.client.transactions.sendTransactionAsBytes(tx);
+    try {
+      await this.client.transactions.sendTransactionAsBytes(tx);
+    } catch (error) {
+      return handleApiError(
+        error,
+        'Failed to submit transaciton to Ergo Node:'
+      );
+    }
   };
 
   /**
@@ -202,12 +259,19 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
    * get all txs in the mempool
    */
   public getMempoolTransactions = async () => {
-    const txsPageIterator = this.getOneMempoolTx();
-    const txs = await all(txsPageIterator);
-    return txs
-      .filter((tx) => tx.id)
-      .map((tx) => JsonBigInt.stringify(tx))
-      .map(this.getTransactionBytes);
+    try {
+      const txsPageIterator = this.getOneMempoolTx();
+      const txs = await all(txsPageIterator);
+      return txs
+        .filter((tx) => tx.id)
+        .map((tx) => JsonBigInt.stringify(tx))
+        .map(this.getTransactionBytes);
+    } catch (error) {
+      return handleApiError(
+        error,
+        'Failed to get mempool transactions from Ergo Node:'
+      );
+    }
   };
 
   /**
@@ -253,11 +317,23 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     offset: number,
     limit: number
   ) => {
-    const boxes = await this.getRawAddressBoxes(address, offset, limit);
+    try {
+      const boxes = await this.getRawAddressBoxes(address, offset, limit);
 
-    const boxesBytes = boxes.map(this.boxToHexString);
+      const boxesBytes = boxes.map(this.boxToHexString);
 
-    return boxesBytes;
+      return boxesBytes;
+    } catch (error) {
+      const baseError = 'Failed to get address boxes from Ergo Node:';
+      return handleApiError(error, baseError, {
+        handleRespondedState: (error) => {
+          if (error.response.status === 400) return [] as string[];
+          throw new FailedError(
+            `${baseError} [${error.response.status}] ${error.response.data.reason}`
+          );
+        },
+      });
+    }
   };
 
   /**
@@ -273,42 +349,61 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     offset = 0,
     limit = 5
   ) => {
-    const allAddressBoxes = await this.getRawAddressBoxes(
-      address,
-      offset,
-      limit
-    );
+    try {
+      const allAddressBoxes = await this.getRawAddressBoxes(
+        address,
+        offset,
+        limit
+      );
 
-    const boxHasToken = (box: ErgoTransactionOutput) =>
-      box.assets?.some((asset) => asset.tokenId === tokenId);
+      const boxHasToken = (box: ErgoTransactionOutput) =>
+        box.assets?.some((asset) => asset.tokenId === tokenId);
 
-    const eligibleBoxes = allAddressBoxes
-      .filter(boxHasToken)
-      .map(this.boxToHexString);
+      const eligibleBoxes = allAddressBoxes
+        .filter(boxHasToken)
+        .map(this.boxToHexString);
 
-    return eligibleBoxes;
+      return eligibleBoxes;
+    } catch (error) {
+      const baseError = 'Failed to get boxes by token id from Ergo Node:';
+      return handleApiError(error, baseError, {
+        handleRespondedState: (error) => {
+          if (error.response.status === 400) return [] as string[];
+          throw new FailedError(
+            `${baseError} [${error.response.status}] ${error.response.data.reason}`
+          );
+        },
+      });
+    }
   };
 
   /**
    * get current state context of blockchain using last ten blocks
    */
   public getStateContext = async () => {
-    const lastBlocks = await this.client.blocks.getLastHeaders(10n);
+    try {
+      const lastBlocks = await this.client.blocks.getLastHeaders(10n);
 
-    const lastBlocksStrings = lastBlocks.map((header) =>
-      JsonBigInt.stringify(header)
-    );
-    const lastBlocksHeaders = BlockHeaders.from_json(lastBlocksStrings);
-    const lastBlockPreHeader = ergoLib.PreHeader.from_block_header(
-      lastBlocksHeaders.get(0)
-    );
+      const lastBlocksStrings = lastBlocks.map((header) =>
+        JsonBigInt.stringify(header)
+      );
+      const lastBlocksHeaders = BlockHeaders.from_json(lastBlocksStrings);
+      const lastBlockPreHeader = ergoLib.PreHeader.from_block_header(
+        lastBlocksHeaders.get(0)
+      );
 
-    const stateContext = new ErgoStateContext(
-      lastBlockPreHeader,
-      lastBlocksHeaders
-    );
+      const stateContext = new ErgoStateContext(
+        lastBlockPreHeader,
+        lastBlocksHeaders
+      );
 
-    return stateContext;
+      return stateContext;
+    } catch (error) {
+      return handleApiError(
+        error,
+        'Failed to get state context from Ergo Node:'
+      );
+    }
   };
 
   /**
@@ -316,9 +411,22 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
    * @param boxId
    */
   public isBoxUnspentAndValid = async (boxId: string) => {
-    const box = await this.client.blockchain.getBoxById(boxId);
+    try {
+      const box = await this.client.blockchain.getBoxById(boxId);
 
-    return !(box as any).spentTransactionId;
+      return !(box as any).spentTransactionId;
+    } catch (error) {
+      const baseError =
+        'Failed to check if box is unspent and valid using Ergo Node:';
+      return handleApiError(error, baseError, {
+        handleRespondedState: (error) => {
+          if (error.response.status === 404) return false;
+          throw new FailedError(
+            `${baseError} [${error.response.status}] ${error.response.data.reason}`
+          );
+        },
+      });
+    }
   };
 }
 
