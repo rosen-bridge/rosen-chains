@@ -8,6 +8,14 @@ interface ErrorHandler<HandlerReturnType> {
   (error: any): HandlerReturnType;
 }
 
+/**
+ * handle an axios api error, considering different kinds of events which may
+ * cause it
+ * @param error the error object
+ * @param baseMessage string to prepend the actual error message
+ * @param overrideHandlers an object for overriding how different kinds of error
+ * are handled
+ */
 const handleApiError = <
   RespondedStateHandlerReturnType = never,
   NotRespondedStateHandlerReturnType = never,
