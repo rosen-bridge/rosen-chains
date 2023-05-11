@@ -1,10 +1,10 @@
 import { AbstractCardanoNetwork } from '../../lib';
 import { BlockInfo, ConfirmationStatus } from '@rosen-chains/abstract-chain';
 import { CardanoUtxo } from '../../lib/types';
-import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
+import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
 class TestCardanoNetwork extends AbstractCardanoNetwork {
-  extractor = new ErgoRosenExtractor(
+  extractor = new CardanoRosenExtractor(
     '9es3xKFSehNNwCpuNpY31ScAubDqeLbSWwaCysjN1ee51bgHKTq',
     {
       idKeys: {},

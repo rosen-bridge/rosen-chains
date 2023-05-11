@@ -1,9 +1,9 @@
 import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
 import { CardanoUtxo } from '../types';
-import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
+import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
 abstract class AbstractCardanoNetwork extends AbstractUtxoChainNetwork {
-  declare extractor: ErgoRosenExtractor; // TODO: change!
+  declare extractor: CardanoRosenExtractor;
 
   /**
    * gets the current network slot
