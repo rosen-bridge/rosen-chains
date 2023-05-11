@@ -1818,12 +1818,15 @@ describe('ErgoChain', () => {
       // mock 'getBoxesByTokenId'
       const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
       when(getBoxesByTokenIdSpy)
-        .calledWith(guardNFT)
+        .calledWith(guardNFT, ergoTestUtils.testLockAddress)
         .mockResolvedValue([serializedBox]);
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = await ergoChain.getGuardsConfigBox(guardNFT);
+      const result = await ergoChain.getGuardsConfigBox(
+        guardNFT,
+        ergoTestUtils.testLockAddress
+      );
 
       // check returned value
       expect(result).toEqual(serializedBox);
@@ -1848,12 +1851,17 @@ describe('ErgoChain', () => {
       const network = new TestErgoNetwork();
       // mock 'getBoxesByTokenId'
       const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
-      when(getBoxesByTokenIdSpy).calledWith(guardNFT).mockResolvedValue([]);
+      when(getBoxesByTokenIdSpy)
+        .calledWith(guardNFT, ergoTestUtils.testLockAddress)
+        .mockResolvedValue([]);
 
       // run test and expect exception thrown
       const ergoChain = generateChainObject(network);
       await expect(async () => {
-        await ergoChain.getGuardsConfigBox(guardNFT);
+        await ergoChain.getGuardsConfigBox(
+          guardNFT,
+          ergoTestUtils.testLockAddress
+        );
       }).rejects.toThrow(Error);
     });
 
@@ -1882,13 +1890,16 @@ describe('ErgoChain', () => {
       // mock 'getBoxesByTokenId'
       const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
       when(getBoxesByTokenIdSpy)
-        .calledWith(guardNFT)
+        .calledWith(guardNFT, ergoTestUtils.testLockAddress)
         .mockResolvedValue(serializedBoxes);
 
       // run test and expect exception thrown
       const ergoChain = generateChainObject(network);
       await expect(async () => {
-        await ergoChain.getGuardsConfigBox(guardNFT);
+        await ergoChain.getGuardsConfigBox(
+          guardNFT,
+          ergoTestUtils.testLockAddress
+        );
       }).rejects.toThrow(Error);
     });
   });

@@ -59,7 +59,12 @@ class TestErgoNetwork extends AbstractErgoNetwork {
     throw Error('Not mocked');
   };
 
-  getBoxesByTokenId = (tokenId: string): Promise<Array<string>> => {
+  getBoxesByTokenId = (
+    tokenId: string,
+    address: string,
+    offset?: number,
+    limit?: number
+  ): Promise<Array<string>> => {
     throw Error('Not mocked');
   };
 }
