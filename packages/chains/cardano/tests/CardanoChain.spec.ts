@@ -5,17 +5,18 @@ import { CardanoConfigs } from '../lib/types';
 import * as TestData from './testData';
 import * as TestUtils from './testUtils';
 import CardanoTransaction from '../lib/CardanoTransaction';
-import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 import { when } from 'jest-when';
 import CardanoUtils from '../lib/CardanoUtils';
 import * as JSONBigInt from 'json-bigint';
 import {
   ConfirmationStatus,
+  NotEnoughAssetsError,
+  NotEnoughValidBoxesError,
   TransactionTypes,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
-import * as net from 'net';
+import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 
 const spyOn = jest.spyOn;
 
@@ -111,6 +112,73 @@ describe('CardanoChain', () => {
       const tx = Transaction.from_bytes(cardanoTx.txBytes);
       expect(tx.body().fee().to_str()).toEqual(configs.fee.toString());
       expect(tx.body().ttl()).toEqual(164);
+    });
+
+    /**
+     * @target CardanoChain.generateTransaction should throw error
+     * when lock address does not have enough assets
+     * @dependencies
+     * @scenario
+     * - mock hasLockAddressEnoughAssets
+     * - run test and expect error
+     * @expected
+     * - generateTransaction should throw NotEnoughAssetsError
+     */
+    it('should throw error when lock address does not have enough assets', async () => {
+      // mock hasLockAddressEnoughAssets
+      const cardanoChain = generateChainObject(network);
+      const hasLockAddressEnoughAssetsSpy = spyOn(
+        cardanoChain,
+        'hasLockAddressEnoughAssets'
+      );
+      hasLockAddressEnoughAssetsSpy.mockResolvedValue(false);
+
+      // run test and expect error
+      await expect(async () => {
+        await cardanoChain.generateTransaction(
+          'event1',
+          'type1',
+          TestData.transaction1Order,
+          [],
+          []
+        );
+      }).rejects.toThrow(NotEnoughAssetsError);
+    });
+
+    /**
+     * @target CardanoChain.generateTransaction should throw error
+     * when bank boxes can not cover order assets
+     * @dependencies
+     * @scenario
+     * - mock getCoveringBoxes, hasLockAddressEnoughAssets
+     * - run test and expect error
+     * @expected
+     * - generateTransaction should throw NotEnoughAssetsError
+     */
+    it('should throw error when bank boxes can not cover order assets', async () => {
+      // mock getCoveringBoxes, hasLockAddressEnoughAssets
+      const cardanoChain = generateChainObject(network);
+      const getCovBoxesSpy = spyOn(cardanoChain, 'getCoveringBoxes');
+      getCovBoxesSpy.mockResolvedValue({
+        covered: false,
+        boxes: bankBoxes.map((box) => JSONBigInt.stringify(box)),
+      });
+      const hasLockAddressEnoughAssetsSpy = spyOn(
+        cardanoChain,
+        'hasLockAddressEnoughAssets'
+      );
+      hasLockAddressEnoughAssetsSpy.mockResolvedValue(true);
+
+      // run test and expect error
+      await expect(async () => {
+        await cardanoChain.generateTransaction(
+          'event1',
+          'type1',
+          TestData.transaction1Order,
+          [],
+          []
+        );
+      }).rejects.toThrow(NotEnoughValidBoxesError);
     });
   });
 
@@ -286,23 +354,121 @@ describe('CardanoChain', () => {
 
   describe('getMempoolBoxMapping', () => {
     const network = new TestCardanoNetwork();
+    const trackingAddress =
+      'addr1qxwxpafgqasnddk8et6en0vn74awg4j0n2nfek6e62aywvgcwedk5s2s92dx7msutk33zsl92uh8uhahh305nz7pekjsz5l37w';
 
     /**
-     * @target CardanoChain.getMempoolBoxMapping should always return empty map
+     * @target CardanoChain.getMempoolBoxMapping should construct mapping
+     * successfully when no token provided
      * @dependencies
      * @scenario
+     * - mock getMempoolTransactions
      * - run test
      * - check returned value
      * @expected
-     * - it should return empty map
+     * - it should return a map equal to constructed map
      */
-    it('should always return an empty map', async () => {
+    it('should construct mapping successfully when no token provided', async () => {
+      // mock getMempoolTransactions
+      const serializedTransactions: Array<string> = [TestData.transaction1].map(
+        (txJson) => {
+          const cardanoTx = Transaction.from_json(txJson);
+          return cardanoTx.to_hex();
+        }
+      );
+      const boxMapping = TestData.transaction1BoxMapping;
+      spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
+        serializedTransactions
+      );
+
       // run test
       const cardanoChain = generateChainObject(network);
+      const result = await cardanoChain.getMempoolBoxMapping(trackingAddress);
 
       // check returned value
-      const result = await cardanoChain.getMempoolBoxMapping('');
-      expect(result).toEqual(new Map());
+      const trackMap = new Map<string, string>();
+      boxMapping.forEach((mapping) =>
+        trackMap.set(mapping.inputId, mapping.serializedOutput)
+      );
+      expect(result).toEqual(trackMap);
+    });
+
+    /**
+     * @target CardanoChain.getMempoolBoxMapping should construct mapping
+     * successfully when token provided
+     * @dependencies
+     * @scenario
+     * - mock getMempoolTransactions
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return a map equal to constructed map
+     */
+    it('should construct mapping successfully when token provided', async () => {
+      // mock getMempoolTransactions
+      const serializedTransactions: Array<string> = [TestData.transaction1].map(
+        (txJson) => {
+          const cardanoTx = Transaction.from_json(txJson);
+          return cardanoTx.to_hex();
+        }
+      );
+      const boxMapping = TestData.transaction1BoxMapping;
+      spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
+        serializedTransactions
+      );
+
+      // run test
+      const trackingTokenId = 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz';
+      const cardanoChain = generateChainObject(network);
+      const result = await cardanoChain.getMempoolBoxMapping(
+        trackingAddress,
+        trackingTokenId
+      );
+
+      // check returned value
+      const trackMap = new Map<string, string>();
+      boxMapping.forEach((mapping) =>
+        trackMap.set(mapping.inputId, mapping.serializedOutput)
+      );
+      expect(result).toEqual(trackMap);
+    });
+
+    /**
+     * @target CardanoChain.getMempoolBoxMapping should map inputs to
+     * undefined when no valid output box found
+     * @dependencies
+     * @scenario
+     * - mock getMempoolTransactions
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return a map of each box to undefined
+     */
+    it('should map inputs to undefined when no valid output box found', async () => {
+      // mock getMempoolTransactions
+      const serializedTransactions: Array<string> = [TestData.transaction1].map(
+        (txJson) => {
+          const cardanoTx = Transaction.from_json(txJson);
+          return cardanoTx.to_hex();
+        }
+      );
+
+      // run test
+      const trackingTokenId = 'asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2';
+      spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
+        serializedTransactions
+      );
+      const cardanoChain = generateChainObject(network);
+      const result = await cardanoChain.getMempoolBoxMapping(
+        trackingAddress,
+        trackingTokenId
+      );
+
+      // check returned value
+      const boxMapping = TestData.transaction1BoxMapping;
+      const trackMap = new Map<string, string | undefined>();
+      boxMapping.forEach((mapping) => trackMap.set(mapping.inputId, undefined));
+      expect(result).toEqual(trackMap);
     });
   });
 

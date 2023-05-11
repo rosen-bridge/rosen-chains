@@ -103,10 +103,10 @@ class CardanoChain extends AbstractUtxoChain {
       .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
 
     if (!(await this.hasLockAddressEnoughAssets(orderRequiredAssets))) {
-      const neededErgs = orderRequiredAssets.nativeToken.toString();
+      const neededADA = orderRequiredAssets.nativeToken.toString();
       const neededTokens = JSONBigInt.stringify(orderRequiredAssets.tokens);
       throw new NotEnoughAssetsError(
-        `Locked assets cannot cover required assets. ADA: ${neededErgs}, Tokens: ${neededTokens}`
+        `Locked assets cannot cover required assets. ADA: ${neededADA}, Tokens: ${neededTokens}`
       );
     }
 
@@ -380,16 +380,51 @@ class CardanoChain extends AbstractUtxoChain {
   };
 
   /**
-   * generates mapping from input box id to serialized string of output box (always returns empty map for Cardano since it does not support mempool)
+   * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
    * @param address the address
    * @param tokenId the token id
-   * @returns an empty map
+   * @returns a Map from input box id to serialized string of output box
    */
   getMempoolBoxMapping = async (
     address: string,
     tokenId?: string
   ): Promise<Map<string, string | undefined>> => {
-    return new Map();
+    const trackMap = new Map<string, string | undefined>();
+
+    const mempoolTxs = await this.network.getMempoolTransactions();
+    mempoolTxs.forEach((serializedTx) => {
+      const tx = CardanoWasm.Transaction.from_bytes(
+        Buffer.from(serializedTx, 'hex')
+      );
+      const txBody = tx.body();
+      // iterate over tx inputs
+      for (let i = 0; i < txBody.inputs().len(); i++) {
+        let trackedBox: CardanoWasm.TransactionOutput | undefined;
+        // iterate over tx outputs
+        for (let j = 0; j < txBody.outputs().len(); j++) {
+          const output = txBody.outputs().get(j);
+          // check if box satisfy conditions
+          if (output.address().to_bech32() !== address) continue;
+          if (tokenId) {
+            const boxTokens = cardanoUtils.getBoxAssets(output).tokens;
+            if (!boxTokens.find((token) => token.id === tokenId)) continue;
+          }
+
+          // mark the tracked box
+          trackedBox = output;
+          break;
+        }
+
+        // add input box to trackMap
+        const input = txBody.inputs().get(i);
+        trackMap.set(
+          CardanoUtils.getBoxId(input),
+          trackedBox ? trackedBox.to_hex() : undefined
+        );
+      }
+    });
+
+    return trackMap;
   };
 
   /**
@@ -411,7 +446,8 @@ class CardanoChain extends AbstractUtxoChain {
     const txBody = tx.body();
 
     // check ttl
-    if (txBody.ttl()! < (await this.network.currentSlot())) {
+    const ttl = txBody.ttl();
+    if (ttl && ttl < (await this.network.currentSlot())) {
       return false;
     }
 
@@ -476,12 +512,12 @@ class CardanoChain extends AbstractUtxoChain {
             BigInt(event.bridgeFee) > feeConfig.bridgeFee
               ? BigInt(event.bridgeFee)
               : feeConfig.bridgeFee;
-          const calculatedRSNFee =
+          const calculatedRatioDivisorFee =
             (eventAmount * feeConfig.feeRatio) / this.feeRatioDivisor;
           const bridgeFee =
-            clampedBridgeFee > calculatedRSNFee
+            clampedBridgeFee > calculatedRatioDivisorFee
               ? clampedBridgeFee
-              : calculatedRSNFee;
+              : calculatedRatioDivisorFee;
           const networkFee =
             BigInt(event.networkFee) > feeConfig.networkFee
               ? BigInt(event.networkFee)

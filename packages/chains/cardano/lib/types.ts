@@ -11,7 +11,7 @@ interface CardanoConfigs extends ChainConfigs {
 interface CardanoAsset {
   policy_id: string;
   asset_name: string;
-  quantity: string;
+  quantity: bigint;
   fingerprint: string;
 }
 
