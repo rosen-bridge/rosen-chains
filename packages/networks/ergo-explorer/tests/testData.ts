@@ -127,7 +127,18 @@ export const testBlockHeader = {
   height: 998407n,
 };
 
-export const testMempoolTransactions = Array(100).fill(testTransaction);
+export const testMempoolTransactions = Array(100).fill({
+  ...testTransaction,
+  inputs: [
+    {
+      ...testTransaction.inputs[0],
+      spendingProof: {
+        extension: {},
+        proofBytes: null,
+      },
+    },
+  ],
+});
 
 export const testAddressBoxes = [
   {

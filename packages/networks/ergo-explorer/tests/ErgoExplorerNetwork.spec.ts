@@ -352,7 +352,7 @@ describe('ErgoExplorerNetwork', () => {
       const actualTxs = await network.getMempoolTransactions();
 
       const expectedTxs = testMempoolTransactions.map(
-        () => testTransactionBytes
+        () => testTransactionWithNullSpendingProofBytes
       );
       expect(actualTxs).toEqual(expectedTxs);
     });
