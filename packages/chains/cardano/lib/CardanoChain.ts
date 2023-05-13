@@ -216,9 +216,11 @@ class CardanoChain extends AbstractUtxoChain {
         orderAssets.get(fingerprint) || 0n
       );
       if (value.compare(spentValue) === 0) return;
-      const assets = CardanoWasm.Assets.new();
-      assets.insert(assetName, value.checked_sub(spentValue));
-      changeBoxMultiAsset.insert(policyId, assets);
+      changeBoxMultiAsset.set_asset(
+        policyId,
+        assetName,
+        value.checked_sub(spentValue)
+      );
     });
     const changeBoxLovelace = inputBoxesAssets.lovelace
       .checked_sub(orderValue)
