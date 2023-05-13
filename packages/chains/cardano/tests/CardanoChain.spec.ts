@@ -17,6 +17,7 @@ import {
 import { Fee } from '@rosen-bridge/minimum-fee';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
 import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
+import { validEventWithHighFee } from './testData';
 
 const spyOn = jest.spyOn;
 
@@ -502,7 +503,8 @@ describe('CardanoChain', () => {
     const network = new TestCardanoNetwork();
 
     /**
-     * @target CardanoChain.isTxValid should return true when all inputs are valid
+     * @target CardanoChain.isTxValid should return true when
+     * all tx inputs are valid and ttl is less than current slot
      * @dependencies
      * @scenario
      * - mock PaymentTransaction
@@ -514,7 +516,7 @@ describe('CardanoChain', () => {
      * @expected
      * - it should return true
      */
-    it('should return true when all inputs are valid', async () => {
+    it('should return true when all tx inputs are valid and ttl is less than current slot', async () => {
       // mock PaymentTransaction
       const payment1 = CardanoTransaction.fromJson(
         TestData.transaction1PaymentTransaction
@@ -975,6 +977,68 @@ describe('CardanoChain', () => {
     });
 
     /**
+     * @target CardanoChain.verifyEvent should return false when a field of event
+     * is wrong
+     * @dependencies
+     * @scenario
+     * - mock an event
+     * - mock a network object with mocked 'getBlockTransactionIds' and
+     *   'getTransaction' functions
+     * - mock getBlockInfo to return -1 as event block height
+     * - mock network extractor to return event data (expect for a key which
+     *   should be wrong)
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when event sourceChainHeight is wrong', async () => {
+      //  mock an event
+      const event = TestData.validEvent;
+
+      // mock a network object with mocked 'getBlockTransactionIds' and
+      //   'getTransaction' functions
+      const network = new TestCardanoNetwork();
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([
+          TestUtils.generateRandomId(),
+          event.sourceTxId,
+          TestUtils.generateRandomId(),
+        ]);
+      const serializedTx = 'serializedTransaction';
+      const getTransactionSpy = spyOn(network, 'getTransaction');
+      when(getTransactionSpy)
+        .calledWith(event.sourceTxId, event.sourceBlockId)
+        .mockResolvedValueOnce(serializedTx);
+
+      // mock getBlockInfo to return -1 as event block height
+      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
+      when(getBlockInfoSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce({
+          height: -1,
+        } as any);
+
+      // mock network extractor to return event data
+      const extractorSpy = spyOn(network.extractor, 'get');
+      when(extractorSpy)
+        .calledWith(serializedTx)
+        .mockReturnValueOnce(event as unknown as RosenData);
+
+      // run test
+      const cardanoChain = generateChainObject(network);
+      const result = await cardanoChain.verifyEvent(event, feeConfig);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
      * @target CardanoChain.verifyEvent should return false when sum of event fees
      * is less than event amount
      * @dependencies
@@ -989,6 +1053,7 @@ describe('CardanoChain', () => {
      * - it should return false
      */
     it('should return false when sum of event fees is less than event amount', async () => {
+      // mock an event
       const event = TestData.invalidEvent;
 
       // mock a network object with mocked 'getBlockTransactionIds' and
@@ -1005,6 +1070,7 @@ describe('CardanoChain', () => {
           event.sourceTxId,
           TestUtils.generateRandomId(),
         ]);
+
       // mock 'getTransaction'
       const serializedTx = 'serializedTransaction';
       const getTransactionSpy = spyOn(network, 'getTransaction');
@@ -1021,6 +1087,132 @@ describe('CardanoChain', () => {
       // run test
       const cardanoChain = generateChainObject(network);
       const result = await cardanoChain.verifyEvent(event, feeConfig);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target CardanoChain.verifyEvent should return false when sum of event fees
+     * is less than event amount while bridgeFee is less than minimum-fee
+     * @dependencies
+     * @scenario
+     * - mock feeConfig
+     * - mock an event
+     * - mock a network object with mocked 'getBlockTransactionIds' and
+     *   'getTransaction' functions
+     * - mock network extractor to return event data
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when sum of event fees is less than event amount while bridgeFee is less than minimum-fee', async () => {
+      // mock feeConfig
+      const fee: Fee = {
+        bridgeFee: 1200000n,
+        networkFee: 0n,
+        rsnRatio: 0n,
+        feeRatio: 0n,
+      };
+
+      // mock an event
+      const event = TestData.validEventWithHighFee;
+
+      // mock a network object with mocked 'getBlockTransactionIds' and
+      //   'getTransaction' functions
+      const network = new TestCardanoNetwork();
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([
+          TestUtils.generateRandomId(),
+          event.sourceTxId,
+          TestUtils.generateRandomId(),
+        ]);
+
+      // mock 'getTransaction'
+      const serializedTx = 'serializedTransaction';
+      const getTransactionSpy = spyOn(network, 'getTransaction');
+      when(getTransactionSpy)
+        .calledWith(event.sourceTxId, event.sourceBlockId)
+        .mockResolvedValueOnce(serializedTx);
+
+      // mock network extractor to return event data
+      const extractorSpy = spyOn(network.extractor, 'get');
+      when(extractorSpy)
+        .calledWith(serializedTx)
+        .mockReturnValueOnce(event as unknown as RosenData);
+
+      // run test
+      const cardanoChain = generateChainObject(network);
+      const result = await cardanoChain.verifyEvent(event, fee);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target CardanoChain.verifyEvent should return false when sum of event fees
+     * is less than event amount while bridgeFee is less than expected value
+     * @dependencies
+     * @scenario
+     * - mock feeConfig
+     * - mock an event
+     * - mock a network object with mocked 'getBlockTransactionIds' and
+     *   'getTransaction' functions
+     * - mock network extractor to return event data
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when sum of event fees is less than event amount while bridgeFee is less than expected value', async () => {
+      // mock feeConfig
+      const fee: Fee = {
+        bridgeFee: 0n,
+        networkFee: 0n,
+        rsnRatio: 0n,
+        feeRatio: 1200n,
+      };
+
+      // mock an event
+      const event = TestData.validEventWithHighFee;
+
+      // mock a network object with mocked 'getBlockTransactionIds' and
+      //   'getTransaction' functions
+      const network = new TestCardanoNetwork();
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([
+          TestUtils.generateRandomId(),
+          event.sourceTxId,
+          TestUtils.generateRandomId(),
+        ]);
+
+      // mock 'getTransaction'
+      const serializedTx = 'serializedTransaction';
+      const getTransactionSpy = spyOn(network, 'getTransaction');
+      when(getTransactionSpy)
+        .calledWith(event.sourceTxId, event.sourceBlockId)
+        .mockResolvedValueOnce(serializedTx);
+
+      // mock network extractor to return event data
+      const extractorSpy = spyOn(network.extractor, 'get');
+      when(extractorSpy)
+        .calledWith(serializedTx)
+        .mockReturnValueOnce(event as unknown as RosenData);
+
+      // run test
+      const cardanoChain = generateChainObject(network);
+      const result = await cardanoChain.verifyEvent(event, fee);
 
       // check returned value
       expect(result).toEqual(false);

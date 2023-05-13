@@ -297,7 +297,9 @@ class CardanoChain extends AbstractUtxoChain {
 
     // send transaction
     try {
-      const response = await this.network.submitTransaction(tx.to_hex());
+      const response = await this.network.submitTransaction(
+        tx.to_bytes().toString()
+      );
       this.logger.info(
         `Cardano Transaction [${transaction.txId}] submitted. Response: ${response}`
       );
@@ -591,18 +593,19 @@ class CardanoChain extends AbstractUtxoChain {
 
     // check metadata
     if (tx.auxiliary_data()) {
-      const aux = tx.auxiliary_data()!;
-      if (aux.metadata()) {
-        const metadata = aux.metadata()!;
-        if (metadata.len() > 0) return false;
-      }
+      this.logger.debug(`Tx [${transaction.txId}] invalid: Contains metadata`);
+      return false;
     }
 
     // check change box
     const changeBoxIndex = tx.body().outputs().len() - 1;
     const changeBox = tx.body().outputs().get(changeBoxIndex);
-    if (changeBox.address().to_bech32() !== this.configs.lockAddress)
+    if (changeBox.address().to_bech32() !== this.configs.lockAddress) {
+      this.logger.debug(
+        `Tx [${transaction.txId}] invalid: Change box address is wrong`
+      );
       return false;
+    }
 
     return true;
   };
@@ -645,8 +648,12 @@ class CardanoChain extends AbstractUtxoChain {
     return this.configs.minBoxValue;
   };
 
+  /**
+   * gets the RWT token id
+   * @returns RWT token id
+   */
   getRWTToken = (): string => {
-    return 'TODO';
+    return this.configs.rwtId;
   };
 
   /**

@@ -39,7 +39,7 @@ interface CardanoTx {
   outputs: CardanoBoxCandidate[];
   ttl: number;
   fee: bigint;
-  metadata: JSON[];
+  metadata: Record<string, Record<string, any>>;
 }
 
 interface UtxoBoxesAssets {
