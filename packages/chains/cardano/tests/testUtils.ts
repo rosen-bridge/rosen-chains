@@ -55,8 +55,27 @@ export const mockBankBoxes = (): CardanoUtxo[] => {
       },
     ],
   };
+  const box5: CardanoUtxo = {
+    txId: generateRandomId(),
+    index: 3,
+    value: 10000000n,
+    assets: [
+      {
+        policy_id: '8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b9',
+        asset_name: '52535457',
+        quantity: 30n,
+        fingerprint: 'asset1vwun0a52xjv5tc2x92wgr6x3p6q3u4frnmq8q0',
+      },
+      {
+        policy_id: '8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b9',
+        asset_name: '52535450',
+        quantity: 40n,
+        fingerprint: 'asset10j94tmxef7rjgae9gq4r9qc66jhh6060teah0t',
+      },
+    ],
+  };
 
-  return [box1, box2, box3, box4];
+  return [box1, box2, box3, box4, box5];
 };
 
 export const AddressUtxoToTransactionOutput = (

@@ -288,6 +288,32 @@ export const transaction3PaymentTransaction = `
 }
 `;
 
+export const transaction4Order: PaymentOrder = [
+  {
+    address:
+      'addr1qxwxpafgqasnddk8et6en0vn74awg4j0n2nfek6e62aywvgcwedk5s2s92dx7msutk33zsl92uh8uhahh305nz7pekjsz5l37w',
+    assets: {
+      nativeToken: 10000000n,
+      tokens: [
+        {
+          id: 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz',
+          value: 1000n,
+        },
+      ],
+    },
+  },
+];
+
+export const transaction4PaymentTransaction = `
+{
+   "network":"cardano",
+   "eventId":"2bedc6e54ede7748e5efc7df689a0a89b281ac1d92d09054650d5f27a25d5b85",
+   "txBytes":"84a400838258202fdc94bb1a1d20233b0e2ac6fbd245ea23ea308a9cc0b118f1502c20608e8cea038258207825206824db48f1fb101426bac21a0cd277719d7c37229a2e6938539090599a00825820d7ff00bb5cbb9159711f10dfa36dd2f07855296e261e5a291bc98548549767ac020182825839019c60f528076136b6c7caf599bd93f57ae4564f9aa69cdb59d2ba473118765b6a41502a9a6f6e1c5da31143e5572e7e5fb7bc5f498bc1cda5821a00989680a1581cef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286a14b52737445524776546573741903e8825839019d6c179773d4e6590e282c37296ecc31cc2a10a45742772dfbc582666aebc9e1e5ac448cf5bfbfa68056d88273cb4cdcf277bfcecd56bc4e821a00897b50a1581c8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b9a2445253545018284452535457181e021a000f42400318a4a0f5f6",
+   "txId":"044a030f9a05adc5ba08156c5d7d71fb85e8a8c94928cbadd52cce87f5d57712",
+   "txType":"payment"
+}
+`;
+
 export const validEvent: EventTrigger = {
   height: 300,
   fromChain: 'cardano',

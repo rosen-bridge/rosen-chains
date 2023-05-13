@@ -17,7 +17,6 @@ import {
 import { Fee } from '@rosen-bridge/minimum-fee';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
 import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
-import { validEventWithHighFee } from './testData';
 
 const spyOn = jest.spyOn;
 
@@ -113,6 +112,69 @@ describe('CardanoChain', () => {
       const tx = Transaction.from_bytes(cardanoTx.txBytes);
       expect(tx.body().fee().to_str()).toEqual(configs.fee.toString());
       expect(tx.body().ttl()).toEqual(164);
+    });
+
+    /**
+     * @target CardanoChain.generateTransaction should generate payment
+     * transaction successfully with special tokens (Two tokens with same policyIds and different AssetNames)
+     * @dependencies
+     * @scenario
+     * - mock transaction order, currentSlot
+     * - mock getCoveringBoxes, hasLockAddressEnoughAssets
+     * - run test
+     * - check returned value
+     * @expected
+     * - PaymentTransaction txType, eventId, and network should be as
+     *   expected
+     * - extracted order of generated transaction should be the same as input
+     *   order
+     * - transaction fee and ttl should be the same as config fee
+     */
+    it('should generate payment transaction successfully with special tokens', async () => {
+      // mock transaction order, currentSlot
+      const order = TestData.transaction4Order;
+      const payment = CardanoTransaction.fromJson(
+        TestData.transaction4PaymentTransaction
+      );
+      const getSlotSpy = spyOn(network, 'currentSlot');
+      getSlotSpy.mockResolvedValue(200);
+
+      // mock getCoveringBoxes, hasLockAddressEnoughAssets
+      const cardanoChain = generateChainObject(network);
+      const getCovBoxesSpy = spyOn(cardanoChain, 'getCoveringBoxes');
+      getCovBoxesSpy.mockResolvedValue({
+        covered: true,
+        boxes: bankBoxes.slice(2).map((box) => JSONBigInt.stringify(box)),
+      });
+      const hasLockAddressEnoughAssetsSpy = spyOn(
+        cardanoChain,
+        'hasLockAddressEnoughAssets'
+      );
+      hasLockAddressEnoughAssetsSpy.mockResolvedValue(true);
+
+      // run test
+      const result = await cardanoChain.generateTransaction(
+        '2bedc6e54ede7748e5efc7df689a0a89b281ac1d92d09054650d5f27a25d5b85',
+        'payment',
+        order,
+        [],
+        []
+      );
+      const cardanoTx = result as CardanoTransaction;
+
+      // check returned value
+      expect(cardanoTx.txType).toEqual(payment.txType);
+      expect(cardanoTx.eventId).toEqual(payment.eventId);
+      expect(cardanoTx.network).toEqual(payment.network);
+
+      // extracted order of generated transaction should be the same as input order
+      const extractedOrder = cardanoChain.extractTransactionOrder(cardanoTx);
+      expect(extractedOrder).toEqual(order);
+
+      // transaction fee and ttl should be the same as input configs
+      const tx = Transaction.from_bytes(cardanoTx.txBytes);
+      expect(tx.body().fee().to_str()).toEqual(configs.fee.toString());
+      expect(tx.body().ttl()).toEqual(264);
     });
 
     /**
