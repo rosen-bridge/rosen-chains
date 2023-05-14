@@ -53,7 +53,7 @@ abstract class AbstractChain {
    */
   abstract getTransactionAssets: (
     transaction: PaymentTransaction
-  ) => TransactionAssetBalance;
+  ) => Promise<TransactionAssetBalance>;
 
   /**
    * extracts payment order of a PaymentTransaction
@@ -76,8 +76,10 @@ abstract class AbstractChain {
    * @param transaction the PaymentTransaction
    * @returns true if not token burned
    */
-  verifyNoTokenBurned = (transaction: PaymentTransaction): boolean => {
-    const assets = this.getTransactionAssets(transaction);
+  verifyNoTokenBurned = async (
+    transaction: PaymentTransaction
+  ): Promise<boolean> => {
+    const assets = await this.getTransactionAssets(transaction);
     return !ChainUtils.isEqualAssetBalance(
       assets.inputAssets,
       assets.outputAssets
