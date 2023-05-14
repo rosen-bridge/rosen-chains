@@ -37,7 +37,7 @@ class CardanoTransaction implements PaymentTransaction {
   };
 
   /**
-   * converts ErgoTransaction to json
+   * converts CardanoTransaction to json
    * @returns json representation of the payment transaction
    */
   toJson = (): string => {

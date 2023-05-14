@@ -87,7 +87,7 @@ class CardanoChain extends AbstractUtxoChain {
    * @param txType transaction type
    * @param order the payment order (list of single payments)
    * @param unsignedTransactions ongoing unsigned PaymentTransactions (used for preventing double spend)
-   * @param serializedSignedTransactions the serialized string of ongoing signed transactions in Cardano Wasm format (used for chainning transaction)
+   * @param serializedSignedTransactions the serialized string of ongoing signed transactions in Cardano Wasm format (used for chaining transactions)
    * @returns the generated payment transaction
    */
   generateTransaction = async (
@@ -393,51 +393,34 @@ class CardanoChain extends AbstractUtxoChain {
     address: string,
     tokenId?: string
   ): Promise<Map<string, string | undefined>> => {
-    const trackMap = new Map<string, string | undefined>();
-
     const mempoolTxs = await this.network.getMempoolTransactions();
-    mempoolTxs.forEach((serializedTx) => {
-      const tx = CardanoWasm.Transaction.from_bytes(
-        Buffer.from(serializedTx, 'hex')
-      );
-      const txBody = tx.body();
-      // iterate over tx inputs
-      for (let i = 0; i < txBody.inputs().len(); i++) {
-        let trackedBox: CardanoWasm.TransactionOutput | undefined;
-        // iterate over tx outputs
-        for (let j = 0; j < txBody.outputs().len(); j++) {
-          const output = txBody.outputs().get(j);
-          // check if box satisfy conditions
-          if (output.address().to_bech32() !== address) continue;
-          if (tokenId) {
-            const boxTokens = cardanoUtils.getBoxAssets(output).tokens;
-            if (!boxTokens.find((token) => token.id === tokenId)) continue;
-          }
-
-          // mark the tracked box
-          trackedBox = output;
-          break;
-        }
-
-        // add input box to trackMap
-        const input = txBody.inputs().get(i);
-        trackMap.set(
-          CardanoUtils.getBoxId(input),
-          trackedBox ? trackedBox.to_hex() : undefined
-        );
-      }
-    });
+    const trackMap = this.getTransactionsBoxMapping(
+      mempoolTxs,
+      address,
+      tokenId
+    );
 
     return trackMap;
   };
 
   /**
-   * checks if a transaction is in mempool (always returns false for Cardano since it does not support mempool)
+   * checks if a transaction is in mempool
    * @param transactionId the transaction id
-   * @returns false
+   * @returns true if the transaction is in mempool
    */
   isTxInMempool = async (transactionId: string): Promise<boolean> => {
-    return false;
+    const mempoolTxs = await this.network.getMempoolTransactions();
+    const mempoolTxIds = mempoolTxs.map((serializedTx) => {
+      const tx = CardanoWasm.Transaction.from_bytes(
+        Buffer.from(serializedTx, 'hex')
+      );
+      const txId = Buffer.from(
+        CardanoWasm.hash_transaction(tx.body()).to_bytes()
+      ).toString('hex');
+      return txId;
+    });
+
+    return mempoolTxIds.includes(transactionId);
   };
 
   /**
@@ -455,14 +438,15 @@ class CardanoChain extends AbstractUtxoChain {
       return false;
     }
 
-    let valid = true;
+    // let valid = true;
     for (let i = 0; i < txBody.inputs().len(); i++) {
       const box = txBody.inputs().get(i);
-      valid =
-        valid &&
-        (await this.network.isBoxUnspentAndValid(CardanoUtils.getBoxId(box)));
+      if (
+        !(await this.network.isBoxUnspentAndValid(CardanoUtils.getBoxId(box)))
+      )
+        return false;
     }
-    return valid;
+    return true;
   };
 
   /**
@@ -623,17 +607,20 @@ class CardanoChain extends AbstractUtxoChain {
     transactionType: string
   ): Promise<ConfirmationStatus> => {
     let expectedConfirmation = 0;
-    if (transactionType === TransactionTypes.lock)
-      expectedConfirmation = this.configs.observationTxConfirmation;
-    else if (
-      transactionType === TransactionTypes.payment ||
-      transactionType === TransactionTypes.reward
-    )
-      expectedConfirmation = this.configs.paymentTxConfirmation;
-    else if (transactionType === TransactionTypes.coldStorage)
-      expectedConfirmation = this.configs.coldTxConfirmation;
-    else
-      throw new Error(`Transaction type [${transactionType}] is not defined`);
+    switch (transactionType) {
+      case TransactionTypes.lock:
+        expectedConfirmation = this.configs.observationTxConfirmation;
+        break;
+      case TransactionTypes.payment:
+      case TransactionTypes.reward:
+        expectedConfirmation = this.configs.paymentTxConfirmation;
+        break;
+      case TransactionTypes.coldStorage:
+        expectedConfirmation = this.configs.coldTxConfirmation;
+        break;
+      default:
+        throw new Error(`Transaction type [${transactionType}] is not defined`);
+    }
 
     const confirmation = await this.network.getTxConfirmation(transactionId);
     if (confirmation >= expectedConfirmation)
