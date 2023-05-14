@@ -1163,8 +1163,8 @@ describe('CardanoChain', () => {
     });
 
     /**
-     * @target CardanoChain.verifyEvent should return false when sum of event fees
-     * is less than event amount
+     * @target CardanoChain.verifyEvent should return false when event amount
+     * is less than sum of event fees
      * @dependencies
      * @scenario
      * - mock an event
@@ -1176,7 +1176,7 @@ describe('CardanoChain', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when sum of event fees is less than event amount', async () => {
+    it('should return false when event amount is less than sum of event fees', async () => {
       // mock an event
       const event = TestData.invalidEvent;
 
@@ -1217,8 +1217,8 @@ describe('CardanoChain', () => {
     });
 
     /**
-     * @target CardanoChain.verifyEvent should return false when sum of event fees
-     * is less than event amount while bridgeFee is less than minimum-fee
+     * @target CardanoChain.verifyEvent should return false when event amount
+     * is less than sum of event fees while bridgeFee is less than minimum-fee
      * @dependencies
      * @scenario
      * - mock feeConfig
@@ -1231,7 +1231,7 @@ describe('CardanoChain', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when sum of event fees is less than event amount while bridgeFee is less than minimum-fee', async () => {
+    it('should return false when event amount is less than sum of event fees while bridgeFee is less than minimum-fee', async () => {
       // mock feeConfig
       const fee: Fee = {
         bridgeFee: 1200000n,
@@ -1280,8 +1280,8 @@ describe('CardanoChain', () => {
     });
 
     /**
-     * @target CardanoChain.verifyEvent should return false when sum of event fees
-     * is less than event amount while bridgeFee is less than expected value
+     * @target CardanoChain.verifyEvent should return false when event amount
+     * is less than sum of event fees while bridgeFee is less than expected value
      * @dependencies
      * @scenario
      * - mock feeConfig
@@ -1294,7 +1294,7 @@ describe('CardanoChain', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when sum of event fees is less than event amount while bridgeFee is less than expected value', async () => {
+    it('should return false when event amount is less than sum of event fees while bridgeFee is less than expected value', async () => {
       // mock feeConfig
       const fee: Fee = {
         bridgeFee: 0n,
