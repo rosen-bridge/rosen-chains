@@ -208,10 +208,11 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
 
   /**
    * get a transaction by its id, returning hex representation of `ergo-lib` tx
-   * bytes
+   * bytes, or throw an error if the tx doesn't belong to the block
    * @param txId
+   * @param blockId
    */
-  public getTransaction = async (txId: string) => {
+  public getTransaction = async (txId: string, blockId: string) => {
     try {
       const possibleMalformedTx = await this.client.v1.getApiV1TransactionsP1(
         txId
@@ -222,6 +223,11 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
        * crash.
        */
       const tx = this.fixMalformedTx(possibleMalformedTx);
+
+      if (tx.blockId !== blockId) {
+        throw new Error(`Tx [${txId}] doesn't belong to block [${blockId}]`);
+      }
+
       return this.getTxBytes(JsonBigInt.stringify(tx));
     } catch (error: any) {
       return handleApiError(error, 'Failed to get tx from Ergo Explorer:');

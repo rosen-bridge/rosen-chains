@@ -288,7 +288,10 @@ describe('ErgoExplorerNetwork', () => {
       mockGetApiV1TransactionsP1();
       const network = getNetwork();
 
-      const actualBytes = await network.getTransaction(testTransaction.id);
+      const actualBytes = await network.getTransaction(
+        testTransaction.id,
+        testTransaction.blockId
+      );
 
       const expectedBytes = testTransactionBytes;
       expect(actualBytes).toEqual(expectedBytes);
@@ -309,10 +312,32 @@ describe('ErgoExplorerNetwork', () => {
       mockGetApiV1TransactionsP1(testTransactionWithNullSpendingProof);
       const network = getNetwork();
 
-      const actualBytes = await network.getTransaction(testTransaction.id);
+      const actualBytes = await network.getTransaction(
+        testTransaction.id,
+        testTransaction.blockId
+      );
 
       const expectedBytes = testTransactionWithNullSpendingProofBytes;
       expect(actualBytes).toEqual(expectedBytes);
+    });
+
+    /**
+     * @target `ErgoExplorerNetwork.getTransaction` should return transaction
+     * bytes hex representation if some tx inputs have `null` value for
+     * `spendingProof`
+     * @dependencies
+     * @scenario
+     * - mock `getApiV1TransactionsP1` of ergo explorer client
+     * @expected
+     * - api call should throw
+     */
+    it("should throw an error if transaction doesn't belong to the block", async () => {
+      mockGetApiV1TransactionsP1();
+      const network = getNetwork();
+
+      expect(
+        network.getTransaction(testTransaction.id, testBlockId)
+      ).rejects.toThrow();
     });
   });
 
