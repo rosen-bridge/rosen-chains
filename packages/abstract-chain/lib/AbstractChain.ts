@@ -124,8 +124,7 @@ abstract class AbstractChain {
    */
   abstract signTransaction: (
     transaction: PaymentTransaction,
-    requiredSign: number,
-    signFunction: (...arg: Array<any>) => any
+    requiredSign: number
   ) => Promise<PaymentTransaction>;
 
   /**

@@ -40,17 +40,20 @@ class CardanoChain extends AbstractUtxoChain {
   declare configs: CardanoConfigs;
   tokenMap: TokenMap;
   feeRatioDivisor: bigint;
+  protected signFunction: (txHash: Uint8Array) => Promise<string>;
 
   constructor(
     network: AbstractCardanoNetwork,
     configs: CardanoConfigs,
     tokenMap: TokenMap,
     feeRatioDivisor: bigint,
+    signFunction: (txHash: Uint8Array) => Promise<string>,
     logger?: AbstractLogger
   ) {
     super(network, configs, logger);
     this.tokenMap = tokenMap;
     this.feeRatioDivisor = feeRatioDivisor;
+    this.signFunction = signFunction;
   }
 
   /**
@@ -324,11 +327,10 @@ class CardanoChain extends AbstractUtxoChain {
    */
   signTransaction = (
     transaction: PaymentTransaction,
-    requiredSign: number,
-    signFunction: (txHash: Uint8Array) => Promise<string>
+    requiredSign: number
   ): Promise<PaymentTransaction> => {
     const tx = Serializer.deserialize(transaction.txBytes);
-    return signFunction(hash_transaction(tx.body()).to_bytes()).then(
+    return this.signFunction(hash_transaction(tx.body()).to_bytes()).then(
       (signature: string) => {
         const signedTx = this.buildSignedTransaction(tx.body(), signature);
         return new CardanoTransaction(
