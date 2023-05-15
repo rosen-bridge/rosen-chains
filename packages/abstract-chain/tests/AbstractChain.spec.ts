@@ -42,7 +42,7 @@ describe('AbstractChain', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when no token burned', () => {
+    it('should return false when no token burned', async () => {
       // mock an AssetBalance
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -57,13 +57,15 @@ describe('AbstractChain', () => {
       // mock chain 'getTransactionAssets' function to return mocked assets
       const chain = generateChainObject(network);
       const getTransactionAssetsSpy = spyOn(chain, 'getTransactionAssets');
-      when(getTransactionAssetsSpy).calledWith(paymentTx).mockReturnValueOnce({
-        inputAssets: a,
-        outputAssets: a,
-      });
+      when(getTransactionAssetsSpy)
+        .calledWith(paymentTx)
+        .mockResolvedValueOnce({
+          inputAssets: a,
+          outputAssets: a,
+        });
 
       // run test
-      const result = chain.verifyNoTokenBurned(paymentTx);
+      const result = await chain.verifyNoTokenBurned(paymentTx);
 
       // Check returned value
       expect(result).toEqual(false);
@@ -82,7 +84,7 @@ describe('AbstractChain', () => {
      * @expected
      * - it should return true
      */
-    it('should return true when some amount of a token got burned', () => {
+    it('should return true when some amount of a token got burned', async () => {
       // mock two AssetBalance (second object has less value for a token)
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -99,13 +101,15 @@ describe('AbstractChain', () => {
       // mock chain 'getTransactionAssets' function to return mocked assets
       const chain = generateChainObject(network);
       const getTransactionAssetsSpy = spyOn(chain, 'getTransactionAssets');
-      when(getTransactionAssetsSpy).calledWith(paymentTx).mockReturnValueOnce({
-        inputAssets: a,
-        outputAssets: b,
-      });
+      when(getTransactionAssetsSpy)
+        .calledWith(paymentTx)
+        .mockResolvedValueOnce({
+          inputAssets: a,
+          outputAssets: b,
+        });
 
       // run test
-      const result = chain.verifyNoTokenBurned(paymentTx);
+      const result = await chain.verifyNoTokenBurned(paymentTx);
 
       // Check returned value
       expect(result).toEqual(true);

@@ -24,7 +24,7 @@ class TestUtxoChain extends AbstractChain {
 
   getTransactionAssets = (
     transaction: PaymentTransaction
-  ): TransactionAssetBalance => {
+  ): Promise<TransactionAssetBalance> => {
     throw Error('Not mocked');
   };
   getLockAddressAssets = (): Promise<AssetBalance> => {
