@@ -323,6 +323,12 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
       ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
     );
 
+  /**
+   * get hex representation of utxos of an address
+   * @param address
+   * @param offset
+   * @param limit
+   */
   public getAddressBoxes = async (
     address: string,
     offset: number,
@@ -350,6 +356,13 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
     }
   };
 
+  /**
+   * get hex representation of utxos of an address containing a token
+   * @param tokenId
+   * @param address
+   * @param offset
+   * @param limit
+   */
   public getBoxesByTokenId = async (
     tokenId: string,
     address: string,
@@ -378,6 +391,9 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
     }
   };
 
+  /**
+   * get current state context of blockchain using last ten blocks
+   */
   public getStateContext = async () => {
     try {
       const { items: lastBlocks } = await this.client.v1.getApiV1BlocksHeaders({
@@ -412,6 +428,10 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
     }
   };
 
+  /**
+   * check if a box is unspent and valid (that is, exists in the blockchain)
+   * @param boxId
+   */
   public isBoxUnspentAndValid = async (boxId: string) => {
     try {
       const box = await this.client.v1.getApiV1BoxesP1(boxId);
