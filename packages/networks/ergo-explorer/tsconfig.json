@@ -5,5 +5,8 @@
     "rootDir": "./"
   },
   "include": ["lib", "tests"],
-  "references": [{ "path": "../../abstract-chain" }]
+  "references": [
+    { "path": "../../abstract-chain" },
+    { "path": "../../chains/ergo" }
+  ]
 }
