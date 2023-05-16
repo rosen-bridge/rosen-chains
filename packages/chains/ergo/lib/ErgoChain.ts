@@ -28,7 +28,6 @@ import { ErgoConfigs } from './types';
 import { AbstractLogger } from '@rosen-bridge/logger-interface';
 import ErgoTransaction from './ErgoTransaction';
 import ErgoUtils from './ErgoUtils';
-import { Buffer } from 'buffer';
 
 class ErgoChain extends AbstractUtxoChain {
   static feeBoxErgoTree =
@@ -36,15 +35,28 @@ class ErgoChain extends AbstractUtxoChain {
   declare network: AbstractErgoNetwork;
   declare configs: ErgoConfigs;
   feeRatioDivisor: bigint;
+  protected signFunction: (
+    tx: wasm.ReducedTransaction,
+    requiredSign: number,
+    boxes: Array<wasm.ErgoBox>,
+    dataBoxes?: Array<wasm.ErgoBox>
+  ) => Promise<wasm.Transaction>;
 
   constructor(
     network: AbstractErgoNetwork,
     configs: ErgoConfigs,
     feeRatioDivisor: bigint,
+    signFunction: (
+      tx: wasm.ReducedTransaction,
+      requiredSign: number,
+      boxes: Array<wasm.ErgoBox>,
+      dataBoxes?: Array<wasm.ErgoBox>
+    ) => Promise<wasm.Transaction>,
     logger?: AbstractLogger
   ) {
     super(network, configs, logger);
     this.feeRatioDivisor = feeRatioDivisor;
+    this.signFunction = signFunction;
   }
 
   /**
@@ -501,13 +513,7 @@ class ErgoChain extends AbstractUtxoChain {
    */
   signTransaction = (
     transaction: PaymentTransaction,
-    requiredSign: number,
-    signFunction: (
-      tx: wasm.ReducedTransaction,
-      requiredSign: number,
-      boxes: Array<wasm.ErgoBox>,
-      dataBoxes?: Array<wasm.ErgoBox>
-    ) => Promise<wasm.Transaction>
+    requiredSign: number
   ): Promise<PaymentTransaction> => {
     const tx = Serializer.deserialize(transaction.txBytes);
     const ergoTx = transaction as ErgoTransaction;
@@ -518,7 +524,7 @@ class ErgoChain extends AbstractUtxoChain {
       wasm.ErgoBox.sigma_parse_bytes(boxBytes)
     );
 
-    return signFunction(tx, requiredSign, txInputs, txDataInputs).then(
+    return this.signFunction(tx, requiredSign, txInputs, txDataInputs).then(
       async (signedTx) => {
         const inputBoxes = wasm.ErgoBoxes.empty();
         txInputs.forEach((box) => inputBoxes.add(box));

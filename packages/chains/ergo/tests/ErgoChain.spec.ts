@@ -12,7 +12,7 @@ import {
   TransactionTypes,
 } from '@rosen-chains/abstract-chain';
 import TestErgoNetwork from './network/TestErgoNetwork';
-import { ErgoConfigs } from '../lib/types';
+import { ErgoConfigs } from '../lib';
 import { when } from 'jest-when';
 import * as wasm from 'ergo-lib-wasm-nodejs';
 import ErgoTransaction from '../lib/ErgoTransaction';
@@ -21,6 +21,16 @@ import { Fee } from '@rosen-bridge/minimum-fee';
 
 const spyOn = jest.spyOn;
 
+const signFunction = async (
+  tx: wasm.ReducedTransaction,
+  requiredSign: number,
+  boxes: Array<wasm.ErgoBox>,
+  dataBoxes?: Array<wasm.ErgoBox>
+): Promise<wasm.Transaction> =>
+  ergoTestUtils.deserializeTransaction(
+    transactionTestData.transaction2SignedSerialized
+  );
+
 describe('ErgoChain', () => {
   const observationTxConfirmation = 5;
   const paymentTxConfirmation = 9;
@@ -28,7 +38,16 @@ describe('ErgoChain', () => {
   const rwtId =
     '9410db5b39388c6b515160e7248346d7ec63d5457292326da12a26cc02efb526';
   const feeRatioDivisor = 10000n;
-  const generateChainObject = (network: TestErgoNetwork, rwt = rwtId) => {
+  const generateChainObject = (
+    network: TestErgoNetwork,
+    rwt = rwtId,
+    signFn: (
+      tx: wasm.ReducedTransaction,
+      requiredSign: number,
+      boxes: Array<wasm.ErgoBox>,
+      dataBoxes?: Array<wasm.ErgoBox>
+    ) => Promise<wasm.Transaction> = signFunction
+  ) => {
     const config: ErgoConfigs = {
       fee: 100n,
       observationTxConfirmation: observationTxConfirmation,
@@ -40,7 +59,8 @@ describe('ErgoChain', () => {
       minBoxValue: 1000000n,
       eventTxConfirmation: 18,
     };
-    return new ErgoChain(network, config, feeRatioDivisor);
+    // mock a sign function to return signed transaction
+    return new ErgoChain(network, config, feeRatioDivisor, signFn);
   };
 
   describe('generateTransaction', () => {
@@ -129,7 +149,12 @@ describe('ErgoChain', () => {
       };
 
       // mock getCoveringBoxes
-      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        feeRatioDivisor,
+        signFunction
+      );
       const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
       getCoveringBoxesSpy.mockResolvedValue({
         covered: true,
@@ -246,7 +271,12 @@ describe('ErgoChain', () => {
       };
 
       // run test and expect exception thrown
-      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        feeRatioDivisor,
+        signFunction
+      );
       await expect(async () => {
         await ergoChain.generateTransaction(
           paymentTx.eventId,
@@ -340,7 +370,12 @@ describe('ErgoChain', () => {
       };
 
       // mock getCoveringBoxes
-      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        feeRatioDivisor,
+        signFunction
+      );
       const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
       getCoveringBoxesSpy.mockResolvedValue({
         covered: false,
@@ -452,7 +487,12 @@ describe('ErgoChain', () => {
       };
 
       // mock getCoveringBoxes
-      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        feeRatioDivisor,
+        signFunction
+      );
       const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
       getCoveringBoxesSpy.mockImplementation(
         async (
@@ -562,7 +602,12 @@ describe('ErgoChain', () => {
       };
 
       // run test
-      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        feeRatioDivisor,
+        signFunction
+      );
       const result = ergoChain.extractTransactionOrder(paymentTx);
 
       // check returned value
@@ -612,7 +657,12 @@ describe('ErgoChain', () => {
       };
 
       // run test
-      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        feeRatioDivisor,
+        signFunction
+      );
       const result = await ergoChain.verifyTransactionFee(paymentTx);
 
       // check returned value
@@ -658,7 +708,12 @@ describe('ErgoChain', () => {
       };
 
       // run test
-      const ergoChain = new ErgoChain(network, config, feeRatioDivisor);
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        feeRatioDivisor,
+        signFunction
+      );
       const result = await ergoChain.verifyTransactionFee(paymentTx);
 
       // check returned value
@@ -1238,17 +1293,6 @@ describe('ErgoChain', () => {
      *   are same as input object, except txBytes which is signed transaction)
      */
     it('should return PaymentTransaction of the signed transaction', async () => {
-      // mock a sign function to return signed transaction
-      const signFunction = async (
-        tx: wasm.ReducedTransaction,
-        requiredSign: number,
-        boxes: Array<wasm.ErgoBox>,
-        dataBoxes?: Array<wasm.ErgoBox>
-      ): Promise<wasm.Transaction> =>
-        ergoTestUtils.deserializeTransaction(
-          transactionTestData.transaction2SignedSerialized
-        );
-
       // mock PaymentTransaction of unsigned transaction
       const paymentTx = new ErgoTransaction(
         'txId',
@@ -1264,8 +1308,7 @@ describe('ErgoChain', () => {
       // run test
       const result = (await ergoChain.signTransaction(
         paymentTx,
-        0,
-        signFunction
+        0
       )) as ErgoTransaction;
 
       // check returned value
@@ -1303,7 +1346,11 @@ describe('ErgoChain', () => {
       ): Promise<wasm.Transaction> => {
         throw Error(`TestError: sign failed`);
       };
-
+      const ergoChain = generateChainObject(
+        new TestErgoNetwork(),
+        rwtId,
+        signFunction
+      );
       // mock PaymentTransaction of unsigned transaction
       const paymentTx = new ErgoTransaction(
         'txId',
@@ -1318,7 +1365,7 @@ describe('ErgoChain', () => {
 
       // run test & check thrown exception
       await expect(async () => {
-        await ergoChain.signTransaction(paymentTx, 0, signFunction);
+        await ergoChain.signTransaction(paymentTx, 0);
       }).rejects.toThrow(`TestError: sign failed`);
     });
   });

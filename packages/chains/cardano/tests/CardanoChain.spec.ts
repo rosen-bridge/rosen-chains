@@ -1,7 +1,7 @@
 import { RosenTokens, TokenMap } from '@rosen-bridge/tokens';
 import TestCardanoNetwork from './network/TestCardanoNetwork';
 import CardanoChain from '../lib/CardanoChain';
-import { CardanoConfigs } from '../lib/types';
+import { CardanoConfigs } from '../lib';
 import * as TestData from './testData';
 import * as TestUtils from './testUtils';
 import CardanoTransaction from '../lib/CardanoTransaction';
@@ -20,7 +20,6 @@ import {
   hash_transaction,
   Transaction,
 } from '@emurgo/cardano-serialization-lib-nodejs';
-import { transaction4ChangeBoxMultiAssets } from './testData';
 
 const spyOn = jest.spyOn;
 
@@ -48,8 +47,18 @@ describe('CardanoChain', () => {
   const rosenTokens: RosenTokens = JSON.parse(TestData.testTokenMap);
   const tokenMap = new TokenMap(rosenTokens);
   const bankBoxes = TestUtils.mockBankBoxes();
-  const generateChainObject = (network: TestCardanoNetwork) => {
-    return new CardanoChain(network, configs, tokenMap, feeRationDivisor);
+  const mockedSignFn = () => Promise.resolve('');
+  const generateChainObject = (
+    network: TestCardanoNetwork,
+    signFn: (txHash: Uint8Array) => Promise<string> = mockedSignFn
+  ) => {
+    return new CardanoChain(
+      network,
+      configs,
+      tokenMap,
+      feeRationDivisor,
+      signFn
+    );
   };
 
   describe('generateTransaction', () => {
@@ -355,12 +364,8 @@ describe('CardanoChain', () => {
       );
 
       // call the function
-      const cardanoChain = generateChainObject(network);
-      const result = await cardanoChain.signTransaction(
-        paymentTx,
-        0,
-        signFunction
-      );
+      const cardanoChain = generateChainObject(network, signFunction);
+      const result = await cardanoChain.signTransaction(paymentTx, 0);
 
       // check returned value
       expect(result.txId).toEqual(paymentTx.txId);
@@ -391,10 +396,10 @@ describe('CardanoChain', () => {
       );
 
       // call the function
-      const cardanoChain = generateChainObject(network);
+      const cardanoChain = generateChainObject(network, signFunction);
 
       await expect(async () => {
-        await cardanoChain.signTransaction(paymentTx, 0, signFunction);
+        await cardanoChain.signTransaction(paymentTx, 0);
       }).rejects.toThrow('TestError: sign failed');
     });
   });
@@ -1423,7 +1428,8 @@ describe('CardanoChain', () => {
         network,
         newConfigs,
         tokenMap,
-        feeRationDivisor
+        feeRationDivisor,
+        mockedSignFn
       );
 
       // call the function
