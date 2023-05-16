@@ -172,7 +172,7 @@ describe('ErgoExplorerNetwork', () => {
      * @expected
      * - returned assets should equal mocked assets
      */
-    it('should return address assets', async () => {
+    it('should return address assets when no `tokens` field is in api result', async () => {
       mockGetApiV1AddressesP1BalanceConfirmed(testAddressBalanceWithNoTokens);
       const network = getNetwork();
 
@@ -216,7 +216,7 @@ describe('ErgoExplorerNetwork', () => {
      * @expected
      * - the function call should throw
      */
-    it('should return block transaction ids', async () => {
+    it('should throw if no `blockTransactions` is returned in api response', async () => {
       mockGetApiV1BlocksP1(null);
       const network = getNetwork();
 
@@ -322,9 +322,8 @@ describe('ErgoExplorerNetwork', () => {
     });
 
     /**
-     * @target `ErgoExplorerNetwork.getTransaction` should return transaction
-     * bytes hex representation if some tx inputs have `null` value for
-     * `spendingProof`
+     * @target `ErgoExplorerNetwork.getTransaction` should throw an error if
+     * transaction doesn't belong to the block
      * @dependencies
      * @scenario
      * - mock `getApiV1TransactionsP1` of ergo explorer client
