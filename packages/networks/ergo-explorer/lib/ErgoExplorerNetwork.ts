@@ -257,8 +257,11 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
         Buffer.from(txBytes, 'hex')
       ).to_json();
       /**
-       * The following type assertion is required because the parameter type of
-       * `postApiV0TransactionsSend` is wrong
+       * FIXME: The following type assertion is required because the parameter
+       * type of `postApiV0TransactionsSend` is wrong. It needs to be removed
+       * when the parameter type is fixed.
+       *
+       * https://git.ergopool.io/ergo/rosen-bridge/rosen-chains/-/issues/24
        */
       await this.client.v0.postApiV0TransactionsSend(tx as any);
       return;
