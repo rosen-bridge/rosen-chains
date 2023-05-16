@@ -1,7 +1,7 @@
 import { AbstractLogger } from '@rosen-bridge/logger-interface';
 import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import { RosenTokens } from '@rosen-bridge/tokens';
-import { FailedError } from '@rosen-chains/abstract-chain';
+import { FailedError, UnexpectedApiError } from '@rosen-chains/abstract-chain';
 import { AbstractErgoNetwork } from '@rosen-chains/ergo';
 import ergoExplorerClientFactory from '@rosen-clients/ergo-explorer';
 import { UTransactionInfo } from '@rosen-clients/ergo-explorer/dist/src/v0/types';
@@ -22,6 +22,10 @@ const JsonBigInt = JsonBigIntFactory({
 });
 
 const TX_FETCHING_PAGE_SIZE = 50;
+const errorCause = {
+  EMPTY_TRANSACTIONS: 'empty-transactions',
+  NO_BLOCK_HEADERS: 'no-block-headers',
+};
 
 interface ErgoExplorerNetworkOptions {
   logger?: AbstractLogger;
@@ -127,7 +131,10 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
 
       if (!blockTransactions) {
         throw new Error(
-          `No transactions found in block [${blockId}]. This may be an issue with the api, because it is not possible to have a block without any transactions.`
+          `No transactions found in block [${blockId}]. This may be an issue with the api, because it is not possible to have a block without any transactions.`,
+          {
+            cause: errorCause.EMPTY_TRANSACTIONS,
+          }
         );
       }
 
@@ -143,6 +150,12 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
           throw new FailedError(
             `${baseError} [${error.response.status}] ${error.response.data.reason}`
           );
+        },
+        handleUnknownState: (error) => {
+          if (error.cause === errorCause.EMPTY_TRANSACTIONS) {
+            throw new FailedError(`${baseError} ${error.message}`);
+          }
+          throw new UnexpectedApiError(`${baseError} ${error.message}`);
         },
       });
     }
@@ -402,7 +415,12 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
       });
 
       if (!lastBlocks) {
-        throw new Error();
+        throw new Error(
+          'No block headers returned by the api. This may be an issue with the api, because it is not possible to have no block headers.',
+          {
+            cause: errorCause.NO_BLOCK_HEADERS,
+          }
+        );
       }
 
       const lastBlocksStrings = lastBlocks.map((header) =>
@@ -421,10 +439,15 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
 
       return stateContext;
     } catch (error: any) {
-      return handleApiError(
-        error,
-        'Failed to get state context from Ergo Explorer:'
-      );
+      const baseError = 'Failed to get state context from Ergo Explorer:';
+      return handleApiError(error, baseError, {
+        handleUnknownState: (error) => {
+          if (error.cause === errorCause.NO_BLOCK_HEADERS) {
+            throw new FailedError(`${baseError} ${error.message}`);
+          }
+          throw new UnexpectedApiError(`${baseError} ${error.message}`);
+        },
+      });
     }
   };
 

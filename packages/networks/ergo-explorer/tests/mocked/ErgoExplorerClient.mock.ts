@@ -164,7 +164,7 @@ export const mockGetApiV1BoxesUnspentBytokenidP1 = (
 /**
  * mock `getApiV1BlocksHeaders` of ergo explorer client
  */
-export const mockGetApiV1BlocksHeaders = () =>
+export const mockGetApiV1BlocksHeaders = (shouldIncludeItemsField = true) =>
   vi.mocked(ergoExplorerClientFactory).mockReturnValueOnce({
     v1: {
       getApiV1BlocksHeaders: async ({
@@ -174,7 +174,9 @@ export const mockGetApiV1BlocksHeaders = () =>
         offset: bigint;
         limit: bigint;
       }) => ({
-        items: testBlockHeaders.slice(Number(offset), Number(offset + limit)),
+        ...(shouldIncludeItemsField && {
+          items: testBlockHeaders.slice(Number(offset), Number(offset + limit)),
+        }),
         total: testBlockHeaders.length,
       }),
     },

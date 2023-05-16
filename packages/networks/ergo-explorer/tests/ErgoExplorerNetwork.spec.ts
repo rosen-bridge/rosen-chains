@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { FailedError } from '@rosen-chains/abstract-chain';
+
 import { ErgoStateContext } from 'ergo-lib-wasm-nodejs';
 
 import ErgoExplorerNetwork from '../lib/ErgoExplorerNetwork';
@@ -220,9 +222,9 @@ describe('ErgoExplorerNetwork', () => {
       mockGetApiV1BlocksP1(null);
       const network = getNetwork();
 
-      expect(
-        async () => await network.getBlockTransactionIds(testBlockId)
-      ).rejects.toThrow();
+      expect(network.getBlockTransactionIds(testBlockId)).rejects.toThrow(
+        FailedError
+      );
     });
 
     /**
@@ -499,6 +501,22 @@ describe('ErgoExplorerNetwork', () => {
       const actualStateContext = await network.getStateContext();
 
       expect(actualStateContext).toBeInstanceOf(ErgoStateContext);
+    });
+
+    /**
+     * @target `ErgoExplorerNetwork.getStateContext` should throw an error if no
+     * block headers is returned by the api
+     * @dependencies
+     * @scenario
+     * - mock `getApiV1BlocksHeaders` of ergo explorer client
+     * @expected
+     * - returned state context should be a valid one
+     */
+    it('should throw an error if no block headers is returned by the api', async () => {
+      mockGetApiV1BlocksHeaders(false);
+      const network = getNetwork();
+
+      expect(network.getStateContext()).rejects.toThrow(FailedError);
     });
   });
 
