@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "./"
+  },
+  "include": ["lib", "tests"],
+  "references": [
+    { "path": "../../abstract-chain" },
+    { "path": "../../chains/cardano" }
+  ]
+}
