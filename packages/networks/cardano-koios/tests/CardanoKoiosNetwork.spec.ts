@@ -2,7 +2,7 @@ import CardanoKoiosNetwork from '../lib';
 import {
   mockAddressAssets,
   mockEmptyAddressAssets,
-  mockGetBlocks,
+  mockGetTip,
   mockNoHistoryAddressAssets,
   mockPostAddressInfo,
   mockPostAddressInfoNoHistory,
@@ -60,7 +60,7 @@ describe('CardanoKoiosNetwork', () => {
      */
     it('should return current block height', async () => {
       // mock client response
-      mockGetBlocks();
+      mockGetTip();
 
       // run test
       const network = mockNetwork();
@@ -410,7 +410,7 @@ describe('CardanoKoiosNetwork', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should be mocked utxos
+     * - it should be empty list
      */
     it('should return empty list when address has no boxes', async () => {
       // mock client response
@@ -433,7 +433,7 @@ describe('CardanoKoiosNetwork', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should be mocked utxos
+     * - it should be empty list
      */
     it('should return empty list when address has no history of transactions', async () => {
       // mock client response
@@ -442,6 +442,29 @@ describe('CardanoKoiosNetwork', () => {
       // run test
       const network = mockNetwork();
       const result = await network.getAddressBoxes(testData.address, 0, 100);
+
+      // check returned value
+      expect(result).toEqual([]);
+    });
+
+    /**
+     * @target `CardanoKoiosNetwork.getAddressBoxes` should return empty
+     * list when offset is more than boxes
+     * @dependencies
+     * @scenario
+     * - mock `postAddressInfo` of cardano koios client
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should be empty list
+     */
+    it('should return empty list when offset is more than boxes', async () => {
+      // mock client response
+      mockPostAddressInfo(JsonBigInt.parse(testData.addressUtxoSet));
+
+      // run test
+      const network = mockNetwork();
+      const result = await network.getAddressBoxes(testData.address, 5, 100);
 
       // check returned value
       expect(result).toEqual([]);
@@ -538,7 +561,7 @@ describe('CardanoKoiosNetwork', () => {
      */
     it('should return current slot', async () => {
       // mock client response
-      mockGetBlocks();
+      mockGetTip();
 
       // run test
       const network = mockNetwork();

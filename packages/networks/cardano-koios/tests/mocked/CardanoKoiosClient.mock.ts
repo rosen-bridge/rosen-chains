@@ -8,14 +8,14 @@ import {
 } from '@rosen-clients/cardano-koios';
 
 /**
- * mock `getBlocks` of cardano koios client
+ * mock `getTip` of cardano koios client
  */
-export const mockGetBlocks = () => {
+export const mockGetTip = () => {
   jest.mocked(cardanoKoiosClientFactory).mockReturnValueOnce({
-    block: {
-      getBlocks: async () => [
+    network: {
+      getTip: async () => [
         {
-          block_height: testData.blockHeight,
+          block_no: testData.blockHeight,
           abs_slot: testData.absoluteSlot,
         },
       ],

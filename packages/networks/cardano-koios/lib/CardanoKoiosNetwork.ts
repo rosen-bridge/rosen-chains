@@ -1,6 +1,9 @@
 import { AbstractLogger } from '@rosen-bridge/logger-interface';
 import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
-import cardanoKoiosClientFactory from '@rosen-clients/cardano-koios';
+import cardanoKoiosClientFactory, {
+  AddressAssets,
+  AddressInfo,
+} from '@rosen-clients/cardano-koios';
 import JsonBigIntFactory from 'json-bigint';
 import { KoiosNullValueError } from './types';
 import {
@@ -48,10 +51,10 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    * @returns the blockchain height
    */
   getHeight = async (): Promise<number> => {
-    return this.client.block
-      .getBlocks()
-      .then((blocks) => {
-        const height = blocks[0].block_height;
+    return this.client.network
+      .getTip()
+      .then((block) => {
+        const height = block[0].block_no;
         if (height) return Number(height);
         throw new KoiosNullValueError('Height of last block is null');
       })
@@ -98,49 +101,63 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    * @returns an object containing the amount of each asset
    */
   getAddressAssets = async (address: string): Promise<AssetBalance> => {
-    const nativeToken = await this.client.address
-      .postAddressInfo({ _addresses: [address] })
-      .then((res) => (res.length === 0 ? '0' : res[0].balance))
-      .catch((e) => {
-        const baseError = `Failed to get address [${address}] assets from Koios: `;
-        if (e.response) {
-          throw new FailedError(baseError + e.response.data.reason);
-        } else if (e.request) {
-          throw new NetworkError(baseError + e.message);
-        } else {
-          throw new UnexpectedApiError(baseError + e.message);
-        }
-      });
-    if (!nativeToken) throw new KoiosNullValueError('Address balance is null');
+    let nativeToken = 0n;
+    let tokens: Array<TokenInfo> = [];
 
-    const tokens: TokenInfo[] = await this.client.address
-      .postAddressAssets({ _addresses: [address] })
-      .then((res) => {
-        if (res.length === 0) return [];
-        const assets = res[0].asset_list?.map((asset) => {
-          if (!asset.fingerprint || !asset.quantity)
-            throw new KoiosNullValueError('Asset info is null');
-          return {
-            id: asset.fingerprint,
-            value: BigInt(asset.quantity),
-          };
-        });
-        if (assets) return assets;
-        throw new KoiosNullValueError('Address asset_list is null');
-      })
-      .catch((e) => {
-        const baseError = `Failed to get address [${address}] assets from Koios: `;
-        if (e.response) {
-          throw new FailedError(baseError + e.response.data.reason);
-        } else if (e.request) {
-          throw new NetworkError(baseError + e.message);
-        } else {
-          throw new UnexpectedApiError(baseError + e.message);
-        }
+    // get ADA value
+    let addressInfo: AddressInfo;
+    try {
+      addressInfo = await this.client.address.postAddressInfo({
+        _addresses: [address],
       });
+    } catch (e: any) {
+      const baseError = `Failed to get address [${address}] assets from Koios: `;
+      if (e.response) {
+        throw new FailedError(baseError + e.response.data.reason);
+      } else if (e.request) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
+    if (addressInfo.length !== 0) {
+      if (!addressInfo[0].balance)
+        throw new KoiosNullValueError('Address balance is null');
+      nativeToken = BigInt(addressInfo[0].balance);
+    }
+
+    // get tokens value
+    let addressAssets: AddressAssets;
+    try {
+      addressAssets = await this.client.address.postAddressAssets({
+        _addresses: [address],
+      });
+    } catch (e: any) {
+      const baseError = `Failed to get address [${address}] assets from Koios: `;
+      if (e.response) {
+        throw new FailedError(baseError + e.response.data.reason);
+      } else if (e.request) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
+    if (addressAssets.length !== 0) {
+      if (!addressAssets[0].asset_list)
+        throw new KoiosNullValueError('Address asset_list is null');
+      const assets = addressAssets[0].asset_list;
+      tokens = assets.map((asset) => {
+        if (!asset.fingerprint || !asset.quantity)
+          throw new KoiosNullValueError('Asset info is null');
+        return {
+          id: asset.fingerprint,
+          value: BigInt(asset.quantity),
+        };
+      });
+    }
 
     return {
-      nativeToken: BigInt(nativeToken),
+      nativeToken: nativeToken,
       tokens: tokens,
     };
   };
@@ -202,7 +219,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   };
 
   /**
-   * gets a transaction
+   * gets a transaction (serialized in `CardanoTx` format)
    * @param transactionId the transaction id
    * @param blockId the block id
    * @returns the serialized string of the transaction
@@ -268,7 +285,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    * @returns list of serialized string of the transactions in mempool
    */
   getMempoolTransactions = async (): Promise<Array<string>> => {
-    // since Cardano has no mempool, it return empty list
+    // since Koios does not support mempool, it returns empty list
     return [];
   };
 
@@ -361,10 +378,10 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    * @returns the current network slot
    */
   currentSlot = (): Promise<number> => {
-    return this.client.block
-      .getBlocks()
-      .then((blocks) => {
-        const slot = blocks[0].abs_slot;
+    return this.client.network
+      .getTip()
+      .then((block) => {
+        const slot = block[0].abs_slot;
         if (slot) return Number(slot);
         throw new KoiosNullValueError('Slot of last block is null');
       })
