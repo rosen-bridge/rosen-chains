@@ -344,7 +344,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
       });
     if (!tx) {
       this.logger.debug(
-        `Utxo [${boxId}] is not valid. Tx [${txId}] is not found`
+        `Utxo [${boxId}] is invalid. Tx [${txId}] is not found`
       );
       return false;
     }

@@ -1,4 +1,4 @@
-# @rosen-chains/ergo-explorer-network
+# @rosen-chains/cardano-koio-network
 
 ## Table of contents
 
@@ -8,40 +8,36 @@
 
 ## Introduction
 
-`@rosen-chains/ergo-explorer-network` is a package to be used as network api
-provider for `@rosen-chains/ergo` package.
+`@rosen-chains/cardano-koios-network` is a package to be used as network api
+provider for `@rosen-chains/cardano` package.
 
 ## Installation
 
 npm:
 
 ```sh
-npm i @rosen-chains/ergo-explorer-network
+npm i @rosen-chains/cardano-koios-network
 ```
 
 yarn:
 
 ```sh
-yarn add @rosen-chains/ergo-explorer-network
+yarn add @rosen-chains/cardano-koios-network
 ```
 
 ## Usage
 
 ```ts
-import { ErgoChain } from '@rosen-chains/ergo';
-import ErgoExplorerNetwork from '@rosen-chains/ergo-explorer-network';
+import { CardanoChain } from '@rosen-chains/cardano';
+import CardanoKoiosNetwork from '@rosen-chains/cardano-koios-network';
 
-const ergoExplorerNetwork = new ErgoExplorerNetwork({
-  explorerBaseUrl: 'SOME_EXPLORER_URL',
-  extractorOptions: {
-    lockAddress: 'SOME_LOCK_ADDRESS',
-    tokens: {
-      // SOME_TOKENS_OBJECT
-    },
-  },
-});
-const ergoChainConfig = {
-  // SOME_ERGO_CHAIN_CONFIG
-};
-const ergoChain = new ErgoChain(ergoExplorerNetwork, ergoChainConfig);
+let tokens: RosenTokens;
+const cardanoKoiosNetwork = new CardanoKoiosNetwork(
+  'https://api.koios.rest/api/v0', // koios api url
+  'lockAddress', // bridge lock address in Cardano (used in CardanoRosenExtractor)
+  tokens, // bridge supported tokens config, provided by `rosen-bridge/contract`
+  loggerFactory('KoiosNetwork') // logger (optional)
+);
+
+const height = await cardanoKoiosNetwork.getHeight();
 ```
