@@ -1,4 +1,8 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["tests"]
+  "exclude": ["tests"],
+  "references": [
+    { "path": "../../abstract-chain/tsconfig.build.json" },
+    { "path": "../../chains/ergo/tsconfig.build.json" }
+  ]
 }

@@ -46,7 +46,7 @@ class TestCardanoNetwork extends AbstractCardanoNetwork {
     throw Error('Not mocked');
   };
 
-  getTxConfirmation = (txId: string): Promise<ConfirmationStatus> => {
+  getTxConfirmation = (txId: string): Promise<number> => {
     throw Error('Not mocked');
   };
 

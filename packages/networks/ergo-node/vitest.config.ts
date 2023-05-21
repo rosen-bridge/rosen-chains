@@ -12,6 +12,7 @@ export default defineConfig({
       registerNodeLoader: true,
     },
     mockReset: true,
+    watch: false,
   },
   plugins: [wasm(), topLevelAwait()],
 });
