@@ -3,8 +3,11 @@ import AbstractUtxoChainNetwork from './network/AbstractUtxoChainNetwork';
 import { AssetBalance, BoxInfo, CoveringBoxes } from './types';
 import { GET_BOX_API_LIMIT } from './constants';
 
-abstract class AbstractUtxoChain extends AbstractChain {
-  declare network: AbstractUtxoChainNetwork;
+abstract class AbstractUtxoChain<
+  TxType,
+  BoxType
+> extends AbstractChain<TxType> {
+  declare network: AbstractUtxoChainNetwork<TxType, BoxType>;
 
   /**
    * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
@@ -15,14 +18,14 @@ abstract class AbstractUtxoChain extends AbstractChain {
   abstract getMempoolBoxMapping: (
     address: string,
     tokenId?: string
-  ) => Promise<Map<string, string | undefined>>;
+  ) => Promise<Map<string, BoxType | undefined>>;
 
   /**
    * extracts box id and assets of a box
-   * @param serializedBox the serialized string of the box
+   * @param box the box
    * @returns an object containing the box id and assets
    */
-  abstract getBoxInfo: (serializedBox: string) => BoxInfo;
+  abstract getBoxInfo: (box: BoxType) => BoxInfo;
 
   /**
    * gets useful, allowable and last boxes for an address until required assets are satisfied
@@ -36,8 +39,8 @@ abstract class AbstractUtxoChain extends AbstractChain {
     address: string,
     requiredAssets: AssetBalance,
     forbiddenBoxIds: Array<string>,
-    trackMap: Map<string, string | undefined>
-  ): Promise<CoveringBoxes> => {
+    trackMap: Map<string, BoxType | undefined>
+  ): Promise<CoveringBoxes<BoxType>> => {
     let uncoveredNativeToken = requiredAssets.nativeToken;
     const uncoveredTokens = requiredAssets.tokens.filter(
       (info) => info.value > 0n
@@ -48,7 +51,7 @@ abstract class AbstractUtxoChain extends AbstractChain {
     };
 
     let offset = 0;
-    const result: Array<string> = [];
+    const result: Array<BoxType> = [];
 
     // get boxes until requirements are satisfied
     while (isRequirementRemaining()) {
@@ -64,7 +67,7 @@ abstract class AbstractUtxoChain extends AbstractChain {
 
       // process received boxes
       for (const box of boxes) {
-        let trackedBox: string | undefined = box;
+        let trackedBox: BoxType | undefined = box;
         let boxInfo = this.getBoxInfo(box);
 
         // track boxes

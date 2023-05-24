@@ -2,8 +2,23 @@ import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
 import { ErgoStateContext } from 'ergo-lib-wasm-nodejs';
 import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
-abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork {
+abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork<
+  string,
+  string
+> {
   declare extractor: ErgoRosenExtractor;
+
+  /**
+   * submits a transaction
+   * @param transaction the transaction
+   */
+  declare submitTransaction: (transaction: string) => Promise<void>;
+
+  /**
+   * gets all transactions in mempool (returns empty list if the chain has no mempool)
+   * @returns list of transactions in mempool
+   */
+  declare getMempoolTransactions: () => Promise<Array<string>>;
 
   /**
    * gets the context of blockchain using 10 last blocks

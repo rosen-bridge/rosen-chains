@@ -13,13 +13,13 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/logger-interface';
 import ChainUtils from './ChainUtils';
 import { ValueError } from './errors';
 
-abstract class AbstractChain {
-  protected network: AbstractChainNetwork;
+abstract class AbstractChain<TxType> {
+  protected network: AbstractChainNetwork<TxType>;
   protected configs: ChainConfigs;
   logger: AbstractLogger;
 
   constructor(
-    network: AbstractChainNetwork,
+    network: AbstractChainNetwork<TxType>,
     configs: ChainConfigs,
     logger?: AbstractLogger
   ) {

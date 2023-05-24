@@ -2,7 +2,10 @@ import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
 import { CardanoUtxo } from '../types';
 import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
-abstract class AbstractCardanoNetwork extends AbstractUtxoChainNetwork {
+abstract class AbstractCardanoNetwork extends AbstractUtxoChainNetwork<
+  string,
+  string
+> {
   declare extractor: CardanoRosenExtractor;
 
   /**

@@ -1,7 +1,7 @@
 import { AbstractChainNetwork } from '../../lib';
 import TestRosenDataExtractor from '../TestRosenDataExtractor';
 
-class TestUtxoChainNetwork extends AbstractChainNetwork {
+class TestUtxoChainNetwork extends AbstractChainNetwork<string> {
   extractor = new TestRosenDataExtractor();
 
   notImplemented = () => {

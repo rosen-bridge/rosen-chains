@@ -35,7 +35,7 @@ import cardanoUtils from './CardanoUtils';
 import * as JSONBigInt from 'json-bigint';
 import { blake2b } from 'blakejs';
 
-class CardanoChain extends AbstractUtxoChain {
+class CardanoChain extends AbstractUtxoChain<string, string> {
   declare network: AbstractCardanoNetwork;
   declare configs: CardanoConfigs;
   tokenMap: TokenMap;
