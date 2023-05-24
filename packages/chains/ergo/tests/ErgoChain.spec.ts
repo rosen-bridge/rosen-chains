@@ -1187,6 +1187,150 @@ describe('ErgoChain', () => {
     });
   });
 
+  describe('verifyTransactionExtraConditions', () => {
+    const network = new TestErgoNetwork();
+
+    /**
+     * @target ErgoChain.verifyTransactionExtraConditions should return true
+     * when change box conditions are met
+     * @dependencies
+     * @scenario
+     * - mock valid PaymentTransaction
+     * - mock a config with valid lockAddress
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return true
+     */
+    it('should return true when change box conditions are met', async () => {
+      // mock PaymentTransaction
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction3PaymentTransaction
+      );
+
+      // mock a config with valid lockAddress
+      const config: ErgoConfigs = {
+        fee: 1200000n,
+        observationTxConfirmation: observationTxConfirmation,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress:
+          'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 1000000n,
+        eventTxConfirmation: 18,
+      };
+
+      // run test
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        feeRatioDivisor,
+        signFunction
+      );
+      const result = await ergoChain.verifyTransactionExtraConditions(
+        paymentTx
+      );
+
+      // check returned value
+      expect(result).toEqual(true);
+    });
+
+    /**
+     * @target ErgoChain.verifyTransactionExtraConditions should return false
+     * when change box address is wrong
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - mock a config with different lockAddress
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when change box address is wrong', async () => {
+      // mock PaymentTransaction
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction4PaymentTransaction
+      );
+
+      // mock a config with different lockAddress
+      const config: ErgoConfigs = {
+        fee: 1200000n,
+        observationTxConfirmation: observationTxConfirmation,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress: '9i1rTxaZpLprUkVHpY4YNyooksLuouiKqZ2v1J5nf8xFTXBCVcB',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 1000000n,
+        eventTxConfirmation: 18,
+      };
+
+      // run test
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        feeRatioDivisor,
+        signFunction
+      );
+      const result = await ergoChain.verifyTransactionExtraConditions(
+        paymentTx
+      );
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target ErgoChain.verifyTransactionExtraConditions should return false
+     * when change box has value in R4
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction with value in change box R4
+     * - mock a config with valid lockAddress
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when change box has value in R4', async () => {
+      // mock PaymentTransaction
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction4PaymentTransaction
+      );
+
+      // mock a config with valid lockAddress
+      const config: ErgoConfigs = {
+        fee: 1200000n,
+        observationTxConfirmation: observationTxConfirmation,
+        paymentTxConfirmation: paymentTxConfirmation,
+        coldTxConfirmation: coldTxConfirmation,
+        lockAddress:
+          'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 1000000n,
+        eventTxConfirmation: 18,
+      };
+
+      // run test
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        feeRatioDivisor,
+        signFunction
+      );
+      const result = await ergoChain.verifyTransactionExtraConditions(
+        paymentTx
+      );
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+  });
+
   describe('isTxValid', () => {
     /**
      * @target ErgoChain.isTxValid should return true when all inputs are valid

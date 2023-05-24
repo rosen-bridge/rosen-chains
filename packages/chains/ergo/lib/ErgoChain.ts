@@ -342,10 +342,11 @@ class ErgoChain extends AbstractUtxoChain {
       // skip change box and fee box
       if (
         output.ergo_tree().to_base16_bytes() === ErgoChain.feeBoxErgoTree ||
-        output.ergo_tree().to_base16_bytes() ===
-          wasm.Address.from_base58(this.configs.lockAddress)
-            .to_ergo_tree()
-            .to_base16_bytes()
+        (tx.output_candidates().len() - i === 2 &&
+          output.ergo_tree().to_base16_bytes() ===
+            wasm.Address.from_base58(this.configs.lockAddress)
+              .to_ergo_tree()
+              .to_base16_bytes())
       )
         continue;
 
@@ -481,6 +482,43 @@ class ErgoChain extends AbstractUtxoChain {
         this.logger.warn(`Event [${eventId}] validation failed: ${e}`);
         return false;
       }
+    }
+  };
+
+  /**
+   * verifies additional conditions for a PaymentTransaction
+   *   1. change box address should equal to lock address
+   *   2. change box should not have register
+   * @param transaction the PaymentTransaction
+   * @returns true if the transaction verified
+   */
+  verifyTransactionExtraConditions = (
+    transaction: PaymentTransaction
+  ): boolean => {
+    const tx = Serializer.deserialize(transaction.txBytes).unsigned_tx();
+    const outputBoxes = tx.output_candidates();
+
+    const box = outputBoxes.get(outputBoxes.len() - 2);
+    const boxErgoTree = box.ergo_tree().to_base16_bytes();
+    const lockErgoTree = wasm.Address.from_base58(this.configs.lockAddress)
+      .to_ergo_tree()
+      .to_base16_bytes();
+    if (boxErgoTree === lockErgoTree) {
+      const r4Value = box.register_value(4);
+      if (r4Value) {
+        this.logger.debug(
+          `Tx [${
+            transaction.txId
+          }] is invalid. Change box has value [${r4Value.encode_to_base16()}] in R4`
+        );
+        return false;
+      }
+      return true;
+    } else {
+      this.logger.debug(
+        `Tx [${transaction.txId}] is invalid. Change box ergoTree [${boxErgoTree}] is not equal to lock address ergoTree [${lockErgoTree}]`
+      );
+      return false;
     }
   };
 
