@@ -3,11 +3,8 @@ import AbstractUtxoChainNetwork from './network/AbstractUtxoChainNetwork';
 import { AssetBalance, BoxInfo, CoveringBoxes } from './types';
 import { GET_BOX_API_LIMIT } from './constants';
 
-abstract class AbstractUtxoChain<
-  TxType,
-  BoxType
-> extends AbstractChain<TxType> {
-  declare network: AbstractUtxoChainNetwork<TxType, BoxType>;
+abstract class AbstractUtxoChain<BoxType> extends AbstractChain {
+  declare network: AbstractUtxoChainNetwork<BoxType>;
 
   /**
    * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)

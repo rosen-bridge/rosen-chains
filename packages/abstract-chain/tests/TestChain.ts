@@ -5,7 +5,7 @@ import {
   TransactionAssetBalance,
 } from '../lib';
 
-class TestChain extends AbstractChain<string> {
+class TestChain extends AbstractChain {
   notImplemented = () => {
     throw Error('Not implemented');
   };

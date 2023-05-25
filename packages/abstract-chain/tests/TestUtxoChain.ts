@@ -1,6 +1,6 @@
 import { AbstractUtxoChain, BoxInfo } from '../lib';
 
-class TestUtxoChain extends AbstractUtxoChain<string, string> {
+class TestUtxoChain extends AbstractUtxoChain<string> {
   notImplemented = () => {
     throw Error('Not implemented');
   };

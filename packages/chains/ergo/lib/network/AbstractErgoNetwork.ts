@@ -2,20 +2,29 @@ import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
 import { ErgoStateContext } from 'ergo-lib-wasm-nodejs';
 import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
-abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork<
-  string,
-  string
-> {
+abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork<string> {
   declare extractor: ErgoRosenExtractor;
 
   /**
-   * submits a transaction
+   * gets a transaction (in wasm sigma-serialized hex string)
+   * @param transactionId the transaction id
+   * @param blockId the block id
+   * @returns the transaction
+   */
+  declare getTransaction: (
+    transactionId: string,
+    blockId: string
+  ) => Promise<string>;
+
+  /**
+   * submits a transaction (in wasm sigma-serialized hex string)
    * @param transaction the transaction
    */
   declare submitTransaction: (transaction: string) => Promise<void>;
 
   /**
-   * gets all transactions in mempool (returns empty list if the chain has no mempool)
+   * gets all transactions in mempool (in wasm sigma-serialized hex string)
+   * returns empty list if the chain has no mempool
    * @returns list of transactions in mempool
    */
   declare getMempoolTransactions: () => Promise<Array<string>>;

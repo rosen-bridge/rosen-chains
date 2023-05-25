@@ -1,9 +1,6 @@
 import AbstractChainNetwork from './AbstractChainNetwork';
 
-abstract class AbstractUtxoChainNetwork<
-  TxType,
-  BoxType
-> extends AbstractChainNetwork<TxType> {
+abstract class AbstractUtxoChainNetwork<BoxType> extends AbstractChainNetwork {
   /**
    * gets confirmed and unspent boxes of an address
    * @param address the address
