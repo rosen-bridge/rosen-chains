@@ -3,6 +3,7 @@ import {
   EventTrigger,
   PaymentOrder,
 } from '@rosen-chains/abstract-chain';
+import { CardanoTx } from '../lib';
 
 export const testTokenMap = `
 {
@@ -387,4 +388,57 @@ export const validEventWithHighFee: EventTrigger = {
     '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6c',
     '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b9c',
   ],
+};
+
+export const cardanoTx1: CardanoTx = {
+  id: 'c5afb967619ee64e0d724a56d27670fee6fe698df1375692d9868cb9792467c8',
+  inputs: [
+    {
+      txId: 'faf9346ebeaf65c2720464eb9126e43dfd7b40742e337370b67b84ae0f03dc2b',
+      index: 0,
+      value: 3000000n,
+      assets: [
+        {
+          policy_id: 'a0028f350aaabe0545fdcb56b039bfb08e4bb4d8c4d7c3c7d481c235',
+          asset_name: '484f534b59',
+          quantity: 184272501n,
+          fingerprint: 'asset17q7r59zlc3dgw0venc80pdv566q6yguw03f0d9',
+        },
+      ],
+    },
+  ],
+  outputs: [
+    {
+      address:
+        'addr1qxwxpafgqasnddk8et6en0vn74awg4j0n2nfek6e62aywvgcwedk5s2s92dx7msutk33zsl92uh8uhahh305nz7pekjsz5l37w',
+      value: 1386445n,
+      assets: [
+        {
+          policy_id: 'a0028f350aaabe0545fdcb56b039bfb08e4bb4d8c4d7c3c7d481c235',
+          asset_name: '484f534b59',
+          quantity: 184272501n,
+          fingerprint: 'asset17q7r59zlc3dgw0venc80pdv566q6yguw03f0d9',
+        },
+      ],
+    },
+    {
+      address:
+        'addr_test1vze7yqqlg8cjlyhz7jzvsg0f3fhxpuu6m3llxrajfzqecggw704re',
+      value: 1344798n,
+      assets: [],
+    },
+  ],
+  fee: 268757n,
+  metadata: {
+    '0': {
+      to: 'ergo',
+      bridgeFee: '165000000',
+      toAddress: '9g7mqqQAnUG4gWi6pFmic65ZfUrrWiVkMnbsg2hXUx6aVbBSTJ4',
+      networkFee: '175000',
+      fromAddress: [
+        'addr1q9jperhqputlfnfqhteu6eu2xhjwxa9keph08vgrqjg357tthg3xm3n4r6p',
+        'w85a5p6gdqv9v5zd6vmqdpxvl0jrql2aszjgvaj',
+      ],
+    },
+  },
 };

@@ -457,13 +457,11 @@ describe('CardanoChain', () => {
      */
     it('should construct mapping successfully when no token provided', async () => {
       // mock getMempoolTransactions
-      const serializedTransactions: Array<string> = [TestData.transaction1].map(
+      const serializedTransactions: Array<string> = [TestData.cardanoTx1].map(
         (txJson) => {
-          const cardanoTx = Transaction.from_json(txJson);
-          return cardanoTx.to_hex();
+          return JSONBigInt.stringify(txJson);
         }
       );
-      const boxMapping = TestData.transaction1BoxMapping;
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
         serializedTransactions
       );
@@ -474,8 +472,9 @@ describe('CardanoChain', () => {
 
       // check returned value
       const trackMap = new Map<string, string>();
-      boxMapping.forEach((mapping) =>
-        trackMap.set(mapping.inputId, mapping.serializedOutput)
+      trackMap.set(
+        CardanoUtils.getBoxId(TestData.cardanoTx1.inputs[0]),
+        JSONBigInt.stringify(TestData.cardanoTx1.outputs[0])
       );
       expect(result).toEqual(trackMap);
     });
@@ -493,19 +492,17 @@ describe('CardanoChain', () => {
      */
     it('should construct mapping successfully when token provided', async () => {
       // mock getMempoolTransactions
-      const serializedTransactions: Array<string> = [TestData.transaction1].map(
+      const serializedTransactions: Array<string> = [TestData.cardanoTx1].map(
         (txJson) => {
-          const cardanoTx = Transaction.from_json(txJson);
-          return cardanoTx.to_hex();
+          return JSONBigInt.stringify(txJson);
         }
       );
-      const boxMapping = TestData.transaction1BoxMapping;
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
         serializedTransactions
       );
 
       // call the function
-      const trackingTokenId = 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz';
+      const trackingTokenId = 'asset17q7r59zlc3dgw0venc80pdv566q6yguw03f0d9';
       const cardanoChain = generateChainObject(network);
       const result = await cardanoChain.getMempoolBoxMapping(
         trackingAddress,
@@ -514,8 +511,9 @@ describe('CardanoChain', () => {
 
       // check returned value
       const trackMap = new Map<string, string>();
-      boxMapping.forEach((mapping) =>
-        trackMap.set(mapping.inputId, mapping.serializedOutput)
+      trackMap.set(
+        CardanoUtils.getBoxId(TestData.cardanoTx1.inputs[0]),
+        JSONBigInt.stringify(TestData.cardanoTx1.outputs[0])
       );
       expect(result).toEqual(trackMap);
     });
@@ -533,11 +531,13 @@ describe('CardanoChain', () => {
      */
     it('should map inputs to undefined when no valid output box found', async () => {
       // mock getMempoolTransactions
-      const serializedTransactions: Array<string> = [TestData.transaction1].map(
+      const serializedTransactions: Array<string> = [TestData.cardanoTx1].map(
         (txJson) => {
-          const cardanoTx = Transaction.from_json(txJson);
-          return cardanoTx.to_hex();
+          return JSONBigInt.stringify(txJson);
         }
+      );
+      spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
+        serializedTransactions
       );
 
       // call the function
@@ -552,9 +552,11 @@ describe('CardanoChain', () => {
       );
 
       // check returned value
-      const boxMapping = TestData.transaction1BoxMapping;
       const trackMap = new Map<string, string | undefined>();
-      boxMapping.forEach((mapping) => trackMap.set(mapping.inputId, undefined));
+      trackMap.set(
+        CardanoUtils.getBoxId(TestData.cardanoTx1.inputs[0]),
+        undefined
+      );
       expect(result).toEqual(trackMap);
     });
   });
