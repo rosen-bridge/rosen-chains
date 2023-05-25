@@ -715,10 +715,25 @@ class CardanoChain extends AbstractUtxoChain {
 
         // add input box to trackMap
         const input = txBody.inputs().get(i);
-        trackMap.set(
-          CardanoUtils.getBoxId(input),
-          trackedBox ? trackedBox.to_hex() : undefined
-        );
+        const boxId = CardanoUtils.getBoxId(input);
+        if (trackedBox) {
+          const boxAssets = cardanoUtils.getBoxAssets(trackedBox);
+          const cardanoBox: CardanoBoxCandidate = {
+            address: trackedBox.address().to_bech32(),
+            value: boxAssets.nativeToken,
+            assets: boxAssets.tokens.map((token) => {
+              return {
+                fingerprint: token.id,
+                asset_name: '',
+                policy_id: '',
+                quantity: token.value,
+              };
+            }),
+          };
+          trackMap.set(boxId, JSONBigInt.stringify(cardanoBox));
+        } else {
+          trackMap.set(boxId, undefined);
+        }
       }
     });
 
