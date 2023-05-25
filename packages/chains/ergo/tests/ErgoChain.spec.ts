@@ -160,12 +160,17 @@ describe('ErgoChain', () => {
         covered: true,
         boxes: paymentTx.inputBoxes
           .slice(1)
-          .map((serializedBox) => Buffer.from(serializedBox).toString('hex')),
+          .map((serializedBox) =>
+            wasm.ErgoBox.sigma_parse_bytes(serializedBox)
+          ),
       });
 
-      // mock getMempoolBoxMapping
-      const mempoolTrackMap = new Map<string, string | undefined>();
-      mempoolTrackMap.set('boxId', 'serialized-box-1');
+      // mock getMempoolBoxMapping (the box itself doesn't matter)
+      const mempoolTrackMap = new Map<string, wasm.ErgoBox | undefined>();
+      mempoolTrackMap.set(
+        'boxId',
+        ergoTestUtils.toErgoBox(boxTestData.ergoBox2)
+      );
       const getMempoolBoxMappingSpy = spyOn(ergoChain, 'getMempoolBoxMapping');
       getMempoolBoxMappingSpy.mockResolvedValue(mempoolTrackMap);
 
@@ -381,7 +386,9 @@ describe('ErgoChain', () => {
         covered: false,
         boxes: paymentTx.inputBoxes
           .slice(1, 2)
-          .map((serializedBox) => Buffer.from(serializedBox).toString('hex')),
+          .map((serializedBox) =>
+            wasm.ErgoBox.sigma_parse_bytes(serializedBox)
+          ),
       });
 
       // run test and expect exception thrown
@@ -499,7 +506,7 @@ describe('ErgoChain', () => {
           address: string,
           requiredAssets: AssetBalance,
           forbiddenBoxIds: Array<string>,
-          trackMap: Map<string, string | undefined>
+          trackMap: Map<string, wasm.ErgoBox | undefined>
         ) => {
           // returns NOT covered when forbiddenBoxIds argument equals to expected value
           if (
@@ -517,7 +524,7 @@ describe('ErgoChain', () => {
               boxes: paymentTx.inputBoxes
                 .slice(1)
                 .map((serializedBox) =>
-                  Buffer.from(serializedBox).toString('hex')
+                  wasm.ErgoBox.sigma_parse_bytes(serializedBox)
                 ),
             };
         }
@@ -772,18 +779,18 @@ describe('ErgoChain', () => {
       when(getBlockInfoSpy)
         .calledWith(event.sourceBlockId)
         .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction'
-      const serializedTx = 'serializedTransaction';
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const mockedTx = ergoTestUtils.deserializeTransaction(
+        transactionTestData.transaction2SignedSerialized
+      );
       const getTransactionSpy = spyOn(network, 'getTransaction');
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(serializedTx);
+        .mockResolvedValueOnce(mockedTx);
 
       // mock network extractor to return event data
       const extractorSpy = spyOn(network.extractor, 'get');
-      when(extractorSpy)
-        .calledWith(serializedTx)
-        .mockReturnValueOnce(event as unknown as RosenData);
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
 
       // run test
       const ergoChain = generateChainObject(network);
@@ -885,20 +892,20 @@ describe('ErgoChain', () => {
       when(getBlockInfoSpy)
         .calledWith(event.sourceBlockId)
         .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction'
-      const serializedTx = 'serializedTransaction';
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const mockedTx = ergoTestUtils.deserializeTransaction(
+        transactionTestData.transaction2SignedSerialized
+      );
       const getTransactionSpy = spyOn(network, 'getTransaction');
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(serializedTx);
+        .mockResolvedValueOnce(mockedTx);
 
       // mock network extractor to return event data (expect for a key which should be wrong)
       const invalidData = event as unknown as RosenData;
       invalidData[key as keyof RosenData] = `fake_${key}`;
       const extractorSpy = spyOn(network.extractor, 'get');
-      when(extractorSpy)
-        .calledWith(serializedTx)
-        .mockReturnValueOnce(invalidData);
+      extractorSpy.mockReturnValueOnce(invalidData);
 
       // run test
       const ergoChain = generateChainObject(network);
@@ -952,18 +959,18 @@ describe('ErgoChain', () => {
       when(getBlockInfoSpy)
         .calledWith(event.sourceBlockId)
         .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction'
-      const serializedTx = 'serializedTransaction';
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const mockedTx = ergoTestUtils.deserializeTransaction(
+        transactionTestData.transaction2SignedSerialized
+      );
       const getTransactionSpy = spyOn(network, 'getTransaction');
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(serializedTx);
+        .mockResolvedValueOnce(mockedTx);
 
       // mock network extractor to return event data
       const extractorSpy = spyOn(network.extractor, 'get');
-      when(extractorSpy)
-        .calledWith(serializedTx)
-        .mockReturnValueOnce(event as unknown as RosenData);
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
 
       // run test
       const ergoChain = generateChainObject(network);
@@ -1017,18 +1024,18 @@ describe('ErgoChain', () => {
       when(getBlockInfoSpy)
         .calledWith(event.sourceBlockId)
         .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction'
-      const serializedTx = 'serializedTransaction';
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const mockedTx = ergoTestUtils.deserializeTransaction(
+        transactionTestData.transaction2SignedSerialized
+      );
       const getTransactionSpy = spyOn(network, 'getTransaction');
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(serializedTx);
+        .mockResolvedValueOnce(mockedTx);
 
       // mock network extractor to return event data
       const extractorSpy = spyOn(network.extractor, 'get');
-      when(extractorSpy)
-        .calledWith(serializedTx)
-        .mockReturnValueOnce(event as unknown as RosenData);
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
 
       // run test
       const ergoChain = generateChainObject(network);
@@ -1091,18 +1098,18 @@ describe('ErgoChain', () => {
       when(getBlockInfoSpy)
         .calledWith(event.sourceBlockId)
         .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction'
-      const serializedTx = 'serializedTransaction';
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const mockedTx = ergoTestUtils.deserializeTransaction(
+        transactionTestData.transaction2SignedSerialized
+      );
       const getTransactionSpy = spyOn(network, 'getTransaction');
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(serializedTx);
+        .mockResolvedValueOnce(mockedTx);
 
       // mock network extractor to return event data
       const extractorSpy = spyOn(network.extractor, 'get');
-      when(extractorSpy)
-        .calledWith(serializedTx)
-        .mockReturnValueOnce(event as unknown as RosenData);
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
 
       // run test
       const ergoChain = generateChainObject(network);
@@ -1165,18 +1172,18 @@ describe('ErgoChain', () => {
       when(getBlockInfoSpy)
         .calledWith(event.sourceBlockId)
         .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction'
-      const serializedTx = 'serializedTransaction';
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const mockedTx = ergoTestUtils.deserializeTransaction(
+        transactionTestData.transaction2SignedSerialized
+      );
       const getTransactionSpy = spyOn(network, 'getTransaction');
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(serializedTx);
+        .mockResolvedValueOnce(mockedTx);
 
       // mock network extractor to return event data
       const extractorSpy = spyOn(network.extractor, 'get');
-      when(extractorSpy)
-        .calledWith(serializedTx)
-        .mockReturnValueOnce(event as unknown as RosenData);
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
 
       // run test
       const ergoChain = generateChainObject(network);
@@ -1654,26 +1661,19 @@ describe('ErgoChain', () => {
      */
     it('should true when tx is in mempool', async () => {
       // mock list of transactions
-      const serializedTransactions: Array<string> = [
+      const transactions = [
         transactionTestData.transaction0,
         transactionTestData.transaction1,
-      ].map((txJson) =>
-        Buffer.from(
-          ergoTestUtils.toTransaction(txJson).sigma_serialize_bytes()
-        ).toString('hex')
-      );
+      ].map(ergoTestUtils.toTransaction);
 
       // mock a network object to return mocked transactions for mempool
       const network = new TestErgoNetwork();
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
-        serializedTransactions
+        transactions
       );
 
       // get txId of one of the transactions
-      const txId = ergoTestUtils
-        .deserializeTransaction(serializedTransactions[0])
-        .id()
-        .to_str();
+      const txId = transactions[0].id().to_str();
 
       // run test
       const ergoChain = generateChainObject(network);
@@ -1697,19 +1697,15 @@ describe('ErgoChain', () => {
      */
     it('should false when tx is NOT in mempool', async () => {
       // mock list of transactions
-      const serializedTransactions: Array<string> = [
+      const transactions = [
         transactionTestData.transaction0,
         transactionTestData.transaction1,
-      ].map((txJson) =>
-        Buffer.from(
-          ergoTestUtils.toTransaction(txJson).sigma_serialize_bytes()
-        ).toString('hex')
-      );
+      ].map(ergoTestUtils.toTransaction);
 
       // mock a network object to return mocked transactions for mempool
       const network = new TestErgoNetwork();
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
-        serializedTransactions
+        transactions
       );
 
       // generate a random txId
@@ -1743,23 +1739,19 @@ describe('ErgoChain', () => {
      */
     it('should construct mapping successfully when no token provided', async () => {
       // mock list of transactions with their box mapping
-      const serializedTransactions: Array<string> = [
-        transactionTestData.transaction0,
-      ].map((txJson) =>
-        Buffer.from(
-          ergoTestUtils.toTransaction(txJson).sigma_serialize_bytes()
-        ).toString('hex')
+      const transactions = [transactionTestData.transaction0].map(
+        ergoTestUtils.toTransaction
       );
       const boxMapping = transactionTestData.transaction0BoxMapping;
 
       // mock a network object to return mocked transactions for mempool
       const network = new TestErgoNetwork();
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
-        serializedTransactions
+        transactions
       );
 
       // construct trackMap using transaction box mappings
-      const trackMap = new Map<string, string>();
+      const trackMap = new Map<string, string | undefined>();
       boxMapping.forEach((mapping) =>
         trackMap.set(mapping.inputId, mapping.serializedOutput)
       );
@@ -1769,7 +1761,16 @@ describe('ErgoChain', () => {
       const result = await ergoChain.getMempoolBoxMapping(trackingAddress);
 
       // check returned value
-      expect(result).toEqual(trackMap);
+      const constructedMap = new Map<string, string | undefined>();
+      result.forEach((value, key) =>
+        constructedMap.set(
+          key,
+          value
+            ? Buffer.from(value.sigma_serialize_bytes()).toString('hex')
+            : undefined
+        )
+      );
+      expect(constructedMap).toEqual(trackMap);
     });
 
     /**
@@ -1787,12 +1788,8 @@ describe('ErgoChain', () => {
      */
     it('should construct mapping successfully when token provided', async () => {
       // mock list of transactions with their box mapping
-      const serializedTransactions: Array<string> = [
-        transactionTestData.transaction0,
-      ].map((txJson) =>
-        Buffer.from(
-          ergoTestUtils.toTransaction(txJson).sigma_serialize_bytes()
-        ).toString('hex')
+      const transactions = [transactionTestData.transaction0].map(
+        ergoTestUtils.toTransaction
       );
       const boxMapping = transactionTestData.transaction0BoxMapping;
       const trackingTokenId =
@@ -1801,7 +1798,7 @@ describe('ErgoChain', () => {
       // mock a network object to return mocked transactions for mempool
       const network = new TestErgoNetwork();
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
-        serializedTransactions
+        transactions
       );
 
       // construct trackMap using transaction box mappings
@@ -1818,7 +1815,16 @@ describe('ErgoChain', () => {
       );
 
       // check returned value
-      expect(result).toEqual(trackMap);
+      const constructedMap = new Map<string, string | undefined>();
+      result.forEach((value, key) =>
+        constructedMap.set(
+          key,
+          value
+            ? Buffer.from(value.sigma_serialize_bytes()).toString('hex')
+            : undefined
+        )
+      );
+      expect(constructedMap).toEqual(trackMap);
     });
 
     /**
@@ -1837,12 +1843,8 @@ describe('ErgoChain', () => {
      */
     it('should map inputs to undefined when no valid output box found', async () => {
       // mock list of transactions with their box mapping
-      const serializedTransactions: Array<string> = [
-        transactionTestData.transaction0,
-      ].map((txJson) =>
-        Buffer.from(
-          ergoTestUtils.toTransaction(txJson).sigma_serialize_bytes()
-        ).toString('hex')
+      const transactions = [transactionTestData.transaction0].map(
+        ergoTestUtils.toTransaction
       );
       const boxMapping = transactionTestData.transaction0BoxMapping;
       const trackingTokenId =
@@ -1851,7 +1853,7 @@ describe('ErgoChain', () => {
       // mock a network object to return mocked transactions for mempool
       const network = new TestErgoNetwork();
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
-        serializedTransactions
+        transactions
       );
 
       // construct trackMap using transaction box mappings
@@ -1887,9 +1889,6 @@ describe('ErgoChain', () => {
     it('should get box id and assets successfully', () => {
       // mock an ErgoBox with assets
       const box = ergoTestUtils.toErgoBox(boxTestData.ergoBox1);
-      const serializedBox = Buffer.from(box.sigma_serialize_bytes()).toString(
-        'hex'
-      );
       const boxInfo: BoxInfo = {
         id: box.box_id().to_str(),
         assets: boxTestData.box1Assets,
@@ -1897,7 +1896,7 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = ergoChain.getBoxInfo(serializedBox);
+      const result = ergoChain.getBoxInfo(box);
 
       // check returned value
       expect(result).toEqual(boxInfo);
@@ -2000,8 +1999,11 @@ describe('ErgoChain', () => {
      * - it should return mocked serializedBox
      */
     it('should get guard box successfully', async () => {
-      // mock serialized box and guardNFT
-      const serializedBox = 'serialized-box';
+      // mock serialized box and guardNFT (the box itself doesn't matter)
+      const box = ergoTestUtils.toErgoBox(boxTestData.ergoBox2);
+      const serializedBox = Buffer.from(box.sigma_serialize_bytes()).toString(
+        'hex'
+      );
       const guardNFT = ergoTestUtils.generateRandomId();
 
       // mock a network object
@@ -2010,7 +2012,7 @@ describe('ErgoChain', () => {
       const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
       when(getBoxesByTokenIdSpy)
         .calledWith(guardNFT, ergoTestUtils.testLockAddress)
-        .mockResolvedValue([serializedBox]);
+        .mockResolvedValue([box]);
 
       // run test
       const ergoChain = generateChainObject(network);
@@ -2068,12 +2070,12 @@ describe('ErgoChain', () => {
      * - it should return Error
      */
     it('should throw error when multiple guard box found', async () => {
-      // mock guardNFT and multiple serializedBoxes
+      // mock guardNFT and multiple serializedBoxes (the boxes themselves don't matter)
       const guardNFT = ergoTestUtils.generateRandomId();
       const serializedBoxes = [
-        'serialized-box-1',
-        'serialized-box-2',
-        'serialized-box-3',
+        ergoTestUtils.toErgoBox(boxTestData.ergoBox1),
+        ergoTestUtils.toErgoBox(boxTestData.ergoBox2),
+        ergoTestUtils.toErgoBox(boxTestData.ergoBox3),
       ];
 
       // mock a network object

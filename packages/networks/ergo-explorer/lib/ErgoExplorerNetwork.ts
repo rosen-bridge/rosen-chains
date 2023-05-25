@@ -198,15 +198,6 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
     this.uint8ArrayToHexString(serializable.sigma_serialize_bytes());
 
   /**
-   * get bytes representation of a tx string
-   * @param tx
-   */
-  private getTxBytes = (tx: string) => {
-    const ergoLibTx = ergoLib.Transaction.from_json(tx);
-    return this.serializableToHexString(ergoLibTx);
-  };
-
-  /**
    * Fix a possible malformed tx (returned by `getApiV1TransactionsP1` api),
    * converting all `null` values for `spendingProof` to an empty string
    * @param tx
@@ -220,8 +211,7 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
   });
 
   /**
-   * get a transaction by its id, returning hex representation of `ergo-lib` tx
-   * bytes, or throw an error if the tx doesn't belong to the block
+   * get a transaction by its id, returning tx or throw an error if the tx doesn't belong to the block
    * @param txId
    * @param blockId
    */
@@ -241,7 +231,7 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
         throw new Error(`Tx [${txId}] doesn't belong to block [${blockId}]`);
       }
 
-      return this.getTxBytes(JsonBigInt.stringify(tx));
+      return ergoLib.Transaction.from_json(JsonBigInt.stringify(tx));
     } catch (error: any) {
       return handleApiError(error, 'Failed to get tx from Ergo Explorer:');
     }
@@ -249,13 +239,10 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
 
   /**
    * submit a transaction to the network
-   * @param tx hex representation of `ergo-lib` tx bytes
+   * @param tx the transaction
    */
-  public submitTransaction = async (txBytes: string) => {
+  public submitTransaction = async (tx: ergoLib.Transaction) => {
     try {
-      const tx = ergoLib.Transaction.sigma_parse_bytes(
-        Buffer.from(txBytes, 'hex')
-      ).to_json();
       /**
        * FIXME: The following type assertion is required because the parameter
        * type of `postApiV0TransactionsSend` is wrong. It needs to be removed
@@ -320,8 +307,7 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
       const txs = await all(mempoolTxIterator);
       return txs
         .map(this.fixMalformedMempoolTx)
-        .map((tx) => JsonBigInt.stringify(tx))
-        .map(this.getTxBytes);
+        .map((tx) => ergoLib.Transaction.from_json(JsonBigInt.stringify(tx)));
     } catch (error: any) {
       return handleApiError(
         error,
@@ -331,16 +317,7 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
   };
 
   /**
-   * get hex string representation of a box
-   * @param box
-   */
-  private boxToHexString = (box: OutputInfo) =>
-    this.serializableToHexString(
-      ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
-    );
-
-  /**
-   * get hex representation of utxos of an address
+   * get utxos of an address
    * @param address
    * @param offset
    * @param limit
@@ -361,7 +338,9 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
         return [];
       }
 
-      const boxesBytes = boxes.map((box) => this.boxToHexString(box));
+      const boxesBytes = boxes.map((box) =>
+        ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
+      );
 
       return boxesBytes;
     } catch (error: any) {
@@ -373,7 +352,7 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
   };
 
   /**
-   * get hex representation of utxos of an address containing a token
+   * get utxos of an address containing a token
    * @param tokenId
    * @param address
    * @param offset
@@ -396,7 +375,9 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
         return [];
       }
 
-      const boxesBytes = boxes.map((box) => this.boxToHexString(box));
+      const boxesBytes = boxes.map((box) =>
+        ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
+      );
 
       return boxesBytes;
     } catch (error) {

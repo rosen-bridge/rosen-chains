@@ -1,12 +1,12 @@
 import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
-import { ErgoStateContext } from 'ergo-lib-wasm-nodejs';
+import { ErgoBox, ErgoStateContext, Transaction } from 'ergo-lib-wasm-nodejs';
 import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
-abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork<string> {
+abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork<ErgoBox> {
   declare extractor: ErgoRosenExtractor;
 
   /**
-   * gets a transaction (in wasm sigma-serialized hex string)
+   * gets a transaction
    * @param transactionId the transaction id
    * @param blockId the block id
    * @returns the transaction
@@ -14,20 +14,20 @@ abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork<string> {
   declare getTransaction: (
     transactionId: string,
     blockId: string
-  ) => Promise<string>;
+  ) => Promise<Transaction>;
 
   /**
-   * submits a transaction (in wasm sigma-serialized hex string)
+   * submits a transaction
    * @param transaction the transaction
    */
-  declare submitTransaction: (transaction: string) => Promise<void>;
+  declare submitTransaction: (transaction: Transaction) => Promise<void>;
 
   /**
-   * gets all transactions in mempool (in wasm sigma-serialized hex string)
+   * gets all transactions in mempool
    * returns empty list if the chain has no mempool
    * @returns list of transactions in mempool
    */
-  declare getMempoolTransactions: () => Promise<Array<string>>;
+  declare getMempoolTransactions: () => Promise<Array<Transaction>>;
 
   /**
    * gets the context of blockchain using 10 last blocks
@@ -41,14 +41,14 @@ abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork<string> {
    * @param address
    * @param offset
    * @param limit
-   * @returns list of serialized string of the boxes
+   * @returns list of boxes
    */
   abstract getBoxesByTokenId: (
     tokenId: string,
     address: string,
     offset?: number,
     limit?: number
-  ) => Promise<Array<string>>;
+  ) => Promise<Array<ErgoBox>>;
 }
 
 export default AbstractErgoNetwork;
