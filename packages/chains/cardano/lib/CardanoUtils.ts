@@ -1,10 +1,11 @@
 import { CardanoUtxo, CardanoAssetInfo, UtxoBoxesAssets } from './types';
 import { AssetBalance, TokenInfo } from '@rosen-chains/abstract-chain';
 import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
-import { default as CIP14 } from '@emurgo/cip14-js';
 import { TokenMap } from '@rosen-bridge/tokens';
 import { CARDANO_CHAIN } from './constants';
 import { BigNum } from '@emurgo/cardano-serialization-lib-nodejs';
+import blake2b from 'blake2b';
+import { bech32 } from 'bech32';
 
 class CardanoUtils {
   /**
@@ -109,10 +110,13 @@ class CardanoUtils {
     policyId: CardanoWasm.ScriptHash,
     assetName: CardanoWasm.AssetName
   ): string => {
-    return CIP14.fromParts(
-      policyId.to_bytes(),
-      Buffer.from(assetName.to_js_value(), 'hex')
-    ).fingerprint();
+    const policyIdBytes = policyId.to_bytes();
+    const assetNameBytes = Buffer.from(assetName.to_js_value(), 'hex');
+    const hashBuf = blake2b(20)
+      .update(new Uint8Array([...policyIdBytes, ...assetNameBytes]))
+      .digest('binary');
+    const words = bech32.toWords(hashBuf);
+    return bech32.encode('asset', words);
   };
 
   /**
