@@ -561,6 +561,139 @@ describe('CardanoChain', () => {
     });
   });
 
+  describe('getTransactionsBoxMapping', () => {
+    const network = new TestCardanoNetwork();
+    class TestCardanoChain extends CardanoChain {
+      callGetTransactionsBoxMapping = (
+        serializedTransactions: string[],
+        address: string,
+        tokenId?: string
+      ) => {
+        return this.getTransactionsBoxMapping(
+          serializedTransactions,
+          address,
+          tokenId
+        );
+      };
+    }
+    const testInstance = new TestCardanoChain(
+      network,
+      configs,
+      tokenMap,
+      feeRationDivisor,
+      null as any
+    );
+
+    /**
+     * @target CardanoChain.getTransactionsBoxMapping should construct mapping
+     * successfully when no token provided
+     * @dependencies
+     * @scenario
+     * - mock serialized transactions
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return a map equal to constructed map
+     */
+    it('should construct mapping successfully when no token provided', () => {
+      // mock serialized transactions
+      const serializedTransactions: Array<string> = [TestData.transaction1].map(
+        (txJson) => {
+          const cardanoTx = Transaction.from_json(txJson);
+          return cardanoTx.to_hex();
+        }
+      );
+
+      // call the function
+      const result = testInstance.callGetTransactionsBoxMapping(
+        serializedTransactions,
+        configs.lockAddress
+      );
+
+      // check returned value
+      const trackMap = new Map<string, string>();
+      const boxMapping = TestData.transaction1BoxMapping;
+      boxMapping.forEach((mapping) => {
+        trackMap.set(mapping.inputId, mapping.serializedOutput);
+      });
+      expect(result).toEqual(trackMap);
+    });
+
+    /**
+     * @target CardanoChain.getTransactionsBoxMapping should construct mapping
+     * successfully when token provided
+     * @dependencies
+     * @scenario
+     * - mock serialized transactions
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return a map equal to constructed map
+     */
+    it('should construct mapping successfully when token provided', () => {
+      // mock serialized transactions
+      const serializedTransactions: Array<string> = [TestData.transaction1].map(
+        (txJson) => {
+          const cardanoTx = Transaction.from_json(txJson);
+          return cardanoTx.to_hex();
+        }
+      );
+
+      // call the function
+      const trackingTokenId = 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz';
+      const result = testInstance.callGetTransactionsBoxMapping(
+        serializedTransactions,
+        configs.lockAddress,
+        trackingTokenId
+      );
+
+      // check returned value
+      const trackMap = new Map<string, string>();
+      const boxMapping = TestData.transaction1BoxMapping;
+      boxMapping.forEach((mapping) => {
+        trackMap.set(mapping.inputId, mapping.serializedOutput);
+      });
+      expect(result).toEqual(trackMap);
+    });
+
+    /**
+     * @target CardanoChain.getTransactionsBoxMapping should map inputs to
+     * undefined when no valid output box found
+     * @dependencies
+     * @scenario
+     * - mock serialized transactions
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return a map of each box to undefined
+     */
+    it('should map inputs to undefined when no valid output box found', () => {
+      // mock serialized transactions
+      const serializedTransactions: Array<string> = [TestData.transaction1].map(
+        (txJson) => {
+          const cardanoTx = Transaction.from_json(txJson);
+          return cardanoTx.to_hex();
+        }
+      );
+
+      // call the function
+      const trackingTokenId = 'asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p0';
+      const result = testInstance.callGetTransactionsBoxMapping(
+        serializedTransactions,
+        configs.lockAddress,
+        trackingTokenId
+      );
+
+      // check returned value
+      const trackMap = new Map<string, string | undefined>();
+      const boxMapping = TestData.transaction1BoxMapping;
+      boxMapping.forEach((mapping) => {
+        trackMap.set(mapping.inputId, undefined);
+      });
+      expect(result).toEqual(trackMap);
+    });
+  });
+
   describe('isTxInMempool', () => {
     const network = new TestCardanoNetwork();
 

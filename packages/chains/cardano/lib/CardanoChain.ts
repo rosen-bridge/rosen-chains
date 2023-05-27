@@ -721,14 +721,12 @@ class CardanoChain extends AbstractUtxoChain {
           const cardanoBox: CardanoBoxCandidate = {
             address: trackedBox.address().to_bech32(),
             value: boxAssets.nativeToken,
-            assets: boxAssets.tokens.map((token) => {
-              return {
-                fingerprint: token.id,
-                asset_name: '',
-                policy_id: '',
-                quantity: token.value,
-              };
-            }),
+            assets: boxAssets.tokens.map((token) => ({
+              fingerprint: token.id,
+              asset_name: '',
+              policy_id: '',
+              quantity: token.value,
+            })),
           };
           trackMap.set(boxId, JSONBigInt.stringify(cardanoBox));
         } else {
