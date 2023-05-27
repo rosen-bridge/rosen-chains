@@ -20,7 +20,12 @@ import {
 import { Fee } from '@rosen-bridge/minimum-fee';
 import AbstractCardanoNetwork from './network/AbstractCardanoNetwork';
 import { AbstractLogger } from '@rosen-bridge/logger-interface';
-import { CardanoUtxo, CardanoConfigs } from './types';
+import {
+  CardanoUtxo,
+  CardanoConfigs,
+  CardanoTx,
+  CardanoBoxCandidate,
+} from './types';
 import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import { TokenMap } from '@rosen-bridge/tokens';
 import { CARDANO_CHAIN, txBuilderConfig } from './constants';
@@ -396,11 +401,35 @@ class CardanoChain extends AbstractUtxoChain {
     tokenId?: string
   ): Promise<Map<string, string | undefined>> => {
     const mempoolTxs = await this.network.getMempoolTransactions();
-    const trackMap = this.getTransactionsBoxMapping(
-      mempoolTxs,
-      address,
-      tokenId
-    );
+    const trackMap = new Map<string, string | undefined>();
+    mempoolTxs.forEach((tx) => {
+      const cardanoTx = JSONBigInt.parse(tx) as CardanoTx;
+      // iterate over tx inputs
+      for (let i = 0; i < cardanoTx.inputs.length; i++) {
+        let trackedBox: CardanoBoxCandidate | undefined;
+        // iterate over tx outputs
+        for (let j = 0; j < cardanoTx.outputs.length; j++) {
+          const output = cardanoTx.outputs[j];
+          // check if box satisfy conditions
+          if (output.address !== address) continue;
+          if (tokenId) {
+            if (!output.assets.find((asset) => asset.fingerprint === tokenId))
+              continue;
+          }
+
+          // mark the tracked box
+          trackedBox = output;
+          break;
+        }
+
+        // add input box to trackMap
+        const input = cardanoTx.inputs[i];
+        trackMap.set(
+          CardanoUtils.getBoxId(input),
+          trackedBox ? JSONBigInt.stringify(trackedBox) : undefined
+        );
+      }
+    });
 
     return trackMap;
   };
@@ -686,10 +715,23 @@ class CardanoChain extends AbstractUtxoChain {
 
         // add input box to trackMap
         const input = txBody.inputs().get(i);
-        trackMap.set(
-          CardanoUtils.getBoxId(input),
-          trackedBox ? trackedBox.to_hex() : undefined
-        );
+        const boxId = CardanoUtils.getBoxId(input);
+        if (trackedBox) {
+          const boxAssets = cardanoUtils.getBoxAssets(trackedBox);
+          const cardanoBox: CardanoBoxCandidate = {
+            address: trackedBox.address().to_bech32(),
+            value: boxAssets.nativeToken,
+            assets: boxAssets.tokens.map((token) => ({
+              fingerprint: token.id,
+              asset_name: '',
+              policy_id: '',
+              quantity: token.value,
+            })),
+          };
+          trackMap.set(boxId, JSONBigInt.stringify(cardanoBox));
+        } else {
+          trackMap.set(boxId, undefined);
+        }
       }
     });
 
