@@ -3,6 +3,7 @@ import {
   EventTrigger,
   PaymentOrder,
 } from '@rosen-chains/abstract-chain';
+import { CardanoTx } from '../lib';
 
 export const testTokenMap = `
 {
@@ -195,25 +196,25 @@ export const transaction1BoxMapping = [
     inputId:
       '3101943d053d487d78578f230518bd7068ad166d1b1b63488ec822cdcff143a8.0',
     serializedOutput:
-      '825839019c60f528076136b6c7caf599bd93f57ae4564f9aa69cdb59d2ba473118765b6a41502a9a6f6e1c5da31143e5572e7e5fb7bc5f498bc1cda5821a001e8480a1581cef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286a14b52737445524776546573741864',
+      '{"address":"addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs","value":137010000,"assets":[{"fingerprint":"asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2","asset_name":"","policy_id":"","quantity":5000},{"fingerprint":"asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7","asset_name":"","policy_id":"","quantity":100},{"fingerprint":"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz","asset_name":"","policy_id":"","quantity":900}]}',
   },
   {
     inputId:
       'a878d4560455eff78e9e81721743473b40d55898cb3162dd643d4c4821e05803.0',
     serializedOutput:
-      '825839019c60f528076136b6c7caf599bd93f57ae4564f9aa69cdb59d2ba473118765b6a41502a9a6f6e1c5da31143e5572e7e5fb7bc5f498bc1cda5821a001e8480a1581cef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286a14b52737445524776546573741864',
+      '{"address":"addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs","value":137010000,"assets":[{"fingerprint":"asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2","asset_name":"","policy_id":"","quantity":5000},{"fingerprint":"asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7","asset_name":"","policy_id":"","quantity":100},{"fingerprint":"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz","asset_name":"","policy_id":"","quantity":900}]}',
   },
   {
     inputId:
       'b2e02269dba680b63f4ac4dfa9f5c967bc208af685709ab9cc2228839547ae52.0',
     serializedOutput:
-      '825839019c60f528076136b6c7caf599bd93f57ae4564f9aa69cdb59d2ba473118765b6a41502a9a6f6e1c5da31143e5572e7e5fb7bc5f498bc1cda5821a001e8480a1581cef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286a14b52737445524776546573741864',
+      '{"address":"addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs","value":137010000,"assets":[{"fingerprint":"asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2","asset_name":"","policy_id":"","quantity":5000},{"fingerprint":"asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7","asset_name":"","policy_id":"","quantity":100},{"fingerprint":"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz","asset_name":"","policy_id":"","quantity":900}]}',
   },
   {
     inputId:
       'bd391046e9cdb40592eae98e2bb65abf75756ae21b4011044b883e7799c68a33.2',
     serializedOutput:
-      '825839019c60f528076136b6c7caf599bd93f57ae4564f9aa69cdb59d2ba473118765b6a41502a9a6f6e1c5da31143e5572e7e5fb7bc5f498bc1cda5821a001e8480a1581cef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286a14b52737445524776546573741864',
+      '{"address":"addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs","value":137010000,"assets":[{"fingerprint":"asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2","asset_name":"","policy_id":"","quantity":5000},{"fingerprint":"asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7","asset_name":"","policy_id":"","quantity":100},{"fingerprint":"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz","asset_name":"","policy_id":"","quantity":900}]}',
   },
 ];
 
@@ -387,4 +388,57 @@ export const validEventWithHighFee: EventTrigger = {
     '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6c',
     '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b9c',
   ],
+};
+
+export const cardanoTx1: CardanoTx = {
+  id: 'c5afb967619ee64e0d724a56d27670fee6fe698df1375692d9868cb9792467c8',
+  inputs: [
+    {
+      txId: 'faf9346ebeaf65c2720464eb9126e43dfd7b40742e337370b67b84ae0f03dc2b',
+      index: 0,
+      value: 3000000n,
+      assets: [
+        {
+          policy_id: 'a0028f350aaabe0545fdcb56b039bfb08e4bb4d8c4d7c3c7d481c235',
+          asset_name: '484f534b59',
+          quantity: 184272501n,
+          fingerprint: 'asset17q7r59zlc3dgw0venc80pdv566q6yguw03f0d9',
+        },
+      ],
+    },
+  ],
+  outputs: [
+    {
+      address:
+        'addr1qxwxpafgqasnddk8et6en0vn74awg4j0n2nfek6e62aywvgcwedk5s2s92dx7msutk33zsl92uh8uhahh305nz7pekjsz5l37w',
+      value: 1386445n,
+      assets: [
+        {
+          policy_id: 'a0028f350aaabe0545fdcb56b039bfb08e4bb4d8c4d7c3c7d481c235',
+          asset_name: '484f534b59',
+          quantity: 184272501n,
+          fingerprint: 'asset17q7r59zlc3dgw0venc80pdv566q6yguw03f0d9',
+        },
+      ],
+    },
+    {
+      address:
+        'addr_test1vze7yqqlg8cjlyhz7jzvsg0f3fhxpuu6m3llxrajfzqecggw704re',
+      value: 1344798n,
+      assets: [],
+    },
+  ],
+  fee: 268757n,
+  metadata: {
+    '0': {
+      to: 'ergo',
+      bridgeFee: '165000000',
+      toAddress: '9g7mqqQAnUG4gWi6pFmic65ZfUrrWiVkMnbsg2hXUx6aVbBSTJ4',
+      networkFee: '175000',
+      fromAddress: [
+        'addr1q9jperhqputlfnfqhteu6eu2xhjwxa9keph08vgrqjg357tthg3xm3n4r6p',
+        'w85a5p6gdqv9v5zd6vmqdpxvl0jrql2aszjgvaj',
+      ],
+    },
+  },
 };
