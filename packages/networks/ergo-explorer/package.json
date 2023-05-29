@@ -51,6 +51,6 @@
     "rosen"
   ],
   "peerDependencies": {
-    "@rosen-chains/ergo": "^0.1.7"
+    "@rosen-chains/ergo": "^0.1.9"
   }
 }
