@@ -192,15 +192,16 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
   /**
    * get a transaction by its id
    * @param txId
+   * @param blockId
    * @returns
    */
-  public getTransaction = async (txId: string) => {
+  public getTransaction = async (txId: string, blockId: string) => {
     try {
-      const partialTx = await this.client.blockchain.getTxById(txId);
       const blockTxs = await this.client.blocks.getBlockTransactionsById(
-        partialTx.blockId
+        blockId
       );
       const tx = blockTxs.transactions.find((tx) => tx.id === txId);
+      if (!tx) throw Error(`tx [${txId}] is not in block [${blockId}]`);
       return ergoLib.Transaction.from_json(JsonBigInt.stringify(tx));
     } catch (error) {
       return handleApiError(error, 'Failed to get tx from Ergo Node:');

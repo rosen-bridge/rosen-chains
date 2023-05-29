@@ -301,7 +301,10 @@ describe('ErgoNodeNetwork', () => {
       mockGetTxByIdAndGetBlockTransactionsById();
       const network = getNetwork();
 
-      const actual = await network.getTransaction(testTransaction.id);
+      const actual = await network.getTransaction(
+        testTransaction.id,
+        testTransaction.blockId
+      );
 
       const expectedBytes = testTransactionBytes;
       expect(
