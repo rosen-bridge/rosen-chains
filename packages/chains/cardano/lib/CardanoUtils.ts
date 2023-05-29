@@ -1,4 +1,9 @@
-import { CardanoUtxo, CardanoAssetInfo, UtxoBoxesAssets } from './types';
+import {
+  CardanoUtxo,
+  CardanoAssetInfo,
+  UtxoBoxesAssets,
+  CardanoBoxCandidate,
+} from './types';
 import { AssetBalance, TokenInfo } from '@rosen-chains/abstract-chain';
 import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import { TokenMap } from '@rosen-bridge/tokens';
@@ -133,6 +138,23 @@ class CardanoUtils {
     }
     return box.txId + '.' + box.index;
   };
+
+  /**
+   * converts a CardanoBoxCandidate to CardanoUtxo
+   * @param candidate CardanoBoxCandidate object
+   * @param txId transaction id
+   * @param index box index in transaction outputs list
+   */
+  static convertCandidateToUtxo = (
+    candidate: CardanoBoxCandidate,
+    txId: string,
+    index: number
+  ): CardanoUtxo => ({
+    txId: txId,
+    index: index,
+    value: candidate.value,
+    assets: structuredClone(candidate.assets),
+  });
 }
 
 export default CardanoUtils;

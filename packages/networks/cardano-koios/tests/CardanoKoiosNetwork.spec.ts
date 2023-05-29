@@ -1,3 +1,4 @@
+import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 import CardanoKoiosNetwork from '../lib';
 import {
   mockAddressAssets,
@@ -280,7 +281,9 @@ describe('CardanoKoiosNetwork', () => {
       );
 
       // check returned value
-      expect(result).toEqual(testData.expectedNoMetadataTxResponse);
+      expect(JsonBigInt.stringify(result)).toEqual(
+        testData.expectedNoMetadataTxResponse
+      );
     });
 
     /**
@@ -306,7 +309,9 @@ describe('CardanoKoiosNetwork', () => {
       );
 
       // check returned value
-      expect(result).toEqual(testData.expectedRosenMetadataTxResponse);
+      expect(JsonBigInt.stringify(result)).toEqual(
+        testData.expectedRosenMetadataTxResponse
+      );
     });
 
     /**
@@ -334,7 +339,9 @@ describe('CardanoKoiosNetwork', () => {
       );
 
       // check returned value
-      expect(result).toEqual(testData.expectedDifferentMetadataTxResponse);
+      expect(JsonBigInt.stringify(result)).toEqual(
+        testData.expectedDifferentMetadataTxResponse
+      );
     });
   });
 
@@ -343,18 +350,22 @@ describe('CardanoKoiosNetwork', () => {
      * @target `CardanoKoiosNetwork.submitTransaction` should submit transaction successfully
      * @dependencies
      * @scenario
+     * - mock transaction
      * - mock `postSubmittx` of cardano koios client
      * - run test
      * @expected
      * - function excution finish without any error
      */
     it('should submit transaction successfully', async () => {
+      // mock transaction
+      const tx = Transaction.from_hex(testData.txBytes);
+
       // mock client response
       mockPostSubmittx();
 
       // run test
       const network = mockNetwork();
-      await network.submitTransaction(testData.txBytes);
+      await network.submitTransaction(tx);
     });
   });
 
@@ -398,7 +409,9 @@ describe('CardanoKoiosNetwork', () => {
       const result = await network.getAddressBoxes(testData.address, 0, 100);
 
       // check returned value
-      expect(result).toEqual(testData.expectedAdressUtxoSet);
+      expect(result.map((box) => JsonBigInt.stringify(box))).toEqual(
+        testData.expectedAdressUtxoSet
+      );
     });
 
     /**
@@ -421,7 +434,7 @@ describe('CardanoKoiosNetwork', () => {
       const result = await network.getAddressBoxes(testData.address, 0, 100);
 
       // check returned value
-      expect(result).toEqual([]);
+      expect(result.map((box) => JsonBigInt.stringify(box))).toEqual([]);
     });
 
     /**
@@ -444,7 +457,7 @@ describe('CardanoKoiosNetwork', () => {
       const result = await network.getAddressBoxes(testData.address, 0, 100);
 
       // check returned value
-      expect(result).toEqual([]);
+      expect(result.map((box) => JsonBigInt.stringify(box))).toEqual([]);
     });
 
     /**
@@ -467,7 +480,7 @@ describe('CardanoKoiosNetwork', () => {
       const result = await network.getAddressBoxes(testData.address, 5, 100);
 
       // check returned value
-      expect(result).toEqual([]);
+      expect(result.map((box) => JsonBigInt.stringify(box))).toEqual([]);
     });
   });
 

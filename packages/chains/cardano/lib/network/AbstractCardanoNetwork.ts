@@ -1,8 +1,9 @@
 import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
-import { CardanoUtxo } from '../types';
+import { CardanoTx, CardanoUtxo } from '../types';
 import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
+import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 
-abstract class AbstractCardanoNetwork extends AbstractUtxoChainNetwork<string> {
+abstract class AbstractCardanoNetwork extends AbstractUtxoChainNetwork<CardanoUtxo> {
   declare extractor: CardanoRosenExtractor;
 
   /**
@@ -14,20 +15,20 @@ abstract class AbstractCardanoNetwork extends AbstractUtxoChainNetwork<string> {
   declare getTransaction: (
     transactionId: string,
     blockId: string
-  ) => Promise<string>;
+  ) => Promise<CardanoTx>;
 
   /**
    * submits a transaction (in CardanoWasm serialized hex string)
    * @param transaction the transaction
    */
-  declare submitTransaction: (transaction: string) => Promise<void>;
+  declare submitTransaction: (transaction: Transaction) => Promise<void>;
 
   /**
    * gets all transactions in mempool (in CardanoTx json string)
    * returns empty list if the chain has no mempool
    * @returns list of transactions in mempool
    */
-  declare getMempoolTransactions: () => Promise<Array<string>>;
+  declare getMempoolTransactions: () => Promise<Array<CardanoTx>>;
 
   /**
    * gets the current network slot
