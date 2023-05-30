@@ -14,12 +14,12 @@ import ChainUtils from './ChainUtils';
 import { ValueError } from './errors';
 
 abstract class AbstractChain {
-  protected network: AbstractChainNetwork;
+  protected network: AbstractChainNetwork<unknown>;
   protected configs: ChainConfigs;
   logger: AbstractLogger;
 
   constructor(
-    network: AbstractChainNetwork,
+    network: AbstractChainNetwork<unknown>,
     configs: ChainConfigs,
     logger?: AbstractLogger
   ) {
