@@ -1,6 +1,6 @@
 import { AbstractUtxoChain, BoxInfo } from '../lib';
 
-class TestUtxoChain extends AbstractUtxoChain {
+class TestUtxoChain extends AbstractUtxoChain<string> {
   notImplemented = () => {
     throw Error('Not implemented');
   };
@@ -20,7 +20,7 @@ class TestUtxoChain extends AbstractUtxoChain {
   getMinimumNativeToken = this.notImplemented;
   getRWTToken = this.notImplemented;
 
-  getBoxInfo = (serializedBox: string): BoxInfo => {
+  getBoxInfo = (box: string): BoxInfo => {
     throw Error('Not mocked');
   };
 }

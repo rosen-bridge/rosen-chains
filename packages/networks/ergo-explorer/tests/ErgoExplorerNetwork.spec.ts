@@ -37,6 +37,7 @@ import {
   testTransactionWithNullSpendingProof,
   testTransactionWithNullSpendingProofBytes,
 } from './testData';
+import * as ergoLib from 'ergo-lib-wasm-nodejs';
 
 vi.mock('@rosen-clients/ergo-explorer');
 
@@ -290,13 +291,15 @@ describe('ErgoExplorerNetwork', () => {
       mockGetApiV1TransactionsP1();
       const network = getNetwork();
 
-      const actualBytes = await network.getTransaction(
+      const actual = await network.getTransaction(
         testTransaction.id,
         testTransaction.blockId
       );
 
       const expectedBytes = testTransactionBytes;
-      expect(actualBytes).toEqual(expectedBytes);
+      expect(
+        Buffer.from(actual.sigma_serialize_bytes()).toString('hex')
+      ).toEqual(expectedBytes);
     });
 
     /**
@@ -314,13 +317,15 @@ describe('ErgoExplorerNetwork', () => {
       mockGetApiV1TransactionsP1(testTransactionWithNullSpendingProof);
       const network = getNetwork();
 
-      const actualBytes = await network.getTransaction(
+      const actual = await network.getTransaction(
         testTransaction.id,
         testTransaction.blockId
       );
 
       const expectedBytes = testTransactionWithNullSpendingProofBytes;
-      expect(actualBytes).toEqual(expectedBytes);
+      expect(
+        Buffer.from(actual.sigma_serialize_bytes()).toString('hex')
+      ).toEqual(expectedBytes);
     });
 
     /**
@@ -355,7 +360,11 @@ describe('ErgoExplorerNetwork', () => {
       const sendTransactionAsBytesSpy = mockPostApiV0TransactionsSend();
       const network = getNetwork();
 
-      await network.submitTransaction(testTransactionBytes);
+      await network.submitTransaction(
+        ergoLib.Transaction.sigma_parse_bytes(
+          Buffer.from(testTransactionBytes, 'hex')
+        )
+      );
 
       expect(sendTransactionAsBytesSpy).toHaveBeenCalled();
     });
@@ -380,7 +389,11 @@ describe('ErgoExplorerNetwork', () => {
       const expectedTxs = testMempoolTransactions.map(
         () => testTransactionWithNullSpendingProofBytes
       );
-      expect(actualTxs).toEqual(expectedTxs);
+      expect(
+        actualTxs.map((tx) =>
+          Buffer.from(tx.sigma_serialize_bytes()).toString('hex')
+        )
+      ).toEqual(expectedTxs);
     });
   });
 
@@ -397,14 +410,14 @@ describe('ErgoExplorerNetwork', () => {
       mockGetApiV1BoxesUnspentByaddressP1();
       const network = getNetwork();
 
-      const actualBoxesBytes = await network.getAddressBoxes(
-        testAddress,
-        0,
-        10
-      );
+      const actualBoxes = await network.getAddressBoxes(testAddress, 0, 10);
 
       const expectedBoxesBytes = testAddressBoxesBytes;
-      expect(actualBoxesBytes).toEqual(expectedBoxesBytes);
+      expect(
+        actualBoxes.map((box) =>
+          Buffer.from(box.sigma_serialize_bytes()).toString('hex')
+        )
+      ).toEqual(expectedBoxesBytes);
     });
 
     /**
@@ -421,14 +434,14 @@ describe('ErgoExplorerNetwork', () => {
       mockGetApiV1BoxesUnspentByaddressP1(false);
       const network = getNetwork();
 
-      const actualBoxesBytes = await network.getAddressBoxes(
-        testAddress,
-        0,
-        10
-      );
+      const actualBoxes = await network.getAddressBoxes(testAddress, 0, 10);
 
       const expectedBoxesBytes: string[] = [];
-      expect(actualBoxesBytes).toEqual(expectedBoxesBytes);
+      expect(
+        actualBoxes.map((box) =>
+          Buffer.from(box.sigma_serialize_bytes()).toString('hex')
+        )
+      ).toEqual(expectedBoxesBytes);
     });
   });
 
@@ -447,7 +460,7 @@ describe('ErgoExplorerNetwork', () => {
       const network = getNetwork();
       const testTokenId = testTokenIdBoxes[0].assets[0].tokenId;
 
-      const actualBoxesBytes = await network.getBoxesByTokenId(
+      const actualBoxes = await network.getBoxesByTokenId(
         testTokenId,
         testAddress,
         0,
@@ -455,7 +468,11 @@ describe('ErgoExplorerNetwork', () => {
       );
 
       const expectedBoxesBytes = testTokenIdBoxesBytes;
-      expect(actualBoxesBytes).toEqual(expectedBoxesBytes);
+      expect(
+        actualBoxes.map((box) =>
+          Buffer.from(box.sigma_serialize_bytes()).toString('hex')
+        )
+      ).toEqual(expectedBoxesBytes);
     });
 
     /**

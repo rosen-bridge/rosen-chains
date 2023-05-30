@@ -8,9 +8,9 @@ interface ChainConfigs {
   rwtId: string;
 }
 
-interface CoveringBoxes {
+interface CoveringBoxes<BoxType> {
   covered: boolean;
-  boxes: Array<string>;
+  boxes: Array<BoxType>;
 }
 
 interface TokenInfo {

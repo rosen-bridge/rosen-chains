@@ -1,6 +1,6 @@
 import { AbstractCardanoNetwork } from '../../lib';
 import { BlockInfo, ConfirmationStatus } from '@rosen-chains/abstract-chain';
-import { CardanoUtxo } from '../../lib/types';
+import { CardanoTx, CardanoUtxo } from '../../lib/types';
 import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
 class TestCardanoNetwork extends AbstractCardanoNetwork {
@@ -26,7 +26,7 @@ class TestCardanoNetwork extends AbstractCardanoNetwork {
     address: string,
     offset: number,
     limit: number
-  ): Promise<Array<string>> => {
+  ): Promise<Array<CardanoUtxo>> => {
     throw Error('Not mocked');
   };
 
@@ -38,11 +38,11 @@ class TestCardanoNetwork extends AbstractCardanoNetwork {
     throw Error('Not mocked');
   };
 
-  getMempoolTransactions = (): Promise<Array<string>> => {
+  getMempoolTransactions = (): Promise<Array<CardanoTx>> => {
     throw Error('Not mocked');
   };
 
-  getTransaction = (txId: string, blockId: string): Promise<string> => {
+  getTransaction = (txId: string, blockId: string): Promise<CardanoTx> => {
     throw Error('Not mocked');
   };
 

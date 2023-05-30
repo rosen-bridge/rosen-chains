@@ -25,6 +25,7 @@ import {
   CardanoConfigs,
   CardanoTx,
   CardanoBoxCandidate,
+  CardanoAsset,
 } from './types';
 import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import { TokenMap } from '@rosen-bridge/tokens';
@@ -40,7 +41,7 @@ import cardanoUtils from './CardanoUtils';
 import * as JSONBigInt from 'json-bigint';
 import { blake2b } from 'blakejs';
 
-class CardanoChain extends AbstractUtxoChain {
+class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
   declare network: AbstractCardanoNetwork;
   declare configs: CardanoConfigs;
   tokenMap: TokenMap;
@@ -127,7 +128,9 @@ class CardanoChain extends AbstractUtxoChain {
       return ids;
     });
     const trackMap = this.getTransactionsBoxMapping(
-      serializedSignedTransactions,
+      serializedSignedTransactions.map((serializedTx) =>
+        CardanoWasm.Transaction.from_bytes(Buffer.from(serializedTx, 'hex'))
+      ),
       this.configs.lockAddress
     );
 
@@ -144,9 +147,7 @@ class CardanoChain extends AbstractUtxoChain {
         `Available boxes didn't cover required assets. ADA: ${neededAdas}, Tokens: ${neededTokens}`
       );
     }
-    const bankBoxes = coveredBoxes.boxes.map((box) => {
-      return JSONBigInt.parse(box) as CardanoUtxo;
-    });
+    const bankBoxes = coveredBoxes.boxes;
 
     const txBuilder = CardanoWasm.TransactionBuilder.new(txBuilderConfig);
     let orderValue = BigNum.zero();
@@ -269,12 +270,10 @@ class CardanoChain extends AbstractUtxoChain {
 
   /**
    * extracts box id and assets of a box
-   * @param serializedBox the serialized string of the box (CardanoUTXO format)
+   * @param box the box
    * @returns an object containing the box id and assets
    */
-  getBoxInfo = (serializedBox: string): BoxInfo => {
-    const box: CardanoUtxo = JSONBigInt.parse(serializedBox);
-
+  getBoxInfo = (box: CardanoUtxo): BoxInfo => {
     return {
       id: CardanoUtils.getBoxId(box),
       assets: {
@@ -307,9 +306,7 @@ class CardanoChain extends AbstractUtxoChain {
 
     // send transaction
     try {
-      const response = await this.network.submitTransaction(
-        tx.to_bytes().toString()
-      );
+      const response = await this.network.submitTransaction(tx);
       this.logger.info(
         `Cardano Transaction [${transaction.txId}] submitted. Response: ${response}`
       );
@@ -370,7 +367,7 @@ class CardanoChain extends AbstractUtxoChain {
       const box: CardanoUtxo = await this.network.getUtxo(
         cardanoUtils.getBoxId(input)
       );
-      const boxAssets = this.getBoxInfo(JSONBigInt.stringify(box)).assets;
+      const boxAssets = this.getBoxInfo(box).assets;
       inputAssets = ChainUtils.sumAssetBalance(inputAssets, boxAssets);
     }
 
@@ -399,17 +396,17 @@ class CardanoChain extends AbstractUtxoChain {
   getMempoolBoxMapping = async (
     address: string,
     tokenId?: string
-  ): Promise<Map<string, string | undefined>> => {
+  ): Promise<Map<string, CardanoUtxo | undefined>> => {
     const mempoolTxs = await this.network.getMempoolTransactions();
-    const trackMap = new Map<string, string | undefined>();
-    mempoolTxs.forEach((tx) => {
-      const cardanoTx = JSONBigInt.parse(tx) as CardanoTx;
+    const trackMap = new Map<string, CardanoUtxo | undefined>();
+    mempoolTxs.forEach((cardanoTx) => {
       // iterate over tx inputs
       for (let i = 0; i < cardanoTx.inputs.length; i++) {
         let trackedBox: CardanoBoxCandidate | undefined;
         // iterate over tx outputs
-        for (let j = 0; j < cardanoTx.outputs.length; j++) {
-          const output = cardanoTx.outputs[j];
+        let index = 0;
+        for (index = 0; index < cardanoTx.outputs.length; index++) {
+          const output = cardanoTx.outputs[index];
           // check if box satisfy conditions
           if (output.address !== address) continue;
           if (tokenId) {
@@ -426,7 +423,13 @@ class CardanoChain extends AbstractUtxoChain {
         const input = cardanoTx.inputs[i];
         trackMap.set(
           CardanoUtils.getBoxId(input),
-          trackedBox ? JSONBigInt.stringify(trackedBox) : undefined
+          trackedBox
+            ? CardanoUtils.convertCandidateToUtxo(
+                trackedBox,
+                cardanoTx.id,
+                index
+              )
+            : undefined
         );
       }
     });
@@ -440,16 +443,9 @@ class CardanoChain extends AbstractUtxoChain {
    * @returns true if the transaction is in mempool
    */
   isTxInMempool = async (transactionId: string): Promise<boolean> => {
-    const mempoolTxs = await this.network.getMempoolTransactions();
-    const mempoolTxIds = mempoolTxs.map((serializedTx) => {
-      const tx = CardanoWasm.Transaction.from_bytes(
-        Buffer.from(serializedTx, 'hex')
-      );
-      const txId = Buffer.from(
-        CardanoWasm.hash_transaction(tx.body()).to_bytes()
-      ).toString('hex');
-      return txId;
-    });
+    const mempoolTxIds = (await this.network.getMempoolTransactions()).map(
+      (tx) => tx.id
+    );
 
     return mempoolTxIds.includes(transactionId);
   };
@@ -499,13 +495,13 @@ class CardanoChain extends AbstractUtxoChain {
         event.sourceBlockId
       );
       if (!blockTxs.includes(event.sourceTxId)) return false;
-      const serializedTx = await this.network.getTransaction(
+      const tx = await this.network.getTransaction(
         event.sourceTxId,
         event.sourceBlockId
       );
       const blockHeight = (await this.network.getBlockInfo(event.sourceBlockId))
         .height;
-      const data = this.network.extractor.get(serializedTx);
+      const data = this.network.extractor.get(JSONBigInt.stringify(tx));
       if (!data) {
         this.logger.info(
           `Event [${eventId}] is not valid, failed to extract rosen data from lock transaction`
@@ -678,29 +674,27 @@ class CardanoChain extends AbstractUtxoChain {
 
   /**
    * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
-   * @param serializedTransactions list of serialized (Cardano Wasm format) string of the transactions
+   * @param txs list of transactions
    * @param address the address
    * @param tokenId the token id
-   * @returns a Map from input box id to serialized string of output box (Cardano Wasm format)
+   * @returns a Map from input box id to output box
    */
   protected getTransactionsBoxMapping = (
-    serializedTransactions: string[],
+    txs: CardanoWasm.Transaction[],
     address: string,
     tokenId?: string
-  ): Map<string, string | undefined> => {
-    const trackMap = new Map<string, string | undefined>();
+  ): Map<string, CardanoUtxo | undefined> => {
+    const trackMap = new Map<string, CardanoUtxo | undefined>();
 
-    serializedTransactions.forEach((serializedTx) => {
-      const tx = CardanoWasm.Transaction.from_bytes(
-        Buffer.from(serializedTx, 'hex')
-      );
+    txs.forEach((tx) => {
       const txBody = tx.body();
       // iterate over tx inputs
       for (let i = 0; i < txBody.inputs().len(); i++) {
         let trackedBox: CardanoWasm.TransactionOutput | undefined;
         // iterate over tx outputs
-        for (let j = 0; j < txBody.outputs().len(); j++) {
-          const output = txBody.outputs().get(j);
+        let index = 0;
+        for (index = 0; index < txBody.outputs().len(); index++) {
+          const output = txBody.outputs().get(index);
           // check if box satisfy conditions
           if (output.address().to_bech32() !== address) continue;
           if (tokenId) {
@@ -717,18 +711,35 @@ class CardanoChain extends AbstractUtxoChain {
         const input = txBody.inputs().get(i);
         const boxId = CardanoUtils.getBoxId(input);
         if (trackedBox) {
-          const boxAssets = cardanoUtils.getBoxAssets(trackedBox);
-          const cardanoBox: CardanoBoxCandidate = {
-            address: trackedBox.address().to_bech32(),
-            value: boxAssets.nativeToken,
-            assets: boxAssets.tokens.map((token) => ({
-              fingerprint: token.id,
-              asset_name: '',
-              policy_id: '',
-              quantity: token.value,
-            })),
+          const boxMultiAsset = trackedBox.amount().multiasset();
+          const boxAssets: Array<CardanoAsset> = [];
+          if (boxMultiAsset) {
+            for (let k = 0; k < boxMultiAsset.keys().len(); k++) {
+              const scriptHash = boxMultiAsset.keys().get(k);
+              const asset = boxMultiAsset.get(scriptHash)!;
+              for (let j = 0; j < asset.keys().len(); j++) {
+                const assetName = asset.keys().get(j);
+                const assetAmount = asset.get(assetName)!;
+                const fingerprint = cardanoUtils.createFingerprint(
+                  scriptHash,
+                  assetName
+                );
+                boxAssets.push({
+                  fingerprint: fingerprint,
+                  policy_id: scriptHash.to_hex(),
+                  asset_name: assetName.to_hex(),
+                  quantity: BigInt(assetAmount.to_str()),
+                });
+              }
+            }
+          }
+          const cardanoBox: CardanoUtxo = {
+            txId: CardanoWasm.hash_transaction(txBody).to_hex(),
+            index: index,
+            value: BigInt(trackedBox.amount().coin().to_str()),
+            assets: boxAssets,
           };
-          trackMap.set(boxId, JSONBigInt.stringify(cardanoBox));
+          trackMap.set(boxId, cardanoBox);
         } else {
           trackMap.set(boxId, undefined);
         }

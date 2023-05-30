@@ -5,7 +5,7 @@ import {
   TransactionAssetBalance,
 } from '../lib';
 
-class TestUtxoChain extends AbstractChain {
+class TestChain extends AbstractChain {
   notImplemented = () => {
     throw Error('Not implemented');
   };
@@ -32,4 +32,4 @@ class TestUtxoChain extends AbstractChain {
   };
 }
 
-export default TestUtxoChain;
+export default TestChain;

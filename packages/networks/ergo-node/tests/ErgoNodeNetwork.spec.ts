@@ -17,7 +17,7 @@ import {
   mockSendTransactionAsBytes,
 } from './mocked/ErgoNodeClient.mock';
 
-import { ErgoStateContext } from 'ergo-lib-wasm-nodejs';
+import { ErgoStateContext, Transaction } from 'ergo-lib-wasm-nodejs';
 import {
   testAddress,
   testAddressBalance,
@@ -301,10 +301,15 @@ describe('ErgoNodeNetwork', () => {
       mockGetTxByIdAndGetBlockTransactionsById();
       const network = getNetwork();
 
-      const actualBytes = await network.getTransaction(testTransaction.id);
+      const actual = await network.getTransaction(
+        testTransaction.id,
+        testTransaction.blockId
+      );
 
       const expectedBytes = testTransactionBytes;
-      expect(actualBytes).toEqual(expectedBytes);
+      expect(
+        Buffer.from(actual.sigma_serialize_bytes()).toString('hex')
+      ).toEqual(expectedBytes);
     });
   });
 
@@ -322,7 +327,9 @@ describe('ErgoNodeNetwork', () => {
       const sendTransactionAsBytesSpy = mockSendTransactionAsBytes();
       const network = getNetwork();
 
-      await network.submitTransaction(testTransactionBytes);
+      await network.submitTransaction(
+        Transaction.sigma_parse_bytes(Buffer.from(testTransactionBytes, 'hex'))
+      );
 
       expect(sendTransactionAsBytesSpy).toHaveBeenCalledWith(
         testTransactionBytes
@@ -349,7 +356,11 @@ describe('ErgoNodeNetwork', () => {
       const expectedTxs = testMempoolTransactions.map(
         () => testTransactionBytes
       );
-      expect(actualTxs).toEqual(expectedTxs);
+      expect(
+        actualTxs.map((tx) =>
+          Buffer.from(tx.sigma_serialize_bytes()).toString('hex')
+        )
+      ).toEqual(expectedTxs);
     });
   });
 
@@ -366,10 +377,14 @@ describe('ErgoNodeNetwork', () => {
       mockGetBoxesByAddressUnspent();
       const network = getNetwork();
 
-      const actualBoxBytes = await network.getAddressBoxes(testAddress, 0, 5);
+      const actualBoxes = await network.getAddressBoxes(testAddress, 0, 5);
 
       const expectedBoxBytes = testAddressBoxesBytes.slice(0, 5);
-      expect(actualBoxBytes).toEqual(expectedBoxBytes);
+      expect(
+        actualBoxes.map((box) =>
+          Buffer.from(box.sigma_serialize_bytes()).toString('hex')
+        )
+      ).toEqual(expectedBoxBytes);
     });
 
     /**
@@ -390,10 +405,14 @@ describe('ErgoNodeNetwork', () => {
       });
       const network = getNetwork();
 
-      const actualBoxBytes = await network.getAddressBoxes(testAddress, 0, 5);
+      const actualBoxes = await network.getAddressBoxes(testAddress, 0, 5);
 
       const expectedBoxBytes: string[] = [];
-      expect(actualBoxBytes).toEqual(expectedBoxBytes);
+      expect(
+        actualBoxes.map((box) =>
+          Buffer.from(box.sigma_serialize_bytes()).toString('hex')
+        )
+      ).toEqual(expectedBoxBytes);
     });
   });
 
@@ -412,7 +431,7 @@ describe('ErgoNodeNetwork', () => {
       const network = getNetwork();
       const testTokenId = testAddressBoxes[0].assets[0].tokenId;
 
-      const actualBoxBytes = await network.getBoxesByTokenId(
+      const actualBoxes = await network.getBoxesByTokenId(
         testTokenId,
         testAddress,
         0,
@@ -429,7 +448,11 @@ describe('ErgoNodeNetwork', () => {
         )
         .slice(0, 5);
 
-      expect(actualBoxBytes).toEqual(expectedBoxBytes);
+      expect(
+        actualBoxes.map((box) =>
+          Buffer.from(box.sigma_serialize_bytes()).toString('hex')
+        )
+      ).toEqual(expectedBoxBytes);
     });
 
     /**
@@ -451,7 +474,7 @@ describe('ErgoNodeNetwork', () => {
       const network = getNetwork();
       const testTokenId = testAddressBoxes[0].assets[0].tokenId;
 
-      const actualBoxBytes = await network.getBoxesByTokenId(
+      const actualBoxes = await network.getBoxesByTokenId(
         testTokenId,
         testAddress,
         0,
@@ -459,7 +482,11 @@ describe('ErgoNodeNetwork', () => {
       );
 
       const expectedBoxBytes: string[] = [];
-      expect(actualBoxBytes).toEqual(expectedBoxBytes);
+      expect(
+        actualBoxes.map((box) =>
+          Buffer.from(box.sigma_serialize_bytes()).toString('hex')
+        )
+      ).toEqual(expectedBoxBytes);
     });
   });
 

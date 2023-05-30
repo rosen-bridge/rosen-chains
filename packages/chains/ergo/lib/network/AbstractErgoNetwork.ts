@@ -1,9 +1,18 @@
 import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
-import { ErgoStateContext } from 'ergo-lib-wasm-nodejs';
+import { ErgoBox, ErgoStateContext, Transaction } from 'ergo-lib-wasm-nodejs';
 import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
-abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork {
+abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork<
+  Transaction,
+  ErgoBox
+> {
   declare extractor: ErgoRosenExtractor;
+
+  /**
+   * submits a transaction
+   * @param transaction the transaction
+   */
+  declare submitTransaction: (transaction: Transaction) => Promise<void>;
 
   /**
    * gets the context of blockchain using 10 last blocks
@@ -17,14 +26,14 @@ abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork {
    * @param address
    * @param offset
    * @param limit
-   * @returns list of serialized string of the boxes
+   * @returns list of boxes
    */
   abstract getBoxesByTokenId: (
     tokenId: string,
     address: string,
     offset?: number,
     limit?: number
-  ) => Promise<Array<string>>;
+  ) => Promise<Array<ErgoBox>>;
 }
 
 export default AbstractErgoNetwork;

@@ -1,16 +1,19 @@
 import AbstractChainNetwork from './AbstractChainNetwork';
 
-abstract class AbstractUtxoChainNetwork extends AbstractChainNetwork {
+abstract class AbstractUtxoChainNetwork<
+  TxType,
+  BoxType
+> extends AbstractChainNetwork<TxType> {
   /**
    * gets confirmed and unspent boxes of an address
    * @param address the address
-   * @returns list of serialized string of the boxes
+   * @returns list of boxes
    */
   abstract getAddressBoxes: (
     address: string,
     offset: number,
     limit: number
-  ) => Promise<Array<string>>;
+  ) => Promise<Array<BoxType>>;
 
   /**
    * checks if a box is still unspent and valid

@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/ergo",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "this project contains ergo chain for Rosen-bridge",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",

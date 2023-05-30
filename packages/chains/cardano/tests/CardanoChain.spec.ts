@@ -1,13 +1,12 @@
 import { RosenTokens, TokenMap } from '@rosen-bridge/tokens';
 import TestCardanoNetwork from './network/TestCardanoNetwork';
 import CardanoChain from '../lib/CardanoChain';
-import { CardanoConfigs } from '../lib';
+import { CardanoBoxCandidate, CardanoConfigs, CardanoUtxo } from '../lib';
 import * as TestData from './testData';
 import * as TestUtils from './testUtils';
 import CardanoTransaction from '../lib/CardanoTransaction';
 import { when } from 'jest-when';
 import CardanoUtils from '../lib/CardanoUtils';
-import * as JSONBigInt from 'json-bigint';
 import {
   ConfirmationStatus,
   NotEnoughAssetsError,
@@ -20,6 +19,7 @@ import {
   hash_transaction,
   Transaction,
 } from '@emurgo/cardano-serialization-lib-nodejs';
+import JSONBigInt from 'json-bigint';
 
 const spyOn = jest.spyOn;
 
@@ -60,6 +60,10 @@ describe('CardanoChain', () => {
       signFn
     );
   };
+  const JsonBI = JSONBigInt({
+    useNativeBigInt: true,
+    alwaysParseAsBig: true,
+  });
 
   describe('generateTransaction', () => {
     const network = new TestCardanoNetwork();
@@ -95,7 +99,7 @@ describe('CardanoChain', () => {
       const getCovBoxesSpy = spyOn(cardanoChain, 'getCoveringBoxes');
       getCovBoxesSpy.mockResolvedValue({
         covered: true,
-        boxes: bankBoxes.map((box) => JSONBigInt.stringify(box)),
+        boxes: bankBoxes,
       });
       const hasLockAddressEnoughAssetsSpy = spyOn(
         cardanoChain,
@@ -167,7 +171,7 @@ describe('CardanoChain', () => {
       const getCovBoxesSpy = spyOn(cardanoChain, 'getCoveringBoxes');
       getCovBoxesSpy.mockResolvedValue({
         covered: true,
-        boxes: bankBoxes.slice(2).map((box) => JSONBigInt.stringify(box)),
+        boxes: bankBoxes.slice(2),
       });
       const hasLockAddressEnoughAssetsSpy = spyOn(
         cardanoChain,
@@ -252,7 +256,7 @@ describe('CardanoChain', () => {
       const getCovBoxesSpy = spyOn(cardanoChain, 'getCoveringBoxes');
       getCovBoxesSpy.mockResolvedValue({
         covered: false,
-        boxes: bankBoxes.map((box) => JSONBigInt.stringify(box)),
+        boxes: bankBoxes,
       });
       const hasLockAddressEnoughAssetsSpy = spyOn(
         cardanoChain,
@@ -311,7 +315,6 @@ describe('CardanoChain', () => {
      * @dependencies
      * @scenario
      * - mock a CardanoBox with assets
-     * - construct serialized box
      * - call the function
      * - check returned value
      * @expected
@@ -321,14 +324,11 @@ describe('CardanoChain', () => {
       // mock a CardanoBox with assets
       const rawBox = bankBoxes[0];
 
-      // construct serialized box
-      const serializedBox = JSONBigInt.stringify(rawBox);
-
       // call the function
       const cardanoChain = generateChainObject(network);
 
       // check returned value
-      const result = await cardanoChain.getBoxInfo(serializedBox);
+      const result = await cardanoChain.getBoxInfo(rawBox);
       expect(result.id).toEqual(rawBox.txId + '.' + rawBox.index);
       expect(result.assets.nativeToken.toString()).toEqual(
         rawBox.value.toString()
@@ -457,13 +457,9 @@ describe('CardanoChain', () => {
      */
     it('should construct mapping successfully when no token provided', async () => {
       // mock getMempoolTransactions
-      const serializedTransactions: Array<string> = [TestData.cardanoTx1].map(
-        (txJson) => {
-          return JSONBigInt.stringify(txJson);
-        }
-      );
+      const transactions = [TestData.cardanoTx1];
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
-        serializedTransactions
+        transactions
       );
 
       // call the function
@@ -471,11 +467,13 @@ describe('CardanoChain', () => {
       const result = await cardanoChain.getMempoolBoxMapping(trackingAddress);
 
       // check returned value
-      const trackMap = new Map<string, string>();
-      trackMap.set(
-        CardanoUtils.getBoxId(TestData.cardanoTx1.inputs[0]),
-        JSONBigInt.stringify(TestData.cardanoTx1.outputs[0])
-      );
+      const trackMap = new Map<string, CardanoUtxo | undefined>();
+      trackMap.set(CardanoUtils.getBoxId(TestData.cardanoTx1.inputs[0]), {
+        txId: TestData.cardanoTx1.id,
+        index: 0,
+        value: TestData.cardanoTx1.outputs[0].value,
+        assets: TestData.cardanoTx1.outputs[0].assets,
+      });
       expect(result).toEqual(trackMap);
     });
 
@@ -492,13 +490,9 @@ describe('CardanoChain', () => {
      */
     it('should construct mapping successfully when token provided', async () => {
       // mock getMempoolTransactions
-      const serializedTransactions: Array<string> = [TestData.cardanoTx1].map(
-        (txJson) => {
-          return JSONBigInt.stringify(txJson);
-        }
-      );
+      const transactions = [TestData.cardanoTx1];
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
-        serializedTransactions
+        transactions
       );
 
       // call the function
@@ -510,11 +504,13 @@ describe('CardanoChain', () => {
       );
 
       // check returned value
-      const trackMap = new Map<string, string>();
-      trackMap.set(
-        CardanoUtils.getBoxId(TestData.cardanoTx1.inputs[0]),
-        JSONBigInt.stringify(TestData.cardanoTx1.outputs[0])
-      );
+      const trackMap = new Map<string, CardanoUtxo | undefined>();
+      trackMap.set(CardanoUtils.getBoxId(TestData.cardanoTx1.inputs[0]), {
+        txId: TestData.cardanoTx1.id,
+        index: 0,
+        value: TestData.cardanoTx1.outputs[0].value,
+        assets: TestData.cardanoTx1.outputs[0].assets,
+      });
       expect(result).toEqual(trackMap);
     });
 
@@ -531,19 +527,15 @@ describe('CardanoChain', () => {
      */
     it('should map inputs to undefined when no valid output box found', async () => {
       // mock getMempoolTransactions
-      const serializedTransactions: Array<string> = [TestData.cardanoTx1].map(
-        (txJson) => {
-          return JSONBigInt.stringify(txJson);
-        }
-      );
+      const transactions = [TestData.cardanoTx1];
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
-        serializedTransactions
+        transactions
       );
 
       // call the function
       const trackingTokenId = 'asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2';
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
-        serializedTransactions
+        transactions
       );
       const cardanoChain = generateChainObject(network);
       const result = await cardanoChain.getMempoolBoxMapping(
@@ -552,7 +544,7 @@ describe('CardanoChain', () => {
       );
 
       // check returned value
-      const trackMap = new Map<string, string | undefined>();
+      const trackMap = new Map<string, CardanoUtxo | undefined>();
       trackMap.set(
         CardanoUtils.getBoxId(TestData.cardanoTx1.inputs[0]),
         undefined
@@ -565,7 +557,7 @@ describe('CardanoChain', () => {
     const network = new TestCardanoNetwork();
     class TestCardanoChain extends CardanoChain {
       callGetTransactionsBoxMapping = (
-        serializedTransactions: string[],
+        serializedTransactions: Transaction[],
         address: string,
         tokenId?: string
       ) => {
@@ -597,24 +589,29 @@ describe('CardanoChain', () => {
      */
     it('should construct mapping successfully when no token provided', () => {
       // mock serialized transactions
-      const serializedTransactions: Array<string> = [TestData.transaction1].map(
-        (txJson) => {
-          const cardanoTx = Transaction.from_json(txJson);
-          return cardanoTx.to_hex();
-        }
+      const transactions = [TestData.transaction1].map((txJson) =>
+        Transaction.from_json(txJson)
       );
 
       // call the function
       const result = testInstance.callGetTransactionsBoxMapping(
-        serializedTransactions,
+        transactions,
         configs.lockAddress
       );
 
       // check returned value
-      const trackMap = new Map<string, string>();
+      const trackMap = new Map<string, CardanoUtxo | undefined>();
       const boxMapping = TestData.transaction1BoxMapping;
       boxMapping.forEach((mapping) => {
-        trackMap.set(mapping.inputId, mapping.serializedOutput);
+        const candidate = JsonBI.parse(
+          mapping.serializedOutput
+        ) as CardanoBoxCandidate;
+        trackMap.set(mapping.inputId, {
+          txId: TestData.transaction1Id,
+          index: 1,
+          value: candidate.value,
+          assets: candidate.assets,
+        });
       });
       expect(result).toEqual(trackMap);
     });
@@ -632,26 +629,31 @@ describe('CardanoChain', () => {
      */
     it('should construct mapping successfully when token provided', () => {
       // mock serialized transactions
-      const serializedTransactions: Array<string> = [TestData.transaction1].map(
-        (txJson) => {
-          const cardanoTx = Transaction.from_json(txJson);
-          return cardanoTx.to_hex();
-        }
+      const transactions = [TestData.transaction1].map((txJson) =>
+        Transaction.from_json(txJson)
       );
 
       // call the function
       const trackingTokenId = 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz';
       const result = testInstance.callGetTransactionsBoxMapping(
-        serializedTransactions,
+        transactions,
         configs.lockAddress,
         trackingTokenId
       );
 
       // check returned value
-      const trackMap = new Map<string, string>();
+      const trackMap = new Map<string, CardanoUtxo | undefined>();
       const boxMapping = TestData.transaction1BoxMapping;
       boxMapping.forEach((mapping) => {
-        trackMap.set(mapping.inputId, mapping.serializedOutput);
+        const candidate = JsonBI.parse(
+          mapping.serializedOutput
+        ) as CardanoBoxCandidate;
+        trackMap.set(mapping.inputId, {
+          txId: TestData.transaction1Id,
+          index: 1,
+          value: candidate.value,
+          assets: candidate.assets,
+        });
       });
       expect(result).toEqual(trackMap);
     });
@@ -669,23 +671,20 @@ describe('CardanoChain', () => {
      */
     it('should map inputs to undefined when no valid output box found', () => {
       // mock serialized transactions
-      const serializedTransactions: Array<string> = [TestData.transaction1].map(
-        (txJson) => {
-          const cardanoTx = Transaction.from_json(txJson);
-          return cardanoTx.to_hex();
-        }
+      const transactions = [TestData.transaction1].map((txJson) =>
+        Transaction.from_json(txJson)
       );
 
       // call the function
       const trackingTokenId = 'asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p0';
       const result = testInstance.callGetTransactionsBoxMapping(
-        serializedTransactions,
+        transactions,
         configs.lockAddress,
         trackingTokenId
       );
 
       // check returned value
-      const trackMap = new Map<string, string | undefined>();
+      const trackMap = new Map<string, CardanoUtxo | undefined>();
       const boxMapping = TestData.transaction1BoxMapping;
       boxMapping.forEach((mapping) => {
         trackMap.set(mapping.inputId, undefined);
@@ -709,23 +708,13 @@ describe('CardanoChain', () => {
      */
     it('should true when tx is in mempool', async () => {
       // mock getMempoolTransactions
-      const serializedTransactions: Array<string> = [TestData.transaction1].map(
-        (txJson) => {
-          const cardanoTx = Transaction.from_json(txJson);
-          return cardanoTx.to_hex();
-        }
-      );
+      const transactions = [TestData.cardanoTx1];
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
-        serializedTransactions
+        transactions
       );
 
       // call the function
-      const tx = Transaction.from_bytes(
-        Buffer.from(serializedTransactions[0], 'hex')
-      );
-      const txId = Buffer.from(hash_transaction(tx.body()).to_bytes()).toString(
-        'hex'
-      );
+      const txId = transactions[0].id;
       const cardanoChain = generateChainObject(network);
       const result = await cardanoChain.isTxInMempool(txId);
 
@@ -745,14 +734,9 @@ describe('CardanoChain', () => {
      */
     it('should false when tx is NOT in mempool', async () => {
       //  mock getMempoolTransactions
-      const serializedTransactions: Array<string> = [TestData.transaction1].map(
-        (txJson) => {
-          const cardanoTx = Transaction.from_json(txJson);
-          return cardanoTx.to_hex();
-        }
-      );
+      const transactions = [TestData.cardanoTx1];
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
-        serializedTransactions
+        transactions
       );
 
       // call the function
@@ -1100,11 +1084,13 @@ describe('CardanoChain', () => {
           event.sourceTxId,
           TestUtils.generateRandomId(),
         ]);
-      const serializedTx = 'serializedTransaction';
+
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const tx = TestData.cardanoTx1;
       const getTransactionSpy = spyOn(network, 'getTransaction');
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(serializedTx);
+        .mockResolvedValueOnce(tx);
 
       // mock getBlockInfo to return event block height
       const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
@@ -1116,9 +1102,7 @@ describe('CardanoChain', () => {
 
       // mock network extractor to return event data
       const extractorSpy = spyOn(network.extractor, 'get');
-      when(extractorSpy)
-        .calledWith(serializedTx)
-        .mockReturnValueOnce(event as unknown as RosenData);
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
 
       // call the function
       const cardanoChain = generateChainObject(network);
@@ -1209,11 +1193,13 @@ describe('CardanoChain', () => {
           event.sourceTxId,
           TestUtils.generateRandomId(),
         ]);
-      const serializedTx = 'serializedTransaction';
+
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const tx = TestData.cardanoTx1;
       const getTransactionSpy = spyOn(network, 'getTransaction');
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(serializedTx);
+        .mockResolvedValueOnce(tx);
 
       // mock getBlockInfo to return event block height
       const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
@@ -1228,9 +1214,7 @@ describe('CardanoChain', () => {
       const invalidData = event as unknown as RosenData;
       invalidData[key as keyof RosenData] = `fake_${key}`;
       const extractorSpy = spyOn(network.extractor, 'get');
-      when(extractorSpy)
-        .calledWith(serializedTx)
-        .mockReturnValueOnce(invalidData);
+      extractorSpy.mockReturnValueOnce(invalidData);
 
       // call the function
       const cardanoChain = generateChainObject(network);
@@ -1274,11 +1258,13 @@ describe('CardanoChain', () => {
           event.sourceTxId,
           TestUtils.generateRandomId(),
         ]);
-      const serializedTx = 'serializedTransaction';
+
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const tx = TestData.cardanoTx1;
       const getTransactionSpy = spyOn(network, 'getTransaction');
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(serializedTx);
+        .mockResolvedValueOnce(tx);
 
       // mock getBlockInfo to return -1 as event block height
       const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
@@ -1290,9 +1276,7 @@ describe('CardanoChain', () => {
 
       // mock network extractor to return event data
       const extractorSpy = spyOn(network.extractor, 'get');
-      when(extractorSpy)
-        .calledWith(serializedTx)
-        .mockReturnValueOnce(event as unknown as RosenData);
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
 
       // call the function
       const cardanoChain = generateChainObject(network);
@@ -1335,18 +1319,16 @@ describe('CardanoChain', () => {
           TestUtils.generateRandomId(),
         ]);
 
-      // mock 'getTransaction'
-      const serializedTx = 'serializedTransaction';
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const tx = TestData.cardanoTx1;
       const getTransactionSpy = spyOn(network, 'getTransaction');
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(serializedTx);
+        .mockResolvedValueOnce(tx);
 
       // mock network extractor to return event data
       const extractorSpy = spyOn(network.extractor, 'get');
-      when(extractorSpy)
-        .calledWith(serializedTx)
-        .mockReturnValueOnce(event as unknown as RosenData);
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
 
       // call the function
       const cardanoChain = generateChainObject(network);
@@ -1398,18 +1380,16 @@ describe('CardanoChain', () => {
           TestUtils.generateRandomId(),
         ]);
 
-      // mock 'getTransaction'
-      const serializedTx = 'serializedTransaction';
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const tx = TestData.cardanoTx1;
       const getTransactionSpy = spyOn(network, 'getTransaction');
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(serializedTx);
+        .mockResolvedValueOnce(tx);
 
       // mock network extractor to return event data
       const extractorSpy = spyOn(network.extractor, 'get');
-      when(extractorSpy)
-        .calledWith(serializedTx)
-        .mockReturnValueOnce(event as unknown as RosenData);
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
 
       // call the function
       const cardanoChain = generateChainObject(network);
@@ -1461,18 +1441,16 @@ describe('CardanoChain', () => {
           TestUtils.generateRandomId(),
         ]);
 
-      // mock 'getTransaction'
-      const serializedTx = 'serializedTransaction';
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const tx = TestData.cardanoTx1;
       const getTransactionSpy = spyOn(network, 'getTransaction');
       when(getTransactionSpy)
         .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(serializedTx);
+        .mockResolvedValueOnce(tx);
 
       // mock network extractor to return event data
       const extractorSpy = spyOn(network.extractor, 'get');
-      when(extractorSpy)
-        .calledWith(serializedTx)
-        .mockReturnValueOnce(event as unknown as RosenData);
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
 
       // call the function
       const cardanoChain = generateChainObject(network);

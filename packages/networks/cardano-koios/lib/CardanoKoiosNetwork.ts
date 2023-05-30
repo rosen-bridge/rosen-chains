@@ -25,6 +25,7 @@ import {
   TxInfoItemInputsItem,
   TxInfoItemOutputsItemAssetListItem,
 } from '@rosen-clients/cardano-koios';
+import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 
 const JsonBigInt = JsonBigIntFactory({
   alwaysParseAsBig: true,
@@ -222,12 +223,12 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    * gets a transaction (serialized in `CardanoTx` format)
    * @param transactionId the transaction id
    * @param blockId the block id
-   * @returns the serialized string of the transaction
+   * @returns the transaction
    */
   getTransaction = async (
     transactionId: string,
     blockId: string
-  ): Promise<string> => {
+  ): Promise<CardanoTx> => {
     const koiosTx = await this.client.transactions
       .postTxInfo({ _tx_hashes: [transactionId] })
       .then((res) => res[0])
@@ -266,15 +267,15 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     };
     if (koiosTx.metadata) tx.metadata = koiosTx.metadata;
 
-    return JsonBigInt.stringify(tx);
+    return tx;
   };
 
   /**
    * submits a transaction
    * @param transaction the transaction
    */
-  submitTransaction = async (transaction: string): Promise<void> => {
-    const txBlob = new Blob([Buffer.from(transaction, 'hex')], {
+  submitTransaction = async (transaction: Transaction): Promise<void> => {
+    const txBlob = new Blob([transaction.to_bytes()], {
       type: 'application/cbor',
     });
     await this.client.transactions.postSubmittx(txBlob);
@@ -282,9 +283,10 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
 
   /**
    * gets all transactions in mempool (returns empty list if the chain has no mempool)
-   * @returns list of serialized string of the transactions in mempool
+   * Note: Koios does not support mempool. So function returns empty list
+   * @returns empty list
    */
-  getMempoolTransactions = async (): Promise<Array<string>> => {
+  getMempoolTransactions = async (): Promise<Array<CardanoTx>> => {
     // since Koios does not support mempool, it returns empty list
     return [];
   };
@@ -292,22 +294,20 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   /**
    * gets confirmed and unspent boxes of an address
    * @param address the address
-   * @returns an object containing the amount of each asset
+   * @returns list of boxes
    */
   getAddressBoxes = async (
     address: string,
     offset: number,
     limit: number
-  ): Promise<Array<string>> => {
+  ): Promise<Array<CardanoUtxo>> => {
     const boxes = await this.client.address
       .postAddressInfo({ _addresses: [address] })
       .then((res) => {
         if (res.length === 0) return [];
         const utxos = res[0].utxo_set;
         if (!utxos) throw new KoiosNullValueError(`Address UTxO list is null`);
-        return utxos.map((utxo) =>
-          JsonBigInt.stringify(this.parseCardanoUTxO(utxo))
-        );
+        return utxos.map(this.parseCardanoUTxO);
       })
       .catch((e) => {
         const baseError = `Failed to get address [${address}] UTxOs Koios: `;
@@ -400,7 +400,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   /**
    * gets an utxo from the network
    * @param boxId the id of Utxo (txId + . + index)
-   * @returns the utxo in CardanoUtxo format
+   * @returns the utxo
    */
   getUtxo = async (boxId: string): Promise<CardanoUtxo> => {
     const [txId, index] = boxId.split('.');

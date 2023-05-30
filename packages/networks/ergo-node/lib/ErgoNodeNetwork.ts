@@ -190,28 +190,19 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     this.uint8ArrayToHexString(serializable.sigma_serialize_bytes());
 
   /**
-   * convert a tx string to its bytes representation
-   * @param tx
-   */
-  private getTransactionBytes = (tx: string) => {
-    const ergoLibTx = ergoLib.Transaction.from_json(tx);
-    return this.serializableToHexString(ergoLibTx);
-  };
-
-  /**
-   * get a transaction by its id, returning hex representation of `ergo-lib` tx
-   * bytes
+   * get a transaction by its id
    * @param txId
+   * @param blockId
    * @returns
    */
-  public getTransaction = async (txId: string) => {
+  public getTransaction = async (txId: string, blockId: string) => {
     try {
-      const partialTx = await this.client.blockchain.getTxById(txId);
       const blockTxs = await this.client.blocks.getBlockTransactionsById(
-        partialTx.blockId
+        blockId
       );
       const tx = blockTxs.transactions.find((tx) => tx.id === txId);
-      return this.getTransactionBytes(JsonBigInt.stringify(tx));
+      if (!tx) throw Error(`tx [${txId}] is not in block [${blockId}]`);
+      return ergoLib.Transaction.from_json(JsonBigInt.stringify(tx));
     } catch (error) {
       return handleApiError(error, 'Failed to get tx from Ergo Node:');
     }
@@ -219,11 +210,13 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
 
   /**
    * submit a transaction to the network
-   * @param tx hex representation of `ergo-lib` tx bytes
+   * @param tx the transaction
    */
-  public submitTransaction = async (tx: string) => {
+  public submitTransaction = async (tx: ergoLib.Transaction) => {
     try {
-      await this.client.transactions.sendTransactionAsBytes(tx);
+      await this.client.transactions.sendTransactionAsBytes(
+        Buffer.from(tx.sigma_serialize_bytes()).toString('hex')
+      );
     } catch (error) {
       return handleApiError(
         error,
@@ -264,8 +257,7 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
       const txs = await all(txsPageIterator);
       return txs
         .filter((tx) => tx.id)
-        .map((tx) => JsonBigInt.stringify(tx))
-        .map(this.getTransactionBytes);
+        .map((tx) => ergoLib.Transaction.from_json(JsonBigInt.stringify(tx)));
     } catch (error) {
       return handleApiError(
         error,
@@ -298,16 +290,7 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
   };
 
   /**
-   * get hex string representation of a box
-   * @param box
-   */
-  private boxToHexString = (box: ErgoTransactionOutput) =>
-    this.serializableToHexString(
-      ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
-    );
-
-  /**
-   * get hex representation of utxos of an address
+   * get utxos of an address
    * @param address
    * @param offset
    * @param limit
@@ -316,18 +299,18 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     address: string,
     offset: number,
     limit: number
-  ) => {
+  ): Promise<ergoLib.ErgoBox[]> => {
     try {
-      const boxes = await this.getRawAddressBoxes(address, offset, limit);
+      const boxes = (await this.getRawAddressBoxes(address, offset, limit)).map(
+        (box: any) => ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
+      );
 
-      const boxesBytes = boxes.map(this.boxToHexString);
-
-      return boxesBytes;
+      return boxes;
     } catch (error) {
       const baseError = 'Failed to get address boxes from Ergo Node:';
       return handleApiError(error, baseError, {
         handleRespondedState: (error) => {
-          if (error.response.status === 400) return [] as string[];
+          if (error.response.status === 400) return [];
           throw new FailedError(
             `${baseError} [${error.response.status}] ${error.response.data.reason}`
           );
@@ -337,7 +320,7 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
   };
 
   /**
-   * get hex representation of utxos of an address containing a token
+   * get utxos of an address containing a token
    * @param tokenId
    * @param address
    * @param offset
@@ -348,7 +331,7 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     address: string,
     offset = 0,
     limit = 5
-  ) => {
+  ): Promise<ergoLib.ErgoBox[]> => {
     try {
       const allAddressBoxes = await this.getRawAddressBoxes(
         address,
@@ -361,14 +344,16 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
 
       const eligibleBoxes = allAddressBoxes
         .filter(boxHasToken)
-        .map(this.boxToHexString);
+        .map((box: any) =>
+          ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
+        );
 
       return eligibleBoxes;
     } catch (error) {
       const baseError = 'Failed to get boxes by token id from Ergo Node:';
       return handleApiError(error, baseError, {
         handleRespondedState: (error) => {
-          if (error.response.status === 400) return [] as string[];
+          if (error.response.status === 400) return [];
           throw new FailedError(
             `${baseError} [${error.response.status}] ${error.response.data.reason}`
           );
