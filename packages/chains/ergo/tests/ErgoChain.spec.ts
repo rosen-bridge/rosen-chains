@@ -1986,6 +1986,56 @@ describe('ErgoChain', () => {
     });
   });
 
+  describe('getBoxRWT', () => {
+    const network = new TestErgoNetwork();
+
+    /**
+     * @target ErgoChain.getBoxRWT should get box RWT successfully
+     * @dependencies
+     * @scenario
+     * - mock an ErgoBox with RWT and construct serialized box
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return RWT amount
+     */
+    it('should get box RWT successfully', () => {
+      // mock an ErgoBox with RWT and construct serialized box
+      const serializedBox = Buffer.from(
+        ergoTestUtils.toErgoBox(boxTestData.eventBox1).sigma_serialize_bytes()
+      ).toString('hex');
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = ergoChain.getBoxRWT(serializedBox);
+
+      // check returned value
+      expect(result).toEqual(10n);
+    });
+
+    /**
+     * @target ErgoChain.getBoxRWT should throw Error when box has no token
+     * @dependencies
+     * @scenario
+     * - mock an ErgoBox without token and construct serialized box
+     * - run test and expect exception thrown
+     * @expected
+     * - it should throw Error
+     */
+    it('should throw Error when box has no token', () => {
+      // mock an ErgoBox without token and construct serialized box
+      const serializedBox = Buffer.from(
+        ergoTestUtils.toErgoBox(boxTestData.ergoBox3).sigma_serialize_bytes()
+      ).toString('hex');
+
+      // run test and expect exception thrown
+      const ergoChain = generateChainObject(network);
+      expect(() => {
+        ergoChain.getBoxRWT(serializedBox);
+      }).toThrow(Error);
+    });
+  });
+
   describe('getGuardsConfigBox', () => {
     /**
      * @target ErgoChain.getGuardsConfigBox should get guard box successfully

@@ -58,17 +58,20 @@ class ChainUtils {
    * @param a first AssetBalance object
    * @param b second AssetBalance object
    * @param minimumNativeToken minimum allowed native token
+   * @param allowNegativeNativeToken if true, sets nativeToken as 0 instead of throwing error
    * @returns reduced AssetBalance
    */
   static subtractAssetBalance = (
     a: AssetBalance,
     b: AssetBalance,
-    minimumNativeToken = 0n
+    minimumNativeToken = 0n,
+    allowNegativeNativeToken = false
   ): AssetBalance => {
     // sum native token
     let nativeToken = 0n;
     if (a.nativeToken > b.nativeToken + minimumNativeToken)
       nativeToken = a.nativeToken - b.nativeToken;
+    else if (allowNegativeNativeToken) nativeToken = 0n;
     else
       throw new ValueError(
         `Cannot reduce native token: [${a.nativeToken.toString()}] is less than [${b.nativeToken.toString()} + ${minimumNativeToken.toString()}]`
