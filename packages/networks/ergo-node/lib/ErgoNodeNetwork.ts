@@ -357,7 +357,7 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
         currentPage++;
       }
 
-      return eligibleBoxes.slice(offset);
+      return eligibleBoxes.slice(offset, limit);
     } catch (error) {
       const baseError = 'Failed to get boxes by token id from Ergo Node:';
       return handleApiError(error, baseError, {

@@ -467,7 +467,7 @@ describe('ErgoExplorerNetwork', () => {
         10
       );
 
-      const expectedBoxesBytes = testTokenIdBoxesBytes;
+      const expectedBoxesBytes = testTokenIdBoxesBytes.slice(0, 2);
       expect(
         actualBoxes.map((box) =>
           Buffer.from(box.sigma_serialize_bytes()).toString('hex')
@@ -499,6 +499,36 @@ describe('ErgoExplorerNetwork', () => {
 
       const expectedBoxesBytes: string[] = [];
       expect(actualBoxesBytes).toEqual(expectedBoxesBytes);
+    });
+
+    /**
+     * @target `ErgoExplorerNetwork.getBoxesByTokenId` should apply offset and limit
+     * to boxes with address
+     * @dependencies
+     * @scenario
+     * - mock `getApiV1BoxesUnspentBytokenidP1` of ergo explorer client to
+     * @expected
+     * - returned boxes bytes should equal mocked boxes bytes
+     */
+    it('should should apply offset and limit to boxes with address', async () => {
+      mockGetApiV1BoxesUnspentBytokenidP1();
+      const network = getNetwork();
+      const testTokenId = testTokenIdBoxes[0].assets[0].tokenId;
+      const testAddress = testTokenIdBoxes[2].address;
+
+      const actualBoxes = await network.getBoxesByTokenId(
+        testTokenId,
+        testAddress,
+        0,
+        2
+      );
+
+      const expectedBoxesBytes = testTokenIdBoxesBytes.slice(2, 4);
+      expect(
+        actualBoxes.map((box) =>
+          Buffer.from(box.sigma_serialize_bytes()).toString('hex')
+        )
+      ).toEqual(expectedBoxesBytes);
     });
   });
 

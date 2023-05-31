@@ -22,6 +22,7 @@ const JsonBigInt = JsonBigIntFactory({
 });
 
 const TX_FETCHING_PAGE_SIZE = 50;
+const BOX_FETCHING_PAGE_SIZE = 50;
 const errorCause = {
   EMPTY_TRANSACTIONS: 'empty-transactions',
   NO_BLOCK_HEADERS: 'no-block-headers',
@@ -365,21 +366,30 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
     limit = 5
   ) => {
     try {
-      const { items: boxes } =
-        await this.client.v1.getApiV1BoxesUnspentBytokenidP1(tokenId, {
-          offset: BigInt(offset),
-          limit: BigInt(limit),
-        });
+      const eligibleBoxes: Array<ergoLib.ErgoBox> = [];
+      let currentPage = 0;
 
-      if (!boxes) {
-        return [];
+      while (eligibleBoxes.length < offset + limit) {
+        const boxesPage = await this.client.v1.getApiV1BoxesUnspentBytokenidP1(
+          tokenId,
+          {
+            offset: BigInt(currentPage * BOX_FETCHING_PAGE_SIZE),
+            limit: BigInt(BOX_FETCHING_PAGE_SIZE),
+          }
+        );
+        if (!boxesPage.items?.length) break;
+
+        eligibleBoxes.push(
+          ...boxesPage.items
+            .filter((box) => box.address === address)
+            .map((box: any) =>
+              ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
+            )
+        );
+        currentPage++;
       }
 
-      const boxesBytes = boxes.map((box) =>
-        ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
-      );
-
-      return boxesBytes;
+      return eligibleBoxes.slice(offset, limit);
     } catch (error) {
       return handleApiError(
         error,
