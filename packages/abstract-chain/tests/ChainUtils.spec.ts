@@ -531,5 +531,60 @@ describe('ChainUtils', () => {
         ],
       });
     });
+
+    /**
+     * @target ChainUtils.reduceAssetBalance should return remaining tokens
+     * with 0 native token when negative native token is allowed
+     * @dependencies
+     * @scenario
+     * - mock two AssetBalance
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return aggregated tokens with 0 native token
+     */
+    it('should return remaining tokens with 0 native token when negative native token is allowed', () => {
+      // mock two AssetBalance
+      const a: AssetBalance = {
+        nativeToken: 100n,
+        tokens: [
+          {
+            id: 'id1',
+            value: 10n,
+          },
+          {
+            id: 'id2',
+            value: 20n,
+          },
+        ],
+      };
+      const b: AssetBalance = {
+        nativeToken: 500n,
+        tokens: [
+          {
+            id: 'id1',
+            value: 5n,
+          },
+        ],
+      };
+
+      // run test
+      const result = ChainUtils.subtractAssetBalance(a, b, 0n, true);
+
+      // check returned value
+      expect(result).toEqual({
+        nativeToken: 0n,
+        tokens: [
+          {
+            id: 'id1',
+            value: 5n,
+          },
+          {
+            id: 'id2',
+            value: 20n,
+          },
+        ],
+      });
+    });
   });
 });

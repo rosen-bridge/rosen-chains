@@ -19,6 +19,7 @@ const JsonBigInt = JsonBigIntFactory({
 });
 
 const TX_FETCHING_PAGE_SIZE = 50;
+const BOX_FETCHING_PAGE_SIZE = 50;
 
 interface ErgoNodeNetworkOptions {
   logger?: AbstractLogger;
@@ -333,22 +334,30 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     limit = 5
   ): Promise<ergoLib.ErgoBox[]> => {
     try {
-      const allAddressBoxes = await this.getRawAddressBoxes(
-        address,
-        offset,
-        limit
-      );
-
       const boxHasToken = (box: ErgoTransactionOutput) =>
         box.assets?.some((asset) => asset.tokenId === tokenId);
 
-      const eligibleBoxes = allAddressBoxes
-        .filter(boxHasToken)
-        .map((box: any) =>
-          ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
+      const eligibleBoxes: Array<ergoLib.ErgoBox> = [];
+      let currentPage = 0;
+      while (eligibleBoxes.length < offset + limit) {
+        const boxesPage = await this.getRawAddressBoxes(
+          address,
+          currentPage * BOX_FETCHING_PAGE_SIZE,
+          BOX_FETCHING_PAGE_SIZE
         );
+        if (boxesPage.length === 0) break;
 
-      return eligibleBoxes;
+        eligibleBoxes.push(
+          ...boxesPage
+            .filter(boxHasToken)
+            .map((box: any) =>
+              ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
+            )
+        );
+        currentPage++;
+      }
+
+      return eligibleBoxes.slice(offset);
     } catch (error) {
       const baseError = 'Failed to get boxes by token id from Ergo Node:';
       return handleApiError(error, baseError, {

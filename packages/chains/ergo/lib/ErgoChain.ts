@@ -93,7 +93,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
     const requiredAssets = ChainUtils.subtractAssetBalance(
       orderRequiredAssets,
-      inputAssets
+      inputAssets,
+      0n,
+      true
     );
 
     // check if there are enough assets in address
@@ -748,6 +750,27 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       throw new Error(`failed to read WID from register R4 of box [${boxId}]`);
     }
     return Buffer.from(wid).toString('hex');
+  };
+
+  /**
+   * gets amount of rwt in the box
+   * @param serializedBox the serialized string of the box
+   * @returns rwt amount
+   */
+  getBoxRWT = (serializedBox: string): bigint => {
+    // deserialize box
+    const box = wasm.ErgoBox.sigma_parse_bytes(
+      Buffer.from(serializedBox, 'hex')
+    );
+
+    // extract wid
+    if (box.tokens().len() < 1) {
+      const boxId = box.box_id().to_str();
+      throw new Error(
+        `failed to read amount of RWT from box [${boxId}]: Box has no token`
+      );
+    }
+    return BigInt(box.tokens().get(0).amount().as_i64().to_str());
   };
 
   /**

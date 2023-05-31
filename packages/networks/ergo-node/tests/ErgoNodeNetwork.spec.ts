@@ -488,6 +488,36 @@ describe('ErgoNodeNetwork', () => {
         )
       ).toEqual(expectedBoxBytes);
     });
+
+    /**
+     * @target `ErgoNodeNetwork.getBoxesByTokenId` should apply offset and limit
+     * to boxes with tokens
+     * @dependencies
+     * @scenario
+     * - mock `getBoxesByAddressUnspent` of ergo node client
+     * @expected
+     * - returned box bytes should equal mocked box bytes
+     */
+    it('should apply offset and limit to boxes with tokens', async () => {
+      mockGetBoxesByAddressUnspent();
+      const network = getNetwork();
+      const testTokenId = testAddressBoxes[2].assets[0].tokenId;
+
+      const actualBoxes = await network.getBoxesByTokenId(
+        testTokenId,
+        testAddress,
+        0,
+        1
+      );
+
+      const expectedBoxBytes = [testAddressBoxesBytes[2]];
+
+      expect(
+        actualBoxes.map((box) =>
+          Buffer.from(box.sigma_serialize_bytes()).toString('hex')
+        )
+      ).toEqual(expectedBoxBytes);
+    });
   });
 
   describe('getStateContext', () => {
