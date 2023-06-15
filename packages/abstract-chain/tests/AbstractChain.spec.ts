@@ -30,7 +30,7 @@ describe('AbstractChain', () => {
     const network = new TestChainNetwork();
 
     /**
-     * @target AbstractChain.verifyNoTokenBurned should return false when no
+     * @target AbstractChain.verifyNoTokenBurned should return true when no
      * token burned
      * @dependencies
      * @scenario
@@ -40,9 +40,9 @@ describe('AbstractChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return false
+     * - it should return true
      */
-    it('should return false when no token burned', async () => {
+    it('should return true when no token burned', async () => {
       // mock an AssetBalance
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -68,11 +68,11 @@ describe('AbstractChain', () => {
       const result = await chain.verifyNoTokenBurned(paymentTx);
 
       // Check returned value
-      expect(result).toEqual(false);
+      expect(result).toEqual(true);
     });
 
     /**
-     * @target AbstractChain.verifyNoTokenBurned should return true when some
+     * @target AbstractChain.verifyNoTokenBurned should return false when some
      * amount of a token got burned
      * @dependencies
      * @scenario
@@ -82,9 +82,9 @@ describe('AbstractChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return true
+     * - it should return false
      */
-    it('should return true when some amount of a token got burned', async () => {
+    it('should return false when some amount of a token got burned', async () => {
       // mock two AssetBalance (second object has less value for a token)
       const a: AssetBalance = {
         nativeToken: 100n,
@@ -112,7 +112,7 @@ describe('AbstractChain', () => {
       const result = await chain.verifyNoTokenBurned(paymentTx);
 
       // Check returned value
-      expect(result).toEqual(true);
+      expect(result).toEqual(false);
     });
   });
 
