@@ -201,7 +201,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         )
       );
       // add extra data to box R4 as coll_coll_byte
-      if (order.extra)
+      if (order.extra !== undefined)
         boxBuilder.set_register_value(
           4,
           wasm.Constant.from_coll_coll_byte([Buffer.from(order.extra, 'hex')])
@@ -369,7 +369,8 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         ).to_base58(wasm.NetworkPrefix.Mainnet),
         assets: assets,
       };
-      if (r4Value) payment.extra = Buffer.from(r4Value).toString('hex');
+      if (r4Value !== undefined)
+        payment.extra = Buffer.from(r4Value).toString('hex');
       order.push(payment);
     }
 
