@@ -74,13 +74,13 @@ abstract class AbstractChain {
   /**
    * verifies no token burned in a PaymentTransaction
    * @param transaction the PaymentTransaction
-   * @returns true if not token burned
+   * @returns true if no token burned
    */
   verifyNoTokenBurned = async (
     transaction: PaymentTransaction
   ): Promise<boolean> => {
     const assets = await this.getTransactionAssets(transaction);
-    return !ChainUtils.isEqualAssetBalance(
+    return ChainUtils.isEqualAssetBalance(
       assets.inputAssets,
       assets.outputAssets
     );
