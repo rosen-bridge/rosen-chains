@@ -625,14 +625,6 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
   };
 
   /**
-   * gets the amount of each asset in the lock address
-   * @returns an object containing the amount of each asset
-   */
-  getLockAddressAssets = async (): Promise<AssetBalance> => {
-    return await this.network.getAddressAssets(this.configs.lockAddress);
-  };
-
-  /**
    * submits a transaction to the blockchain
    * @param transaction the transaction
    */

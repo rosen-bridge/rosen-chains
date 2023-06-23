@@ -27,9 +27,6 @@ class TestChain extends AbstractChain {
   ): Promise<TransactionAssetBalance> => {
     throw Error('Not mocked');
   };
-  getLockAddressAssets = (): Promise<AssetBalance> => {
-    throw Error('Not mocked');
-  };
 }
 
 export default TestChain;
