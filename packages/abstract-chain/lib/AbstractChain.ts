@@ -139,10 +139,26 @@ abstract class AbstractChain {
   ) => Promise<ConfirmationStatus>;
 
   /**
+   * gets the amount of each asset in the address
+   * @param address
+   * @returns an object containing the amount of each asset
+   */
+  getAddressAssets = async (address: string): Promise<AssetBalance> =>
+    await this.network.getAddressAssets(address);
+
+  /**
    * gets the amount of each asset in the lock address
    * @returns an object containing the amount of each asset
    */
-  abstract getLockAddressAssets: () => Promise<AssetBalance>;
+  getLockAddressAssets = async (): Promise<AssetBalance> =>
+    await this.getAddressAssets(this.configs.lockAddress);
+
+  /**
+   * gets the amount of each asset in the cold storage address
+   * @returns an object containing the amount of each asset
+   */
+  getColdAddressAssets = async (): Promise<AssetBalance> =>
+    await this.getAddressAssets(this.configs.coldStorageAddress);
 
   /**
    * gets the blockchain height
