@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/ergo-node-network",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "ergo node network package for rosen ergo chain",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
