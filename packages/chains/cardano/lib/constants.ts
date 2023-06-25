@@ -1,6 +1,8 @@
 import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 
 const CARDANO_CHAIN = 'cardano';
+const OGMIOS_TYPE = 'ogmios';
+const KOIOS_TYPE = 'koios';
 
 const protocolParameters = {
   minFeeA: CardanoWasm.BigNum.from_str('44'),
@@ -27,4 +29,4 @@ const txBuilderConfig: CardanoWasm.TransactionBuilderConfig =
     .coins_per_utxo_word(protocolParameters.coinsPerUtxoWord)
     .build();
 
-export { txBuilderConfig, CARDANO_CHAIN };
+export { txBuilderConfig, CARDANO_CHAIN, OGMIOS_TYPE, KOIOS_TYPE };
