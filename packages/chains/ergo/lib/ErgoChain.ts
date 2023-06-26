@@ -24,7 +24,7 @@ import * as wasm from 'ergo-lib-wasm-nodejs';
 import Serializer from './Serializer';
 import { blake2b } from 'blakejs';
 import { ERGO_CHAIN } from './constants';
-import { ErgoConfigs } from './types';
+import { ErgoConfigs, GuardsPkConfig } from './types';
 import { AbstractLogger } from '@rosen-bridge/logger-interface';
 import ErgoTransaction from './ErgoTransaction';
 import ErgoUtils from './ErgoUtils';
@@ -855,6 +855,44 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       eventBox.tokens().len() !== 0 &&
       eventBox.tokens().get(0).id().to_str() === expectedRWT
     );
+  };
+
+  /**
+   * gets guards public keys and required signs from config box in the blockchain
+   * @param guardNFT the guard NFT tokenId
+   * @param address address containing guard config box
+   */
+  getGuardsPkConfig = async (
+    guardNFT: string,
+    address: string
+  ): Promise<GuardsPkConfig> => {
+    const guardBox = wasm.ErgoBox.sigma_parse_bytes(
+      Buffer.from(await this.getGuardsConfigBox(guardNFT, address), 'hex')
+    );
+    const r4 = guardBox.register_value(4)?.to_coll_coll_byte();
+    const r5 = guardBox.register_value(5)?.to_i32_array();
+
+    if (r4 === undefined || r5 === undefined) {
+      this.logger.debug(
+        `Cannot get guards pk config from box [${guardBox
+          .box_id()
+          .to_str()}]. R4 [${guardBox
+          .register_value(4)
+          ?.encode_to_base16()}], R5 [${guardBox
+          .register_value(5)
+          ?.encode_to_base16()}]`
+      );
+      throw Error(
+        `Failed to get guards public keys from box [${guardBox
+          .box_id()
+          .to_str()}] due to invalid registers`
+      );
+    }
+
+    return {
+      publicKeys: r4.map((pk) => Buffer.from(pk).toString('hex')),
+      requiredSigns: r5[0],
+    };
   };
 }
 
