@@ -894,6 +894,13 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       requiredSigns: r5[0],
     };
   };
+
+  /**
+   * gets the context of blockchain using 10 last blocks
+   * @returns the state context object
+   */
+  getStateContext = async (): Promise<wasm.ErgoStateContext> =>
+    await this.network.getStateContext();
 }
 
 export default ErgoChain;
