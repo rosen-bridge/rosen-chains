@@ -2221,4 +2221,75 @@ describe('ErgoChain', () => {
       expect(result).toEqual(false);
     });
   });
+
+  describe('getGuardsPkConfig', () => {
+    /**
+     * @target ErgoChain.getGuardsPkConfig should get guards public key config successfully
+     * @dependencies
+     * @scenario
+     * - mock guard config box and guardNFT
+     * - mock a network object with mocked 'getBoxesByTokenId'
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return expected public keys and requiredSigns
+     */
+    it('should get guards public key config successfully', async () => {
+      // mock guard config box and guardNFT
+      const box = ergoTestUtils.toErgoBox(boxTestData.guardConfigBox);
+      const guardNFT = boxTestData.guardNFT;
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getBoxesByTokenId'
+      const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
+      when(getBoxesByTokenIdSpy)
+        .calledWith(guardNFT, ergoTestUtils.testLockAddress)
+        .mockResolvedValue([box]);
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.getGuardsPkConfig(
+        guardNFT,
+        ergoTestUtils.testLockAddress
+      );
+
+      // check returned value
+      expect(result).toEqual(boxTestData.guardPks);
+    });
+
+    /**
+     * @target ErgoChain.getGuardsPkConfig should throw error when
+     * register values are invalid
+     * @dependencies
+     * @scenario
+     * - mock an invalid box and guardNFT
+     * - mock a network object with mocked 'getBoxesByTokenId'
+     * - run test and expect exception thrown
+     * @expected
+     * - it should throw Error
+     */
+    it('should throw error when register values are invalid', async () => {
+      // mock an invalid box and guardNFT
+      const box = ergoTestUtils.toErgoBox(boxTestData.eventBox1);
+      const guardNFT = boxTestData.guardNFT;
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getBoxesByTokenId'
+      const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
+      when(getBoxesByTokenIdSpy)
+        .calledWith(guardNFT, ergoTestUtils.testLockAddress)
+        .mockResolvedValue([box]);
+
+      // run test and expect exception thrown
+      const ergoChain = generateChainObject(network);
+      await expect(async () => {
+        await ergoChain.getGuardsPkConfig(
+          guardNFT,
+          ergoTestUtils.testLockAddress
+        );
+      }).rejects.toThrow(Error);
+    });
+  });
 });

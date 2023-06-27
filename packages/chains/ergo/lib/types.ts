@@ -13,4 +13,9 @@ interface ErgoTransactionJsonModel extends PaymentTransactionJsonModel {
   dataInputs: Array<string>;
 }
 
-export { ErgoConfigs, ErgoTransactionJsonModel };
+interface GuardsPkConfig {
+  publicKeys: Array<string>;
+  requiredSigns: number;
+}
+
+export { ErgoConfigs, ErgoTransactionJsonModel, GuardsPkConfig };
