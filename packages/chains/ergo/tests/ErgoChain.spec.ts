@@ -2257,5 +2257,39 @@ describe('ErgoChain', () => {
       // check returned value
       expect(result).toEqual(boxTestData.guardPks);
     });
+
+    /**
+     * @target ErgoChain.getGuardsPkConfig should throw error when
+     * register values are invalid
+     * @dependencies
+     * @scenario
+     * - mock an invalid box and guardNFT
+     * - mock a network object with mocked 'getBoxesByTokenId'
+     * - run test and expect exception thrown
+     * @expected
+     * - it should throw Error
+     */
+    it('should throw error when register values are invalid', async () => {
+      // mock an invalid box and guardNFT
+      const box = ergoTestUtils.toErgoBox(boxTestData.eventBox1);
+      const guardNFT = boxTestData.guardNFT;
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getBoxesByTokenId'
+      const getBoxesByTokenIdSpy = spyOn(network, 'getBoxesByTokenId');
+      when(getBoxesByTokenIdSpy)
+        .calledWith(guardNFT, ergoTestUtils.testLockAddress)
+        .mockResolvedValue([box]);
+
+      // run test and expect exception thrown
+      const ergoChain = generateChainObject(network);
+      await expect(async () => {
+        await ergoChain.getGuardsPkConfig(
+          guardNFT,
+          ergoTestUtils.testLockAddress
+        );
+      }).rejects.toThrow(Error);
+    });
   });
 });

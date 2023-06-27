@@ -869,10 +869,18 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     const guardBox = wasm.ErgoBox.sigma_parse_bytes(
       Buffer.from(await this.getGuardsConfigBox(guardNFT, address), 'hex')
     );
-    const r4 = guardBox.register_value(4)?.to_coll_coll_byte();
-    const r5 = guardBox.register_value(5)?.to_i32_array();
+    try {
+      const r4 = guardBox.register_value(4)?.to_coll_coll_byte();
+      const r5 = guardBox.register_value(5)?.to_i32_array();
 
-    if (r4 === undefined || r5 === undefined) {
+      if (r4 === undefined || r5 === undefined)
+        throw Error(`R4 or R4 is empty`);
+
+      return {
+        publicKeys: r4.map((pk) => Buffer.from(pk).toString('hex')),
+        requiredSigns: r5[0],
+      };
+    } catch (e) {
       this.logger.debug(
         `Cannot get guards pk config from box [${guardBox
           .box_id()
@@ -885,14 +893,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       throw Error(
         `Failed to get guards public keys from box [${guardBox
           .box_id()
-          .to_str()}] due to invalid registers`
+          .to_str()}] due to invalid registers: ${e}`
       );
     }
-
-    return {
-      publicKeys: r4.map((pk) => Buffer.from(pk).toString('hex')),
-      requiredSigns: r5[0],
-    };
   };
 
   /**
