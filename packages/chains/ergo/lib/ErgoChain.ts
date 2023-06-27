@@ -874,7 +874,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       const r5 = guardBox.register_value(5)?.to_i32_array();
 
       if (r4 === undefined || r5 === undefined)
-        throw Error(`R4 or R4 is empty`);
+        throw Error(`R4 or R5 is empty`);
 
       return {
         publicKeys: r4.map((pk) => Buffer.from(pk).toString('hex')),
