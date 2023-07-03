@@ -216,10 +216,11 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     const inputBoxesAssets = CardanoUtils.calculateInputBoxesAssets(bankBoxes);
     const changeBoxMultiAsset = CardanoWasm.MultiAsset.new();
     inputBoxesAssets.assets.forEach((value, key) => {
+      const assetInfo = key.split(',');
       const assetName = CardanoWasm.AssetName.new(
-        Buffer.from(key.assetName, 'hex')
+        Buffer.from(assetInfo[1], 'hex')
       );
-      const policyId = CardanoWasm.ScriptHash.from_hex(key.policyId);
+      const policyId = CardanoWasm.ScriptHash.from_hex(assetInfo[0]);
       const fingerprint = CardanoUtils.createFingerprint(policyId, assetName);
       const spentValue = CardanoUtils.bigIntToBigNum(
         orderAssets.get(fingerprint) || 0n
@@ -364,7 +365,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     }
 
     let outputAssets: AssetBalance = {
-      nativeToken: 0n,
+      nativeToken: BigInt(tx.body().fee().to_str()),
       tokens: [],
     };
     for (let i = 0; i < txBody.outputs().len(); i++) {

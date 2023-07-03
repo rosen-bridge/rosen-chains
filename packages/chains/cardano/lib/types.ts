@@ -1,5 +1,5 @@
 import { ChainConfigs } from '@rosen-chains/abstract-chain';
-import { BigNum, MultiAsset } from '@emurgo/cardano-serialization-lib-nodejs';
+import { BigNum } from '@emurgo/cardano-serialization-lib-nodejs';
 
 interface CardanoConfigs extends ChainConfigs {
   minBoxValue: bigint;
@@ -43,7 +43,7 @@ interface CardanoTx {
 
 interface UtxoBoxesAssets {
   lovelace: BigNum;
-  assets: Map<CardanoAssetInfo, BigNum>;
+  assets: Map<string, BigNum>;
 }
 
 export {

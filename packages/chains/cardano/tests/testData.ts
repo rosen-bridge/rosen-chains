@@ -248,7 +248,7 @@ export const transaction1Id =
   '0066ad9bffa8579a6a7b6f5b6d8fdab20107eca2a2f8435235271173532acab1';
 
 export const transaction1Assets: AssetBalance = {
-  nativeToken: 139010000n,
+  nativeToken: 140010000n,
   tokens: [
     {
       id: 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz',

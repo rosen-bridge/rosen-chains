@@ -20,7 +20,7 @@ class CardanoUtils {
   static calculateInputBoxesAssets = (
     boxes: CardanoUtxo[]
   ): UtxoBoxesAssets => {
-    const assets: Map<CardanoAssetInfo, BigNum> = new Map();
+    const assets: Map<string, BigNum> = new Map();
     let changeBoxLovelace: CardanoWasm.BigNum = CardanoWasm.BigNum.zero();
     boxes.forEach((box) => {
       changeBoxLovelace = changeBoxLovelace.checked_add(
@@ -28,10 +28,7 @@ class CardanoUtils {
       );
 
       box.assets.forEach((boxAsset) => {
-        const assetsInfo: CardanoAssetInfo = {
-          policyId: boxAsset.policy_id,
-          assetName: boxAsset.asset_name,
-        };
+        const assetsInfo = `${boxAsset.policy_id},${boxAsset.asset_name}`;
         const currentValue =
           assets.get(assetsInfo) || CardanoWasm.BigNum.zero();
 
