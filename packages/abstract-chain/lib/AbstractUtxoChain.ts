@@ -22,7 +22,7 @@ abstract class AbstractUtxoChain<BoxType> extends AbstractChain {
    * @param box the box
    * @returns an object containing the box id and assets
    */
-  abstract getBoxInfo: (box: BoxType) => BoxInfo;
+  protected abstract getBoxInfo: (box: BoxType) => BoxInfo;
 
   /**
    * gets useful, allowable and last boxes for an address until required assets are satisfied

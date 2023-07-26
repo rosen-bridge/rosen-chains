@@ -767,6 +767,21 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
   };
 
   /**
+   * gets box info from a serialized box
+   * @param serializedBox the serialized string of the box
+   * @returns box id and assets
+   */
+  getSerializedBoxInfo = (serializedBox: string): BoxInfo => {
+    // deserialize box
+    const box = wasm.ErgoBox.sigma_parse_bytes(
+      Buffer.from(serializedBox, 'hex')
+    );
+
+    // get box info
+    return this.getBoxInfo(box);
+  };
+
+  /**
    * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
    * @param transactions list of transactions
    * @param address the address

@@ -2036,6 +2036,40 @@ describe('ErgoChain', () => {
     });
   });
 
+  describe('getSerializedBoxInfo', () => {
+    const network = new TestErgoNetwork();
+
+    /**
+     * @target ErgoChain.getSerializedBoxInfo should get box id and assets successfully
+     * @dependencies
+     * @scenario
+     * - mock an ErgoBox with assets
+     * - construct serialized box and BoxInfo
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return constructed BoxInfo
+     */
+    it('should get box id and assets successfully', () => {
+      // mock an ErgoBox with assets
+      const box = ergoTestUtils.toErgoBox(boxTestData.ergoBox1);
+      const serializedBox = Buffer.from(box.sigma_serialize_bytes()).toString(
+        'hex'
+      );
+      const boxInfo: BoxInfo = {
+        id: box.box_id().to_str(),
+        assets: boxTestData.box1Assets,
+      };
+
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = ergoChain.getSerializedBoxInfo(serializedBox);
+
+      // check returned value
+      expect(result).toEqual(boxInfo);
+    });
+  });
+
   describe('getGuardsConfigBox', () => {
     /**
      * @target ErgoChain.getGuardsConfigBox should get guard box successfully
