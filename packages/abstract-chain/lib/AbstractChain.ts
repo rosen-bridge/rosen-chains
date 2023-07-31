@@ -1,3 +1,7 @@
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/logger-interface';
+import { Fee } from '@rosen-bridge/minimum-fee';
+import ChainUtils from './ChainUtils';
+import { ValueError } from './errors';
 import AbstractChainNetwork from './network/AbstractChainNetwork';
 import {
   AssetBalance,
@@ -6,12 +10,9 @@ import {
   EventTrigger,
   PaymentOrder,
   PaymentTransaction,
+  SigningStatus,
   TransactionAssetBalance,
 } from './types';
-import { Fee } from '@rosen-bridge/minimum-fee';
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/logger-interface';
-import ChainUtils from './ChainUtils';
-import { ValueError } from './errors';
 
 abstract class AbstractChain {
   protected network: AbstractChainNetwork<unknown>;
@@ -111,9 +112,13 @@ abstract class AbstractChain {
   /**
    * checks if a transaction is still valid and can be sent to the network
    * @param transaction the transaction
+   * @param signingStatus
    * @returns true if the transaction is still valid
    */
-  abstract isTxValid: (transaction: PaymentTransaction) => Promise<boolean>;
+  abstract isTxValid: (
+    transaction: PaymentTransaction,
+    signingStatus: SigningStatus
+  ) => Promise<boolean>;
 
   /**
    * requests the corresponding signer service to sign the transaction
