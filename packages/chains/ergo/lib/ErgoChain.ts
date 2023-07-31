@@ -1,33 +1,34 @@
-import AbstractErgoNetwork from './network/AbstractErgoNetwork';
+import { AbstractLogger } from '@rosen-bridge/logger-interface';
+import { Fee } from '@rosen-bridge/minimum-fee';
 import {
   AbstractUtxoChain,
   AssetBalance,
   BoxInfo,
+  ChainUtils,
   ConfirmationStatus,
   EventTrigger,
   FailedError,
+  ImpossibleBehavior,
   NetworkError,
+  NotEnoughAssetsError,
+  NotEnoughValidBoxesError,
   NotFoundError,
   PaymentOrder,
   PaymentTransaction,
-  TransactionAssetBalance,
-  UnexpectedApiError,
-  ChainUtils,
+  SigningStatus,
   SinglePayment,
-  ImpossibleBehavior,
+  TransactionAssetBalance,
   TransactionTypes,
-  NotEnoughValidBoxesError,
-  NotEnoughAssetsError,
+  UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
-import { Fee } from '@rosen-bridge/minimum-fee';
-import * as wasm from 'ergo-lib-wasm-nodejs';
-import Serializer from './Serializer';
 import { blake2b } from 'blakejs';
+import * as wasm from 'ergo-lib-wasm-nodejs';
 import { ERGO_CHAIN } from './constants';
-import { ErgoConfigs, GuardsPkConfig } from './types';
-import { AbstractLogger } from '@rosen-bridge/logger-interface';
 import ErgoTransaction from './ErgoTransaction';
 import ErgoUtils from './ErgoUtils';
+import AbstractErgoNetwork from './network/AbstractErgoNetwork';
+import Serializer from './Serializer';
+import { ErgoConfigs, GuardsPkConfig } from './types';
 
 class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
   static feeBoxErgoTree =
@@ -541,12 +542,18 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
   /**
    * checks if a transaction is still valid and can be sent to the network
    * @param transaction the transaction
+   * @param signingStatus the signing status of transaction
    * @returns true if the transaction is still valid
    */
-  isTxValid = async (transaction: PaymentTransaction): Promise<boolean> => {
+  isTxValid = async (
+    transaction: PaymentTransaction,
+    signingStatus: SigningStatus = SigningStatus.Signed
+  ): Promise<boolean> => {
     // deserialize transaction
-    const tx = Serializer.signedDeserialize(transaction.txBytes);
-
+    const tx =
+      signingStatus === SigningStatus.Signed
+        ? Serializer.signedDeserialize(transaction.txBytes)
+        : Serializer.deserialize(transaction.txBytes).unsigned_tx();
     // check if any input is spent or invalid
     let valid = true;
     for (let i = 0; i < tx.inputs().len(); i++) {

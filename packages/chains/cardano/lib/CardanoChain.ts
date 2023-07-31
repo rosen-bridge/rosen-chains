@@ -1,3 +1,11 @@
+import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
+import {
+  BigNum,
+  hash_transaction,
+} from '@emurgo/cardano-serialization-lib-nodejs';
+import { AbstractLogger } from '@rosen-bridge/logger-interface';
+import { Fee } from '@rosen-bridge/minimum-fee';
+import { TokenMap } from '@rosen-bridge/tokens';
 import {
   AbstractUtxoChain,
   AssetBalance,
@@ -12,34 +20,26 @@ import {
   NotFoundError,
   PaymentOrder,
   PaymentTransaction,
+  SigningStatus,
   SinglePayment,
   TransactionAssetBalance,
   TransactionTypes,
   UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
-import { Fee } from '@rosen-bridge/minimum-fee';
-import AbstractCardanoNetwork from './network/AbstractCardanoNetwork';
-import { AbstractLogger } from '@rosen-bridge/logger-interface';
-import {
-  CardanoUtxo,
-  CardanoConfigs,
-  CardanoTx,
-  CardanoBoxCandidate,
-  CardanoAsset,
-} from './types';
-import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
-import { TokenMap } from '@rosen-bridge/tokens';
-import { CARDANO_CHAIN, txBuilderConfig } from './constants';
-import CardanoUtils from './CardanoUtils';
+import { blake2b } from 'blakejs';
+import * as JSONBigInt from 'json-bigint';
 import CardanoTransaction from './CardanoTransaction';
+import CardanoUtils from './CardanoUtils';
+import cardanoUtils from './CardanoUtils';
+import { CARDANO_CHAIN, txBuilderConfig } from './constants';
+import AbstractCardanoNetwork from './network/AbstractCardanoNetwork';
 import Serializer from './Serializer';
 import {
-  BigNum,
-  hash_transaction,
-} from '@emurgo/cardano-serialization-lib-nodejs';
-import cardanoUtils from './CardanoUtils';
-import * as JSONBigInt from 'json-bigint';
-import { blake2b } from 'blakejs';
+  CardanoAsset,
+  CardanoBoxCandidate,
+  CardanoConfigs,
+  CardanoUtxo,
+} from './types';
 
 class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
   declare network: AbstractCardanoNetwork;
@@ -446,9 +446,13 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
   /**
    * checks if a transaction is still valid and can be sent to the network
    * @param transaction the payment transaction
+   * @param _signingStatus
    * @returns true if the transaction is still valid
    */
-  isTxValid = async (transaction: PaymentTransaction): Promise<boolean> => {
+  isTxValid = async (
+    transaction: PaymentTransaction,
+    _signingStatus: SigningStatus = SigningStatus.Signed
+  ): Promise<boolean> => {
     const tx = Serializer.deserialize(transaction.txBytes);
     const txBody = tx.body();
 

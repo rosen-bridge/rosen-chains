@@ -64,6 +64,11 @@ interface EventTrigger {
   WIDs: Array<string>;
 }
 
+enum SigningStatus {
+  Signed,
+  UnSigned,
+}
+
 interface PaymentTransaction {
   network: string;
   txId: string;
@@ -108,4 +113,5 @@ export {
   PaymentTransactionJsonModel,
   ConfirmationStatus,
   TransactionTypes,
+  SigningStatus,
 };
