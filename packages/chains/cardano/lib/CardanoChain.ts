@@ -630,24 +630,10 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     transactionId: string,
     transactionType: string
   ): Promise<ConfirmationStatus> => {
-    let expectedConfirmation = 0;
-    switch (transactionType) {
-      case TransactionTypes.lock:
-        expectedConfirmation = this.configs.observationTxConfirmation;
-        break;
-      case TransactionTypes.payment:
-      case TransactionTypes.reward:
-        expectedConfirmation = this.configs.paymentTxConfirmation;
-        break;
-      case TransactionTypes.coldStorage:
-        expectedConfirmation = this.configs.coldTxConfirmation;
-        break;
-      default:
-        throw new Error(`Transaction type [${transactionType}] is not defined`);
-    }
-
+    const requiredConfirmation =
+      this.getTxRequiredConfirmation(transactionType);
     const confirmation = await this.network.getTxConfirmation(transactionId);
-    if (confirmation >= expectedConfirmation)
+    if (confirmation >= requiredConfirmation)
       return ConfirmationStatus.ConfirmedEnough;
     else if (confirmation === -1) return ConfirmationStatus.NotFound;
     else return ConfirmationStatus.NotConfirmedEnough;

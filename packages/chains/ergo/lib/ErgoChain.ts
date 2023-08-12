@@ -602,6 +602,28 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
   };
 
   /**
+   * @param transactionType type of the transaction
+   * @returns required number of confirmation
+   */
+  override getTxRequiredConfirmation = (transactionType: string): number => {
+    switch (transactionType) {
+      case TransactionTypes.payment:
+      case TransactionTypes.reward:
+        return this.configs.confirmations.payment;
+      case TransactionTypes.coldStorage:
+        return this.configs.confirmations.cold;
+      case TransactionTypes.lock:
+        return this.configs.confirmations.observation;
+      case TransactionTypes.manual:
+        return this.configs.confirmations.manual;
+      default:
+        throw Error(
+          `Confirmation for type [${transactionType}] is not defined in Ergo chain`
+        );
+    }
+  };
+
+  /**
    * extracts confirmation status for a transaction
    * @param transactionId the transaction id
    * @param transactionType type of the transaction
@@ -611,21 +633,10 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     transactionId: string,
     transactionType: string
   ): Promise<ConfirmationStatus> => {
-    let expectedConfirmation = 0;
-    if (transactionType === TransactionTypes.lock)
-      expectedConfirmation = this.configs.observationTxConfirmation;
-    else if (
-      transactionType === TransactionTypes.payment ||
-      transactionType === TransactionTypes.reward
-    )
-      expectedConfirmation = this.configs.paymentTxConfirmation;
-    else if (transactionType === TransactionTypes.coldStorage)
-      expectedConfirmation = this.configs.coldTxConfirmation;
-    else
-      throw new Error(`Transaction type [${transactionType}] is not defined`);
-
+    const requiredConfirmation =
+      this.getTxRequiredConfirmation(transactionType);
     const confirmation = await this.network.getTxConfirmation(transactionId);
-    if (confirmation >= expectedConfirmation)
+    if (confirmation >= requiredConfirmation)
       return ConfirmationStatus.ConfirmedEnough;
     else if (confirmation === -1) return ConfirmationStatus.NotFound;
     else return ConfirmationStatus.NotConfirmedEnough;

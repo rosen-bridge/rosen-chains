@@ -9,9 +9,12 @@ describe('AbstractChain', () => {
   const generateChainObject = (network: TestChainNetwork) => {
     const config: ChainConfigs = {
       fee: 100n,
-      observationTxConfirmation: 5,
-      paymentTxConfirmation: 6,
-      coldTxConfirmation: 7,
+      confirmations: {
+        observation: 5,
+        payment: 6,
+        cold: 7,
+        manual: 8,
+      },
       lockAddress: 'lock_addr',
       coldStorageAddress: 'cold_addr',
       rwtId: 'rwt',

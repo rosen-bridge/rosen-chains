@@ -1,8 +1,12 @@
+interface ConfirmationConfigs {
+  observation: number;
+  payment: number;
+  cold: number;
+  manual: number;
+}
 interface ChainConfigs {
   fee: bigint;
-  observationTxConfirmation: number;
-  paymentTxConfirmation: number;
-  coldTxConfirmation: number;
+  confirmations: ConfirmationConfigs;
   lockAddress: string;
   coldStorageAddress: string;
   rwtId: string;
@@ -96,9 +100,11 @@ class TransactionTypes {
   static reward = 'reward';
   static coldStorage = 'cold-storage';
   static lock = 'lock';
+  static manual = 'manual';
 }
 
 export {
+  ConfirmationConfigs,
   ChainConfigs,
   CoveringBoxes,
   TokenInfo,
