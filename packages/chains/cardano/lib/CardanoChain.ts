@@ -23,7 +23,7 @@ import {
   SigningStatus,
   SinglePayment,
   TransactionAssetBalance,
-  TransactionTypes,
+  TransactionType,
   UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
 import { blake2b } from 'blakejs';
@@ -628,7 +628,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
    */
   getTxConfirmationStatus = async (
     transactionId: string,
-    transactionType: string
+    transactionType: TransactionType
   ): Promise<ConfirmationStatus> => {
     const requiredConfirmation =
       this.getTxRequiredConfirmation(transactionType);

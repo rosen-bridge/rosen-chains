@@ -9,7 +9,7 @@ import {
   ConfirmationStatus,
   NotEnoughAssetsError,
   NotEnoughValidBoxesError,
-  TransactionTypes,
+  TransactionType,
 } from '@rosen-chains/abstract-chain';
 import TestErgoNetwork from './network/TestErgoNetwork';
 import { ErgoConfigs } from '../lib';
@@ -1556,7 +1556,7 @@ describe('ErgoChain', () => {
   });
 
   describe('getTxConfirmationStatus', () => {
-    const txType = TransactionTypes.payment;
+    const txType = TransactionType.payment;
     const requiredConfirmation = paymentTxConfirmation;
 
     /**

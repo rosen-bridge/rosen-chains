@@ -18,7 +18,7 @@ import {
   SigningStatus,
   SinglePayment,
   TransactionAssetBalance,
-  TransactionTypes,
+  TransactionType,
   UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
 import { blake2b } from 'blakejs';
@@ -605,16 +605,18 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
    * @param transactionType type of the transaction
    * @returns required number of confirmation
    */
-  override getTxRequiredConfirmation = (transactionType: string): number => {
+  override getTxRequiredConfirmation = (
+    transactionType: TransactionType
+  ): number => {
     switch (transactionType) {
-      case TransactionTypes.payment:
-      case TransactionTypes.reward:
+      case TransactionType.payment:
+      case TransactionType.reward:
         return this.configs.confirmations.payment;
-      case TransactionTypes.coldStorage:
+      case TransactionType.coldStorage:
         return this.configs.confirmations.cold;
-      case TransactionTypes.lock:
+      case TransactionType.lock:
         return this.configs.confirmations.observation;
-      case TransactionTypes.manual:
+      case TransactionType.manual:
         return this.configs.confirmations.manual;
       default:
         throw Error(
@@ -631,7 +633,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
    */
   getTxConfirmationStatus = async (
     transactionId: string,
-    transactionType: string
+    transactionType: TransactionType
   ): Promise<ConfirmationStatus> => {
     const requiredConfirmation =
       this.getTxRequiredConfirmation(transactionType);

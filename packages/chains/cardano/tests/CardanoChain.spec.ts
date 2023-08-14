@@ -11,7 +11,7 @@ import {
   ConfirmationStatus,
   NotEnoughAssetsError,
   NotEnoughValidBoxesError,
-  TransactionTypes,
+  TransactionType,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
@@ -924,7 +924,7 @@ describe('CardanoChain', () => {
   });
 
   describe('getTxConfirmationStatus', () => {
-    const txType = TransactionTypes.payment;
+    const txType = TransactionType.payment;
     const requiredConfirmation = paymentTxConfirmation;
 
     /**

@@ -95,12 +95,12 @@ enum ConfirmationStatus {
   NotFound,
 }
 
-class TransactionTypes {
-  static payment = 'payment';
-  static reward = 'reward';
-  static coldStorage = 'cold-storage';
-  static lock = 'lock';
-  static manual = 'manual';
+enum TransactionType {
+  payment = 'payment',
+  reward = 'reward',
+  coldStorage = 'cold-storage',
+  lock = 'lock',
+  manual = 'manual',
 }
 
 export {
@@ -118,6 +118,6 @@ export {
   PaymentTransaction,
   PaymentTransactionJsonModel,
   ConfirmationStatus,
-  TransactionTypes,
+  TransactionType,
   SigningStatus,
 };
