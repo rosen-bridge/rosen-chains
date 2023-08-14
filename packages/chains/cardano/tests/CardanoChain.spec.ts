@@ -31,9 +31,10 @@ describe('CardanoChain', () => {
   const rwtId =
     '9410db5b39388c6b515160e7248346d7ec63d5457292326da12a26cc02efb526';
   const feeRationDivisor = 1n;
+  const minBoxValue = 2000000n;
   const configs: CardanoConfigs = {
     fee: 1000000n,
-    minBoxValue: 2000000n,
+    minBoxValue: minBoxValue,
     txTtl: 64,
     lockAddress:
       'addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs',
@@ -136,9 +137,13 @@ describe('CardanoChain', () => {
       expect(tx.body().ttl()).toEqual(164);
 
       // getCoveringBoxes should have been called with correct arguments
+      const expectedRequiredAssets = structuredClone(
+        TestData.transaction1Order[0].assets
+      );
+      expectedRequiredAssets.nativeToken += minBoxValue;
       expect(getCovBoxesSpy).toHaveBeenCalledWith(
         configs.lockAddress,
-        TestData.transaction1Order[0].assets,
+        expectedRequiredAssets,
         TestData.transaction1InputIds,
         new Map()
       );

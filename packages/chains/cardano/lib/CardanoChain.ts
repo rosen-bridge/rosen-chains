@@ -107,13 +107,16 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     serializedSignedTransactions: string[]
   ): Promise<PaymentTransaction> => {
     // calculate required assets
-    const orderRequiredAssets = order
+    const requiredAssets = order
       .map((order) => order.assets)
-      .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
+      .reduce(ChainUtils.sumAssetBalance, {
+        nativeToken: this.getMinimumNativeToken(),
+        tokens: [],
+      });
 
-    if (!(await this.hasLockAddressEnoughAssets(orderRequiredAssets))) {
-      const neededADA = orderRequiredAssets.nativeToken.toString();
-      const neededTokens = JSONBigInt.stringify(orderRequiredAssets.tokens);
+    if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
+      const neededADA = requiredAssets.nativeToken.toString();
+      const neededTokens = JSONBigInt.stringify(requiredAssets.tokens);
       throw new NotEnoughAssetsError(
         `Locked assets cannot cover required assets. ADA: ${neededADA}, Tokens: ${neededTokens}`
       );
@@ -136,13 +139,13 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
 
     const coveredBoxes = await this.getCoveringBoxes(
       this.configs.lockAddress,
-      orderRequiredAssets,
+      requiredAssets,
       forbiddenBoxIds,
       trackMap
     );
     if (!coveredBoxes.covered) {
-      const neededAdas = orderRequiredAssets.nativeToken.toString();
-      const neededTokens = JSONBigInt.stringify(orderRequiredAssets.tokens);
+      const neededAdas = requiredAssets.nativeToken.toString();
+      const neededTokens = JSONBigInt.stringify(requiredAssets.tokens);
       throw new NotEnoughValidBoxesError(
         `Available boxes didn't cover required assets. ADA: ${neededAdas}, Tokens: ${neededTokens}`
       );
