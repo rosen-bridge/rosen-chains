@@ -92,11 +92,14 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
           ).assets
       )
       .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
-    const requiredAssets = ChainUtils.subtractAssetBalance(
-      orderRequiredAssets,
-      inputAssets,
-      0n,
-      true
+    const requiredAssets = ChainUtils.sumAssetBalance(
+      ChainUtils.subtractAssetBalance(
+        orderRequiredAssets,
+        inputAssets,
+        0n,
+        true
+      ),
+      { nativeToken: this.getMinimumNativeToken(), tokens: [] }
     );
 
     // check if there are enough assets in address
