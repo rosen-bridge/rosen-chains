@@ -101,7 +101,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
    */
   generateTransaction = async (
     eventId: string,
-    txType: string,
+    txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[]

@@ -1,4 +1,7 @@
-import { PaymentTransaction } from '@rosen-chains/abstract-chain';
+import {
+  PaymentTransaction,
+  TransactionType,
+} from '@rosen-chains/abstract-chain';
 import { ERGO_CHAIN } from './constants';
 import { ErgoTransactionJsonModel } from './types';
 
@@ -7,7 +10,7 @@ class ErgoTransaction implements PaymentTransaction {
   txId: string;
   eventId: string;
   txBytes: Uint8Array;
-  txType: string;
+  txType: TransactionType;
   inputBoxes: Array<Uint8Array>;
   dataInputs: Array<Uint8Array>;
 
@@ -17,7 +20,7 @@ class ErgoTransaction implements PaymentTransaction {
     txBytes: Uint8Array,
     inputBoxes: Array<Uint8Array>,
     dataInputs: Array<Uint8Array>,
-    txType: string
+    txType: TransactionType
   ) {
     this.network = ERGO_CHAIN;
     this.txId = txId;
@@ -40,7 +43,7 @@ class ErgoTransaction implements PaymentTransaction {
       Buffer.from(obj.txBytes, 'hex'),
       obj.inputBoxes.map((box) => Buffer.from(box, 'hex')),
       obj.dataInputs.map((box) => Buffer.from(box, 'hex')),
-      obj.txType
+      obj.txType as TransactionType
     );
   };
 

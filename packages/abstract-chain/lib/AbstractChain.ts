@@ -41,7 +41,7 @@ abstract class AbstractChain {
    */
   abstract generateTransaction: (
     eventId: string,
-    txType: string,
+    txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[],

@@ -73,7 +73,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
    */
   generateTransaction = async (
     eventId: string,
-    txType: string,
+    txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[],

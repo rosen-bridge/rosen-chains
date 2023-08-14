@@ -186,7 +186,7 @@ describe('CardanoChain', () => {
       // call the function
       const result = await cardanoChain.generateTransaction(
         '2bedc6e54ede7748e5efc7df689a0a89b281ac1d92d09054650d5f27a25d5b85',
-        'payment',
+        TransactionType.payment,
         order,
         [],
         []
@@ -236,7 +236,7 @@ describe('CardanoChain', () => {
       await expect(async () => {
         await cardanoChain.generateTransaction(
           'event1',
-          'type1',
+          TransactionType.payment,
           TestData.transaction1Order,
           [],
           []
@@ -272,7 +272,7 @@ describe('CardanoChain', () => {
       await expect(async () => {
         await cardanoChain.generateTransaction(
           'event1',
-          'type1',
+          TransactionType.payment,
           TestData.transaction1Order,
           [],
           []

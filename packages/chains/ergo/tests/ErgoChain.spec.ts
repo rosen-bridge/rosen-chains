@@ -666,7 +666,7 @@ describe('ErgoChain', () => {
         ).sigma_serialize_bytes(),
         [],
         [],
-        'txType'
+        TransactionType.payment
       );
 
       // mock a config that has more fee comparing to mocked transaction fee
@@ -720,7 +720,7 @@ describe('ErgoChain', () => {
         ).sigma_serialize_bytes(),
         [],
         [],
-        'txType'
+        TransactionType.payment
       );
 
       // mock a config that has less fee comparing to mocked transaction fee
@@ -1404,7 +1404,7 @@ describe('ErgoChain', () => {
           .sigma_serialize_bytes(),
         [],
         [],
-        'txType'
+        TransactionType.payment
       );
 
       // run test
@@ -1449,7 +1449,7 @@ describe('ErgoChain', () => {
           .sigma_serialize_bytes(),
         [],
         [],
-        'txType'
+        TransactionType.payment
       );
 
       // run test
@@ -1487,7 +1487,7 @@ describe('ErgoChain', () => {
         ).sigma_serialize_bytes(),
         [],
         [],
-        'txType'
+        TransactionType.payment
       );
 
       // run test
@@ -1545,7 +1545,7 @@ describe('ErgoChain', () => {
         ).sigma_serialize_bytes(),
         [],
         [],
-        'txType'
+        TransactionType.payment
       );
 
       // run test & check thrown exception

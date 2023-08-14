@@ -1,6 +1,11 @@
 import TestChain from './TestChain';
 import TestChainNetwork from './network/TestChainNetwork';
-import { AssetBalance, ChainConfigs, PaymentTransaction } from '../lib';
+import {
+  AssetBalance,
+  ChainConfigs,
+  PaymentTransaction,
+  TransactionType,
+} from '../lib';
 import { when } from 'jest-when';
 
 const spyOn = jest.spyOn;
@@ -28,7 +33,7 @@ describe('AbstractChain', () => {
       txId: 'mockedTxId',
       eventId: 'mockedNetworkId',
       txBytes: Buffer.from('mockedTxBytes'),
-      txType: 'payment',
+      txType: TransactionType.payment,
     };
     const network = new TestChainNetwork();
 

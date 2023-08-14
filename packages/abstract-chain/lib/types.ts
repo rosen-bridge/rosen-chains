@@ -78,7 +78,7 @@ interface PaymentTransaction {
   txId: string;
   eventId: string;
   txBytes: Uint8Array;
-  txType: string;
+  txType: TransactionType;
 }
 
 interface PaymentTransactionJsonModel {
