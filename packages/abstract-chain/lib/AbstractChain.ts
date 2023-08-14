@@ -12,6 +12,7 @@ import {
   PaymentTransaction,
   SigningStatus,
   TransactionAssetBalance,
+  TransactionType,
 } from './types';
 
 abstract class AbstractChain {
@@ -40,7 +41,7 @@ abstract class AbstractChain {
    */
   abstract generateTransaction: (
     eventId: string,
-    txType: string,
+    txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[],
@@ -133,6 +134,27 @@ abstract class AbstractChain {
   ) => Promise<PaymentTransaction>;
 
   /**
+   * @param transactionType type of the transaction
+   * @returns required number of confirmation
+   */
+  getTxRequiredConfirmation = (transactionType: TransactionType): number => {
+    switch (transactionType) {
+      case TransactionType.payment:
+        return this.configs.confirmations.payment;
+      case TransactionType.coldStorage:
+        return this.configs.confirmations.cold;
+      case TransactionType.lock:
+        return this.configs.confirmations.observation;
+      case TransactionType.manual:
+        return this.configs.confirmations.manual;
+      default:
+        throw Error(
+          `Confirmation for type [${transactionType}] is not defined in abstract chain`
+        );
+    }
+  };
+
+  /**
    * extracts confirmation status for a transaction
    * @param transactionId the transaction id
    * @param transactionType type of the transaction
@@ -140,7 +162,7 @@ abstract class AbstractChain {
    */
   abstract getTxConfirmationStatus: (
     transactionId: string,
-    transactionType: string
+    transactionType: TransactionType
   ) => Promise<ConfirmationStatus>;
 
   /**

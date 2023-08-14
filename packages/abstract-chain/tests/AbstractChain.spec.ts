@@ -1,6 +1,11 @@
 import TestChain from './TestChain';
 import TestChainNetwork from './network/TestChainNetwork';
-import { AssetBalance, ChainConfigs, PaymentTransaction } from '../lib';
+import {
+  AssetBalance,
+  ChainConfigs,
+  PaymentTransaction,
+  TransactionType,
+} from '../lib';
 import { when } from 'jest-when';
 
 const spyOn = jest.spyOn;
@@ -9,9 +14,12 @@ describe('AbstractChain', () => {
   const generateChainObject = (network: TestChainNetwork) => {
     const config: ChainConfigs = {
       fee: 100n,
-      observationTxConfirmation: 5,
-      paymentTxConfirmation: 6,
-      coldTxConfirmation: 7,
+      confirmations: {
+        observation: 5,
+        payment: 6,
+        cold: 7,
+        manual: 8,
+      },
       lockAddress: 'lock_addr',
       coldStorageAddress: 'cold_addr',
       rwtId: 'rwt',
@@ -25,7 +33,7 @@ describe('AbstractChain', () => {
       txId: 'mockedTxId',
       eventId: 'mockedNetworkId',
       txBytes: Buffer.from('mockedTxBytes'),
-      txType: 'payment',
+      txType: TransactionType.payment,
     };
     const network = new TestChainNetwork();
 

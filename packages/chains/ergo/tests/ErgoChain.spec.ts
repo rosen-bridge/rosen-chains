@@ -9,7 +9,7 @@ import {
   ConfirmationStatus,
   NotEnoughAssetsError,
   NotEnoughValidBoxesError,
-  TransactionTypes,
+  TransactionType,
 } from '@rosen-chains/abstract-chain';
 import TestErgoNetwork from './network/TestErgoNetwork';
 import { ErgoConfigs } from '../lib';
@@ -35,6 +35,7 @@ describe('ErgoChain', () => {
   const observationTxConfirmation = 5;
   const paymentTxConfirmation = 9;
   const coldTxConfirmation = 10;
+  const manualTxConfirmation = 11;
   const rwtId =
     '9410db5b39388c6b515160e7248346d7ec63d5457292326da12a26cc02efb526';
   const feeRatioDivisor = 10000n;
@@ -50,9 +51,12 @@ describe('ErgoChain', () => {
   ) => {
     const config: ErgoConfigs = {
       fee: 100n,
-      observationTxConfirmation: observationTxConfirmation,
-      paymentTxConfirmation: paymentTxConfirmation,
-      coldTxConfirmation: coldTxConfirmation,
+      confirmations: {
+        observation: observationTxConfirmation,
+        payment: paymentTxConfirmation,
+        cold: coldTxConfirmation,
+        manual: manualTxConfirmation,
+      },
       lockAddress: 'lock_addr',
       coldStorageAddress: 'cold_addr',
       rwtId: rwt,
@@ -137,9 +141,12 @@ describe('ErgoChain', () => {
       // mock chain config
       const config: ErgoConfigs = {
         fee: 1100000n,
-        observationTxConfirmation: observationTxConfirmation,
-        paymentTxConfirmation: paymentTxConfirmation,
-        coldTxConfirmation: coldTxConfirmation,
+        confirmations: {
+          observation: observationTxConfirmation,
+          payment: paymentTxConfirmation,
+          cold: coldTxConfirmation,
+          manual: manualTxConfirmation,
+        },
         lockAddress:
           'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
         coldStorageAddress: 'cold_addr',
@@ -264,9 +271,12 @@ describe('ErgoChain', () => {
       // mock chain config
       const config: ErgoConfigs = {
         fee: 1100000n,
-        observationTxConfirmation: observationTxConfirmation,
-        paymentTxConfirmation: paymentTxConfirmation,
-        coldTxConfirmation: coldTxConfirmation,
+        confirmations: {
+          observation: observationTxConfirmation,
+          payment: paymentTxConfirmation,
+          cold: coldTxConfirmation,
+          manual: manualTxConfirmation,
+        },
         lockAddress:
           'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
         coldStorageAddress: 'cold_addr',
@@ -363,9 +373,12 @@ describe('ErgoChain', () => {
       // mock chain config
       const config: ErgoConfigs = {
         fee: 1100000n,
-        observationTxConfirmation: observationTxConfirmation,
-        paymentTxConfirmation: paymentTxConfirmation,
-        coldTxConfirmation: coldTxConfirmation,
+        confirmations: {
+          observation: observationTxConfirmation,
+          payment: paymentTxConfirmation,
+          cold: coldTxConfirmation,
+          manual: manualTxConfirmation,
+        },
         lockAddress:
           'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
         coldStorageAddress: 'cold_addr',
@@ -482,9 +495,12 @@ describe('ErgoChain', () => {
       // mock chain config
       const config: ErgoConfigs = {
         fee: 1100000n,
-        observationTxConfirmation: observationTxConfirmation,
-        paymentTxConfirmation: paymentTxConfirmation,
-        coldTxConfirmation: coldTxConfirmation,
+        confirmations: {
+          observation: observationTxConfirmation,
+          payment: paymentTxConfirmation,
+          cold: coldTxConfirmation,
+          manual: manualTxConfirmation,
+        },
         lockAddress:
           'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
         coldStorageAddress: 'cold_addr',
@@ -597,9 +613,12 @@ describe('ErgoChain', () => {
       const expectedOrder = transactionTestData.transaction3Order;
       const config: ErgoConfigs = {
         fee: 1100000n,
-        observationTxConfirmation: observationTxConfirmation,
-        paymentTxConfirmation: paymentTxConfirmation,
-        coldTxConfirmation: coldTxConfirmation,
+        confirmations: {
+          observation: observationTxConfirmation,
+          payment: paymentTxConfirmation,
+          cold: coldTxConfirmation,
+          manual: manualTxConfirmation,
+        },
         lockAddress:
           'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
         coldStorageAddress: 'cold_addr',
@@ -647,15 +666,18 @@ describe('ErgoChain', () => {
         ).sigma_serialize_bytes(),
         [],
         [],
-        'txType'
+        TransactionType.payment
       );
 
       // mock a config that has more fee comparing to mocked transaction fee
       const config: ErgoConfigs = {
         fee: 1200000n,
-        observationTxConfirmation: observationTxConfirmation,
-        paymentTxConfirmation: paymentTxConfirmation,
-        coldTxConfirmation: coldTxConfirmation,
+        confirmations: {
+          observation: observationTxConfirmation,
+          payment: paymentTxConfirmation,
+          cold: coldTxConfirmation,
+          manual: manualTxConfirmation,
+        },
         lockAddress: 'lock_addr',
         coldStorageAddress: 'cold_addr',
         rwtId: rwtId,
@@ -698,15 +720,18 @@ describe('ErgoChain', () => {
         ).sigma_serialize_bytes(),
         [],
         [],
-        'txType'
+        TransactionType.payment
       );
 
       // mock a config that has less fee comparing to mocked transaction fee
       const config: ErgoConfigs = {
         fee: 100n,
-        observationTxConfirmation: observationTxConfirmation,
-        paymentTxConfirmation: paymentTxConfirmation,
-        coldTxConfirmation: coldTxConfirmation,
+        confirmations: {
+          observation: observationTxConfirmation,
+          payment: paymentTxConfirmation,
+          cold: coldTxConfirmation,
+          manual: manualTxConfirmation,
+        },
         lockAddress: 'lock_addr',
         coldStorageAddress: 'cold_addr',
         rwtId: rwtId,
@@ -1218,9 +1243,12 @@ describe('ErgoChain', () => {
       // mock a config with valid lockAddress
       const config: ErgoConfigs = {
         fee: 1200000n,
-        observationTxConfirmation: observationTxConfirmation,
-        paymentTxConfirmation: paymentTxConfirmation,
-        coldTxConfirmation: coldTxConfirmation,
+        confirmations: {
+          observation: observationTxConfirmation,
+          payment: paymentTxConfirmation,
+          cold: coldTxConfirmation,
+          manual: manualTxConfirmation,
+        },
         lockAddress:
           'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
         coldStorageAddress: 'cold_addr',
@@ -1265,9 +1293,12 @@ describe('ErgoChain', () => {
       // mock a config with different lockAddress
       const config: ErgoConfigs = {
         fee: 1200000n,
-        observationTxConfirmation: observationTxConfirmation,
-        paymentTxConfirmation: paymentTxConfirmation,
-        coldTxConfirmation: coldTxConfirmation,
+        confirmations: {
+          observation: observationTxConfirmation,
+          payment: paymentTxConfirmation,
+          cold: coldTxConfirmation,
+          manual: manualTxConfirmation,
+        },
         lockAddress: '9i1rTxaZpLprUkVHpY4YNyooksLuouiKqZ2v1J5nf8xFTXBCVcB',
         coldStorageAddress: 'cold_addr',
         rwtId: rwtId,
@@ -1311,9 +1342,12 @@ describe('ErgoChain', () => {
       // mock a config with valid lockAddress
       const config: ErgoConfigs = {
         fee: 1200000n,
-        observationTxConfirmation: observationTxConfirmation,
-        paymentTxConfirmation: paymentTxConfirmation,
-        coldTxConfirmation: coldTxConfirmation,
+        confirmations: {
+          observation: observationTxConfirmation,
+          payment: paymentTxConfirmation,
+          cold: coldTxConfirmation,
+          manual: manualTxConfirmation,
+        },
         lockAddress:
           'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
         coldStorageAddress: 'cold_addr',
@@ -1370,7 +1404,7 @@ describe('ErgoChain', () => {
           .sigma_serialize_bytes(),
         [],
         [],
-        'txType'
+        TransactionType.payment
       );
 
       // run test
@@ -1415,7 +1449,7 @@ describe('ErgoChain', () => {
           .sigma_serialize_bytes(),
         [],
         [],
-        'txType'
+        TransactionType.payment
       );
 
       // run test
@@ -1453,7 +1487,7 @@ describe('ErgoChain', () => {
         ).sigma_serialize_bytes(),
         [],
         [],
-        'txType'
+        TransactionType.payment
       );
 
       // run test
@@ -1511,7 +1545,7 @@ describe('ErgoChain', () => {
         ).sigma_serialize_bytes(),
         [],
         [],
-        'txType'
+        TransactionType.payment
       );
 
       // run test & check thrown exception
@@ -1522,21 +1556,12 @@ describe('ErgoChain', () => {
   });
 
   describe('getTxConfirmationStatus', () => {
-    /**
-     * gets test confirmation config for a transaction by type
-     * @param type
-     */
-    const getConfigConfirmation = (type: string): number => {
-      if (type === TransactionTypes.payment) return paymentTxConfirmation;
-      else if (type === TransactionTypes.reward) return paymentTxConfirmation;
-      else if (type === TransactionTypes.coldStorage) return coldTxConfirmation;
-      else if (type === TransactionTypes.lock) return observationTxConfirmation;
-      else throw new Error(`Transaction type [${type}] is not defined`);
-    };
+    const txType = TransactionType.payment;
+    const requiredConfirmation = paymentTxConfirmation;
 
     /**
      * @target ErgoChain.getTxConfirmationStatus should return
-     * ConfirmedEnough when tx confirmation is more than expected config
+     * ConfirmedEnough when tx confirmation is more than required number
      * @dependencies
      * @scenario
      * - generate a random txId
@@ -1546,36 +1571,28 @@ describe('ErgoChain', () => {
      * @expected
      * - it should return `ConfirmedEnough` enum
      */
-    it.each([
-      TransactionTypes.payment,
-      TransactionTypes.reward,
-      TransactionTypes.coldStorage,
-      TransactionTypes.lock,
-    ])(
-      'should return ConfirmedEnough when %p tx confirmation is more than expected config',
-      async (txType: string) => {
-        // generate a random txId
-        const txId = ergoTestUtils.generateRandomId();
+    it('should return ConfirmedEnough when tx confirmation is more than required number', async () => {
+      // generate a random txId
+      const txId = ergoTestUtils.generateRandomId();
 
-        // mock a network object to return enough confirmation for mocked txId
-        const network = new TestErgoNetwork();
-        const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-        when(getTxConfirmationSpy)
-          .calledWith(txId)
-          .mockResolvedValueOnce(getConfigConfirmation(txType));
+      // mock a network object to return enough confirmation for mocked txId
+      const network = new TestErgoNetwork();
+      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+      when(getTxConfirmationSpy)
+        .calledWith(txId)
+        .mockResolvedValueOnce(requiredConfirmation + 1);
 
-        // run test
-        const ergoChain = generateChainObject(network);
-        const result = await ergoChain.getTxConfirmationStatus(txId, txType);
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.getTxConfirmationStatus(txId, txType);
 
-        // check returned value
-        expect(result).toEqual(ConfirmationStatus.ConfirmedEnough);
-      }
-    );
+      // check returned value
+      expect(result).toEqual(ConfirmationStatus.ConfirmedEnough);
+    });
 
     /**
      * @target ErgoChain.getTxConfirmationStatus should return
-     * NotConfirmedEnough when payment tx confirmation is less than expected config
+     * NotConfirmedEnough when payment tx confirmation is less than required number
      * @dependencies
      * @scenario
      * - generate a random txId
@@ -1586,32 +1603,24 @@ describe('ErgoChain', () => {
      * @expected
      * - it should return `NotConfirmedEnough` enum
      */
-    it.each([
-      TransactionTypes.payment,
-      TransactionTypes.reward,
-      TransactionTypes.coldStorage,
-      TransactionTypes.lock,
-    ])(
-      'should return NotConfirmedEnough when %p tx confirmation is less than expected config',
-      async (txType: string) => {
-        // generate a random txId
-        const txId = ergoTestUtils.generateRandomId();
+    it('should return NotConfirmedEnough when tx confirmation is less than required number', async () => {
+      // generate a random txId
+      const txId = ergoTestUtils.generateRandomId();
 
-        // mock a network object to return insufficient confirmation for mocked
-        const network = new TestErgoNetwork();
-        const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-        when(getTxConfirmationSpy)
-          .calledWith(txId)
-          .mockResolvedValueOnce(getConfigConfirmation(txType) - 1);
+      // mock a network object to return insufficient confirmation for mocked
+      const network = new TestErgoNetwork();
+      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+      when(getTxConfirmationSpy)
+        .calledWith(txId)
+        .mockResolvedValueOnce(requiredConfirmation - 1);
 
-        // run test
-        const ergoChain = generateChainObject(network);
-        const result = await ergoChain.getTxConfirmationStatus(txId, txType);
+      // run test
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.getTxConfirmationStatus(txId, txType);
 
-        // check returned value
-        expect(result).toEqual(ConfirmationStatus.NotConfirmedEnough);
-      }
-    );
+      // check returned value
+      expect(result).toEqual(ConfirmationStatus.NotConfirmedEnough);
+    });
 
     /**
      * @target ErgoChain.getTxConfirmationStatus should return
@@ -1636,10 +1645,7 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = generateChainObject(network);
-      const result = await ergoChain.getTxConfirmationStatus(
-        txId,
-        TransactionTypes.payment
-      );
+      const result = await ergoChain.getTxConfirmationStatus(txId, txType);
 
       // check returned value
       expect(result).toEqual(ConfirmationStatus.NotFound);

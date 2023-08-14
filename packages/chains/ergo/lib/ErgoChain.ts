@@ -18,7 +18,7 @@ import {
   SigningStatus,
   SinglePayment,
   TransactionAssetBalance,
-  TransactionTypes,
+  TransactionType,
   UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
 import { blake2b } from 'blakejs';
@@ -73,7 +73,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
    */
   generateTransaction = async (
     eventId: string,
-    txType: string,
+    txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[],
@@ -602,6 +602,30 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
   };
 
   /**
+   * @param transactionType type of the transaction
+   * @returns required number of confirmation
+   */
+  override getTxRequiredConfirmation = (
+    transactionType: TransactionType
+  ): number => {
+    switch (transactionType) {
+      case TransactionType.payment:
+      case TransactionType.reward:
+        return this.configs.confirmations.payment;
+      case TransactionType.coldStorage:
+        return this.configs.confirmations.cold;
+      case TransactionType.lock:
+        return this.configs.confirmations.observation;
+      case TransactionType.manual:
+        return this.configs.confirmations.manual;
+      default:
+        throw Error(
+          `Confirmation for type [${transactionType}] is not defined in Ergo chain`
+        );
+    }
+  };
+
+  /**
    * extracts confirmation status for a transaction
    * @param transactionId the transaction id
    * @param transactionType type of the transaction
@@ -609,23 +633,12 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
    */
   getTxConfirmationStatus = async (
     transactionId: string,
-    transactionType: string
+    transactionType: TransactionType
   ): Promise<ConfirmationStatus> => {
-    let expectedConfirmation = 0;
-    if (transactionType === TransactionTypes.lock)
-      expectedConfirmation = this.configs.observationTxConfirmation;
-    else if (
-      transactionType === TransactionTypes.payment ||
-      transactionType === TransactionTypes.reward
-    )
-      expectedConfirmation = this.configs.paymentTxConfirmation;
-    else if (transactionType === TransactionTypes.coldStorage)
-      expectedConfirmation = this.configs.coldTxConfirmation;
-    else
-      throw new Error(`Transaction type [${transactionType}] is not defined`);
-
+    const requiredConfirmation =
+      this.getTxRequiredConfirmation(transactionType);
     const confirmation = await this.network.getTxConfirmation(transactionId);
-    if (confirmation >= expectedConfirmation)
+    if (confirmation >= requiredConfirmation)
       return ConfirmationStatus.ConfirmedEnough;
     else if (confirmation === -1) return ConfirmationStatus.NotFound;
     else return ConfirmationStatus.NotConfirmedEnough;

@@ -1,8 +1,12 @@
+interface ConfirmationConfigs {
+  observation: number;
+  payment: number;
+  cold: number;
+  manual: number;
+}
 interface ChainConfigs {
   fee: bigint;
-  observationTxConfirmation: number;
-  paymentTxConfirmation: number;
-  coldTxConfirmation: number;
+  confirmations: ConfirmationConfigs;
   lockAddress: string;
   coldStorageAddress: string;
   rwtId: string;
@@ -74,7 +78,7 @@ interface PaymentTransaction {
   txId: string;
   eventId: string;
   txBytes: Uint8Array;
-  txType: string;
+  txType: TransactionType;
 }
 
 interface PaymentTransactionJsonModel {
@@ -91,14 +95,16 @@ enum ConfirmationStatus {
   NotFound,
 }
 
-class TransactionTypes {
-  static payment = 'payment';
-  static reward = 'reward';
-  static coldStorage = 'cold-storage';
-  static lock = 'lock';
+enum TransactionType {
+  payment = 'payment',
+  reward = 'reward',
+  coldStorage = 'cold-storage',
+  lock = 'lock',
+  manual = 'manual',
 }
 
 export {
+  ConfirmationConfigs,
   ChainConfigs,
   CoveringBoxes,
   TokenInfo,
@@ -112,6 +118,6 @@ export {
   PaymentTransaction,
   PaymentTransactionJsonModel,
   ConfirmationStatus,
-  TransactionTypes,
+  TransactionType,
   SigningStatus,
 };
