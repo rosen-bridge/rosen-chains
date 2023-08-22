@@ -957,15 +957,14 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     for (let i = 0; i < tx.outputs().len(); i++) {
       const output = tx.outputs().get(i);
       const boxErgoTree = output.ergo_tree().to_base16_bytes();
+      const lockErgoTree = wasm.Address.from_base58(this.configs.lockAddress)
+        .to_ergo_tree()
+        .to_base16_bytes();
 
       // skip change box and fee box
       if (
         boxErgoTree === ErgoChain.feeBoxErgoTree ||
-        (tx.outputs().len() - i === 2 &&
-          boxErgoTree ===
-            wasm.Address.from_base58(this.configs.lockAddress)
-              .to_ergo_tree()
-              .to_base16_bytes())
+        (tx.outputs().len() - i === 2 && boxErgoTree === lockErgoTree)
       )
         continue;
 
