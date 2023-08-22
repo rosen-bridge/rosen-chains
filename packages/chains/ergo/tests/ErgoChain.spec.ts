@@ -2332,4 +2332,61 @@ describe('ErgoChain', () => {
       }).rejects.toThrow(Error);
     });
   });
+
+  describe('extractSignedTransactionOrder', () => {
+    const network = new TestErgoNetwork();
+
+    /**
+     * @target ErgoChain.extractSignedTransactionOrder should extract transaction
+     * order successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction order
+     */
+    it('should extract transaction order successfully', () => {
+      // mock PaymentTransaction
+      const paymentTx = new ErgoTransaction(
+        'txId',
+        'eventId',
+        ergoTestUtils
+          .toTransaction(transactionTestData.transaction0)
+          .sigma_serialize_bytes(),
+        [],
+        [],
+        TransactionType.payment
+      );
+      const expectedOrder = transactionTestData.transaction0Order;
+      const config: ErgoConfigs = {
+        fee: 1100000n,
+        confirmations: {
+          observation: observationTxConfirmation,
+          payment: paymentTxConfirmation,
+          cold: coldTxConfirmation,
+          manual: manualTxConfirmation,
+        },
+        lockAddress:
+          'nB3L2PD3LBtiNhDYK7XhZ8nVt6uekBXN7RcPUKgdKLXFcrJiSPxmQsUKuUkTRQ1hbvDrxEQAKYurGFbaGD1RPxU7XqQimD78j23HHMQKL1boUGsnNhCxaVNAYMcFbQNo355Af8cWkhAN6',
+        coldStorageAddress: 'cold_addr',
+        rwtId: rwtId,
+        minBoxValue: 1000000n,
+        eventTxConfirmation: 18,
+      };
+
+      // run test
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        feeRatioDivisor,
+        signFunction
+      );
+      const result = ergoChain.extractSignedTransactionOrder(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(expectedOrder);
+    });
+  });
 });
