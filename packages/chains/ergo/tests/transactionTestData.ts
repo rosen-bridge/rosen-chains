@@ -369,6 +369,76 @@ export const transaction0BoxMapping = [
   },
 ];
 
+export const transaction0Order: PaymentOrder = [
+  {
+    address:
+      'EE7687i4URb4YuSGSQXPCbAgnr73Bb67aXgwzpjguuNwyRrWwVamRPKsiE3hbewDFDzkQa2PDdQG1S3KGcPbbPqvaT15RXFcCELtrAJ5BeZJFf9EfumFNWKztr7Me5Z23TRUPNgbcYEpCkC3RJeui3Tv6jXbEF2v284inu65FisnWoicPvpbuJb3fHpLkr5JAFPcp6uGTqTaaNWMJxWrHRbpKtvwVjG2VibGBGZJPtMbG3pzryH7Aq6CtLKtCAkSivDUkQWbXpm7TuvMnRCL78LvdoqauB8fRHxxxMw5BbmhVqBsKigUa92WBJCdyM7efp5SM1EXvNskbDEtuHHiYbLPxBJHXvZWWa8XCKvbWVV5eWdWExzASe3KzPCDEFm5JY2Peq64SY5gz6yu9n23BxDtb7PueWCMYfJs2VaYcLbndFJpkcDJKDiaEm18wSd3oKQ9eENKNZ74H2JyqmjnX6yVXcecP6NUj5gE3N2b5Pm5MjL37wveibdWHeSRQZFepWQdVAK5TLTgDL9YEE4jv5RLqB6vZ5eMtfSjhZ2',
+    assets: {
+      nativeToken: 300000n,
+      tokens: [
+        {
+          id: '497287b9a1eff643791277744a74b7d598b834dc613f2ebc972e33767c61ac2b',
+          value: 1n,
+        },
+        {
+          id: '03689941746717cddd05c52f454e34eb6e203a84f931fdc47c52f44589f83496',
+          value: 7n,
+        },
+      ],
+    },
+    extra: '6eb97fd94107bd6d8a75b78b4229b5cd1af4ba9562038fa0bd5324306e1e1916',
+  },
+  {
+    address:
+      'EE7687i4URb4YuSGSQXPCbAgnr73Bb67aXgwzpjguuNwyRrWwVamRPKsiE3hbewDFDzkQa2PDdQG1S3KGcPbbPqvaT15RXFcCELtrAJ5BeZJFf9EfumFNWKztr7Me5Z23TRUPNgbcYEpCkC3RJeui3Tv6jXbEF2v284inu65FisnWoicPvpbuJb3fHpLkr5JAFPcp6uGTqTaaNWMJxWrHRbpKtvwVjG2VibGBGZJPtMbG3pzryH7Aq6CtLKtCAkSivDUkQWbXpm7TuvMnRCL78LvdoqauB8fRHxxxMw5BbmhVqBsKigUa92WBJCdyM7efp5SM1EXvNskbDEtuHHiYbLPxBJHXvZWWa8XCKvbWVV5eWdWExzASe3KzPCDEFm5JY2Peq64SY5gz6yu9n23BxDtb7PueWCMYfJs2VaYcLbndFJpkcDJKDiaEm18wSd3oKQ9eENKNZ74H2JyqmjnX6yVXcecP6NUj5gE3N2b5Pm5MjL37wveibdWHeSRQZFepWQdVAK5TLTgDL9YEE4jv5RLqB6vZ5eMtfSjhZ2',
+    assets: {
+      nativeToken: 300000n,
+      tokens: [
+        {
+          id: '497287b9a1eff643791277744a74b7d598b834dc613f2ebc972e33767c61ac2b',
+          value: 1n,
+        },
+        {
+          id: '03689941746717cddd05c52f454e34eb6e203a84f931fdc47c52f44589f83496',
+          value: 7n,
+        },
+      ],
+    },
+    extra: '3582b12ab4413c9a877845e8faf18d546d1ae11ddd7bb365c0118c7abefdd157',
+  },
+  {
+    address: '9gwLLBvQ8zzhTBz8uzS563ZNNQqggmDgoPjqVk6LETW8oJaZZFS',
+    assets: {
+      nativeToken: 300000n,
+      tokens: [],
+    },
+  },
+  {
+    address: '9gH92yjsJCBHwx4fDbXe6j8jLdDBMX3dm6nqwiHhUqyxgNKXmoK',
+    assets: {
+      nativeToken: 300000n,
+      tokens: [
+        {
+          id: '03689941746717cddd05c52f454e34eb6e203a84f931fdc47c52f44589f83496',
+          value: 10n,
+        },
+      ],
+    },
+  },
+  {
+    address: '9hPoYNQwVDbtAyt5uhYyKttye7ZPzZ7ePcc6d2rgKr9fiZm6DhD',
+    assets: {
+      nativeToken: 300000n,
+      tokens: [
+        {
+          id: '03689941746717cddd05c52f454e34eb6e203a84f931fdc47c52f44589f83496',
+          value: 60n,
+        },
+      ],
+    },
+  },
+];
+
 export const transaction1 = `{
   "id": "2e01dd718c2c8524753520e6eb2474db94d17e5c95682374dbc911e7f503951e",
   "blockId": "eedc45c53ecd32d565ae04badf86aa2448a657b7c9e8e30a612338a9c0eb06d9",
