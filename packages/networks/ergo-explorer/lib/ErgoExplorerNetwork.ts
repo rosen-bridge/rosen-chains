@@ -286,8 +286,8 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
 
     while (true) {
       const txsPage = await this.client.v0.getApiV0TransactionsUnconfirmed({
-        offset: BigInt(currentPage * TX_FETCHING_PAGE_SIZE),
-        limit: BigInt(TX_FETCHING_PAGE_SIZE),
+        offset: currentPage * TX_FETCHING_PAGE_SIZE,
+        limit: TX_FETCHING_PAGE_SIZE,
       });
 
       if (txsPage.items?.length) {
@@ -331,8 +331,8 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
     try {
       const { items: boxes } =
         await this.client.v1.getApiV1BoxesUnspentByaddressP1(address, {
-          offset: BigInt(offset),
-          limit: BigInt(limit),
+          offset: offset,
+          limit: limit,
         });
 
       if (!boxes) {
@@ -373,8 +373,8 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
         const boxesPage = await this.client.v1.getApiV1BoxesUnspentBytokenidP1(
           tokenId,
           {
-            offset: BigInt(currentPage * BOX_FETCHING_PAGE_SIZE),
-            limit: BigInt(BOX_FETCHING_PAGE_SIZE),
+            offset: currentPage * BOX_FETCHING_PAGE_SIZE,
+            limit: BOX_FETCHING_PAGE_SIZE,
           }
         );
         if (!boxesPage.items?.length) break;
@@ -404,8 +404,8 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
   public getStateContext = async () => {
     try {
       const { items: lastBlocks } = await this.client.v1.getApiV1BlocksHeaders({
-        offset: 0n,
-        limit: 10n,
+        offset: 0,
+        limit: 10,
       });
 
       if (!lastBlocks) {
