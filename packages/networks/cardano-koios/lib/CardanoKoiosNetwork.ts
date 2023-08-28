@@ -27,11 +27,6 @@ import {
 } from '@rosen-clients/cardano-koios';
 import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 
-const JsonBigInt = JsonBigIntFactory({
-  alwaysParseAsBig: true,
-  useNativeBigInt: true,
-});
-
 class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   private client: ReturnType<typeof cardanoKoiosClientFactory>;
   extractor: CardanoRosenExtractor;
@@ -52,7 +47,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    * @returns the blockchain height
    */
   getHeight = async (): Promise<number> => {
-    return this.client.network
+    return this.client
       .getTip()
       .then((block) => {
         const height = block[0].block_no;
@@ -77,7 +72,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    * @returns the transaction confirmation
    */
   getTxConfirmation = async (transactionId: string): Promise<number> => {
-    return this.client.transactions
+    return this.client
       .postTxStatus({ _tx_hashes: [transactionId] })
       .then((res) => {
         const confirmation = res[0].num_confirmations;
@@ -108,7 +103,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     // get ADA value
     let addressInfo: AddressInfo;
     try {
-      addressInfo = await this.client.address.postAddressInfo({
+      addressInfo = await this.client.postAddressInfo({
         _addresses: [address],
       });
     } catch (e: any) {
@@ -130,7 +125,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     // get tokens value
     let addressAssets: AddressAssets;
     try {
-      addressAssets = await this.client.address.postAddressAssets({
+      addressAssets = await this.client.postAddressAssets({
         _addresses: [address],
       });
     } catch (e: any) {
@@ -169,7 +164,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    * @returns list of the transaction ids in the block
    */
   getBlockTransactionIds = (blockId: string): Promise<Array<string>> => {
-    return this.client.block
+    return this.client
       .postBlockTxs({ _block_hashes: [blockId] })
       .then((res) => {
         const txIds = res[0].tx_hashes;
@@ -195,7 +190,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    * @returns an object containing block info
    */
   getBlockInfo = (blockId: string): Promise<BlockInfo> => {
-    return this.client.block
+    return this.client
       .postBlockInfo({ _block_hashes: [blockId] })
       .then((res) => {
         const block = res[0];
@@ -229,7 +224,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     transactionId: string,
     blockId: string
   ): Promise<CardanoTx> => {
-    const koiosTx = await this.client.transactions
+    const koiosTx = await this.client
       .postTxInfo({ _tx_hashes: [transactionId] })
       .then((res) => res[0])
       .catch((e) => {
@@ -278,7 +273,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     const txBlob = new Blob([transaction.to_bytes()], {
       type: 'application/cbor',
     });
-    await this.client.transactions.postSubmittx(txBlob);
+    await this.client.postSubmittx(txBlob);
   };
 
   /**
@@ -294,6 +289,8 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   /**
    * gets confirmed and unspent boxes of an address
    * @param address the address
+   * @param offset
+   * @param limit
    * @returns list of boxes
    */
   getAddressBoxes = async (
@@ -301,7 +298,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     offset: number,
     limit: number
   ): Promise<Array<CardanoUtxo>> => {
-    const boxes = await this.client.address
+    const boxes = await this.client
       .postAddressInfo({ _addresses: [address] })
       .then((res) => {
         if (res.length === 0) return [];
@@ -329,7 +326,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    */
   isBoxUnspentAndValid = async (boxId: string): Promise<boolean> => {
     const [txId, index] = boxId.split('.');
-    const tx = await this.client.transactions
+    const tx = await this.client
       .postTxUtxos({ _tx_hashes: [txId] })
       .then((res) => (res.length === 0 ? undefined : res[0]))
       .catch((e) => {
@@ -354,7 +351,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     if (!boxAddressCred)
       throw new KoiosNullValueError(`Box address credential is null`);
 
-    const utxos = await this.client.address
+    const utxos = await this.client
       .postCredentialUtxos({ _payment_credentials: [boxAddressCred] })
       .catch((e) => {
         const baseError = `Failed to get address credential [${boxAddressCred}] UTxOs from Koios: `;
@@ -378,7 +375,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    * @returns the current network slot
    */
   currentSlot = (): Promise<number> => {
-    return this.client.network
+    return this.client
       .getTip()
       .then((block) => {
         const slot = block[0].abs_slot;
@@ -404,7 +401,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    */
   getUtxo = async (boxId: string): Promise<CardanoUtxo> => {
     const [txId, index] = boxId.split('.');
-    const tx = await this.client.transactions
+    const tx = await this.client
       .postTxUtxos({ _tx_hashes: [txId] })
       .then((res) => res[0])
       .catch((e) => {
