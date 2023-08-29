@@ -22,7 +22,7 @@
   "dependencies": {
     "@rosen-bridge/logger-interface": "^0.1.0",
     "@rosen-bridge/minimum-fee": "^0.1.11",
-    "@rosen-bridge/rosen-extractor": "^0.1.9"
+    "@rosen-bridge/rosen-extractor": "^0.1.10"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.19.0",
