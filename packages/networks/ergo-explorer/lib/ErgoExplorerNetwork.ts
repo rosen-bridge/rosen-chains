@@ -244,14 +244,7 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
    */
   public submitTransaction = async (tx: ergoLib.Transaction) => {
     try {
-      /**
-       * FIXME: The following type assertion is required because the parameter
-       * type of `postApiV0TransactionsSend` is wrong. It needs to be removed
-       * when the parameter type is fixed.
-       *
-       * https://git.ergopool.io/ergo/rosen-bridge/rosen-chains/-/issues/24
-       */
-      await this.client.v0.postApiV0TransactionsSend(tx as any);
+      await this.client.v0.postApiV0TransactionsSend(tx);
       return;
     } catch (error: any) {
       return handleApiError(
