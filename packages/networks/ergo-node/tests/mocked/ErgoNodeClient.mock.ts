@@ -17,11 +17,9 @@ import {
  */
 export const mockGetNodeInfo = () =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    info: {
-      getNodeInfo: async () => ({
-        fullHeight: testHeight,
-      }),
-    },
+    getNodeInfo: async () => ({
+      fullHeight: testHeight,
+    }),
   } as any);
 
 /**
@@ -29,9 +27,7 @@ export const mockGetNodeInfo = () =>
  */
 export const mockGetTxById = () =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    blockchain: {
-      getTxById: async () => testTransaction,
-    },
+    getTxById: async () => testTransaction,
   } as any);
 
 /**
@@ -42,11 +38,9 @@ export const mockGetAddressBalanceTotal = (
   balance: typeof testAddressBalance | null = testAddressBalance
 ) =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    blockchain: {
-      getAddressBalanceTotal: async () => ({
-        confirmed: balance,
-      }),
-    },
+    getAddressBalanceTotal: async () => ({
+      confirmed: balance,
+    }),
   } as any);
 
 /**
@@ -57,11 +51,9 @@ export const mockGetBlockTransactionsById = (
   txs: typeof testPartialTransactions | null = testPartialTransactions
 ) =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    blocks: {
-      getBlockTransactionsById: async () => ({
-        transactions: txs,
-      }),
-    },
+    getBlockTransactionsById: async () => ({
+      transactions: txs,
+    }),
   } as any);
 
 /**
@@ -70,9 +62,7 @@ export const mockGetBlockTransactionsById = (
  */
 export const mockGetBlockHeaderById = () =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    blocks: {
-      getBlockHeaderById: async () => testBlockHeaders,
-    },
+    getBlockHeaderById: async () => testBlockHeaders,
   } as any);
 
 /**
@@ -81,14 +71,10 @@ export const mockGetBlockHeaderById = () =>
  */
 export const mockGetTxByIdAndGetBlockTransactionsById = () =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    blockchain: {
-      getTxById: async () => testTransaction,
-    },
-    blocks: {
-      getBlockTransactionsById: async () => ({
-        transactions: [testTransaction],
-      }),
-    },
+    getTxById: async () => testTransaction,
+    getBlockTransactionsById: async () => ({
+      transactions: [testTransaction],
+    }),
   } as any);
 
 /**
@@ -97,11 +83,9 @@ export const mockGetTxByIdAndGetBlockTransactionsById = () =>
 export const mockSendTransactionAsBytes = () => {
   const sendTransactionAsBytesSpy = vi.fn();
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    transactions: {
-      sendTransactionAsBytes: sendTransactionAsBytesSpy.mockResolvedValue(
-        testTransaction.id
-      ),
-    },
+    sendTransactionAsBytes: sendTransactionAsBytesSpy.mockResolvedValue(
+      testTransaction.id
+    ),
   } as any);
   return sendTransactionAsBytesSpy;
 };
@@ -111,16 +95,13 @@ export const mockSendTransactionAsBytes = () => {
  */
 export const mockGetUnconfirmedTransactions = () =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    transactions: {
-      getUnconfirmedTransactions: async ({
-        offset,
-        limit,
-      }: {
-        offset: bigint;
-        limit: bigint;
-      }) =>
-        testMempoolTransactions.slice(Number(offset), Number(offset + limit)),
-    },
+    getUnconfirmedTransactions: async ({
+      offset,
+      limit,
+    }: {
+      offset: number;
+      limit: number;
+    }) => testMempoolTransactions.slice(Number(offset), Number(offset + limit)),
   } as any);
 
 /**
@@ -128,12 +109,10 @@ export const mockGetUnconfirmedTransactions = () =>
  */
 export const mockGetBoxesByAddressUnspent = () =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    blockchain: {
-      getBoxesByAddressUnspent: async (
-        address: string,
-        { offset, limit }: { offset: bigint; limit: bigint }
-      ) => testAddressBoxes.slice(Number(offset), Number(offset + limit)),
-    },
+    getBoxesByAddressUnspent: async (
+      address: string,
+      { offset, limit }: { offset: number; limit: number }
+    ) => testAddressBoxes.slice(Number(offset), Number(offset + limit)),
   } as any);
 
 /**
@@ -141,9 +120,7 @@ export const mockGetBoxesByAddressUnspent = () =>
  */
 export const mockGetLastHeaders = () =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    blocks: {
-      getLastHeaders: async () => testLastBlockHeaders,
-    },
+    getLastHeaders: async () => testLastBlockHeaders,
   } as any);
 
 /**
@@ -151,27 +128,18 @@ export const mockGetLastHeaders = () =>
  */
 export const mockGetBoxById = () =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    blockchain: {
-      getBoxById: async () => testAddressBoxes[0],
-    },
+    getBoxById: async () => testAddressBoxes[0],
   } as any);
 
-type ErgoNodeClientSchema = ReturnType<typeof ergoNodeClientFactory>;
 /**
- * mock an api in a category to throw an error
- * @param category ergo node api category
+ * mock an api to throw an error
  * @param apiName the name of the api in the category
  * @param objectToThrow
  */
-export const mockApiToThrow = <Category extends keyof ErgoNodeClientSchema>(
-  category: Category,
-  apiName: keyof ErgoNodeClientSchema[Category],
-  objectToThrow: {
-    [key: string]: any;
-  }
+export const mockApiToThrow = (
+  apiName: string,
+  objectToThrow: { [p: string]: any }
 ) =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
-    [category]: {
-      [apiName]: vi.fn().mockRejectedValueOnce(objectToThrow),
-    },
+    [apiName]: vi.fn().mockRejectedValueOnce(objectToThrow),
   } as any);
