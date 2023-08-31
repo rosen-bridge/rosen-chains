@@ -117,7 +117,7 @@ describe('ErgoNodeNetwork', () => {
      * - returned confirmations should equal -1
      */
     it('should return `-1` if tx is not found in the blockchain', async () => {
-      mockApiToThrow('blockchain', 'getTxById', {
+      mockApiToThrow('getTxById', {
         response: {
           status: 404,
         },
@@ -249,7 +249,7 @@ describe('ErgoNodeNetwork', () => {
      * - returned tx ids should be an empty array
      */
     it('should return an empty array if block is not found in the blockchain', async () => {
-      mockApiToThrow('blocks', 'getBlockTransactionsById', {
+      mockApiToThrow('getBlockTransactionsById', {
         response: {
           status: 404,
         },
@@ -398,7 +398,7 @@ describe('ErgoNodeNetwork', () => {
      * - returned box bytes should equal an empty array
      */
     it('should return an empty array if address is not found or is invalid', async () => {
-      mockApiToThrow('blockchain', 'getBoxesByAddressUnspent', {
+      mockApiToThrow('getBoxesByAddressUnspent', {
         response: {
           status: 400,
         },
@@ -466,7 +466,7 @@ describe('ErgoNodeNetwork', () => {
      * - returned box bytes should equal an empty array
      */
     it('should return an empty array if address is not found or is invalid', async () => {
-      mockApiToThrow('blockchain', 'getBoxesByAddressUnspent', {
+      mockApiToThrow('getBoxesByAddressUnspent', {
         response: {
           status: 400,
         },
@@ -570,7 +570,7 @@ describe('ErgoNodeNetwork', () => {
      * - should return false
      */
     it('should return `false` if box is not found in the blockchain', async () => {
-      mockApiToThrow('blockchain', 'getBoxById', {
+      mockApiToThrow('getBoxById', {
         response: {
           status: 404,
         },
