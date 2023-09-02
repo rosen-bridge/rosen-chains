@@ -414,6 +414,12 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
           throw new UnexpectedApiError(baseError + e.message);
         }
       });
+
+    if (!tx)
+      throw new KoiosNullValueError(
+        `Tx with [${txId}] id was not found on the blockchain, so none of its utxos can be gotten.`
+      );
+
     const box = tx.outputs?.find((utxo) => utxo.tx_index?.toString() === index);
     if (!box) throw new KoiosNullValueError(`Tx input box is null`);
 
