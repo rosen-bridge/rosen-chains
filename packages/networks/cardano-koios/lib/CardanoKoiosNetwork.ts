@@ -4,7 +4,6 @@ import cardanoKoiosClientFactory, {
   AddressAssets,
   AddressInfo,
 } from '@rosen-clients/cardano-koios';
-import JsonBigIntFactory from 'json-bigint';
 import { KoiosNullValueError } from './types';
 import {
   AbstractCardanoNetwork,

@@ -5,10 +5,7 @@ import { FailedError, UnexpectedApiError } from '@rosen-chains/abstract-chain';
 import { AbstractErgoNetwork } from '@rosen-chains/ergo';
 import ergoExplorerClientFactory from '@rosen-clients/ergo-explorer';
 import { UTransactionInfo } from '@rosen-clients/ergo-explorer/dist/src/v0/types';
-import {
-  OutputInfo,
-  TransactionInfo,
-} from '@rosen-clients/ergo-explorer/dist/src/v1/types';
+import { TransactionInfo } from '@rosen-clients/ergo-explorer/dist/src/v1/types';
 
 import * as ergoLib from 'ergo-lib-wasm-nodejs';
 import all from 'it-all';
