@@ -3,8 +3,9 @@ import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import { RosenTokens } from '@rosen-bridge/tokens';
 import { FailedError } from '@rosen-chains/abstract-chain';
 import { AbstractErgoNetwork } from '@rosen-chains/ergo';
-import ergoNodeClientFactory from '@rosen-clients/ergo-node';
-import { ErgoTransactionOutput } from '@rosen-clients/ergo-node/dist/src/types';
+import ergoNodeClientFactory, {
+  IndexedErgoBox,
+} from '@rosen-clients/ergo-node';
 
 import * as ergoLib from 'ergo-lib-wasm-nodejs';
 import { BlockHeaders, ErgoStateContext } from 'ergo-lib-wasm-nodejs';
@@ -273,13 +274,10 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     offset: number,
     limit: number
   ) => {
-    const boxes = await this.client.getBoxesByAddressUnspent(address, {
+    return await this.client.getBoxesByAddressUnspent(address, {
       offset: offset,
       limit: limit,
     });
-
-    // Type assertion is needed because the types returned by client are wrong
-    return boxes as any;
   };
 
   /**
@@ -294,11 +292,10 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     limit: number
   ): Promise<ergoLib.ErgoBox[]> => {
     try {
-      const boxes = (await this.getRawAddressBoxes(address, offset, limit)).map(
-        (box: any) => ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
+      return (await this.getRawAddressBoxes(address, offset, limit)).map(
+        (box: IndexedErgoBox) =>
+          ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
       );
-
-      return boxes;
     } catch (error) {
       const baseError = 'Failed to get address boxes from Ergo Node:';
       return handleApiError(error, baseError, {
@@ -326,7 +323,7 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     limit = 5
   ): Promise<ergoLib.ErgoBox[]> => {
     try {
-      const boxHasToken = (box: ErgoTransactionOutput) =>
+      const boxHasToken = (box: IndexedErgoBox) =>
         box.assets?.some((asset) => asset.tokenId === tokenId);
 
       const eligibleBoxes: Array<ergoLib.ErgoBox> = [];
@@ -342,7 +339,7 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
         eligibleBoxes.push(
           ...boxesPage
             .filter(boxHasToken)
-            .map((box: any) =>
+            .map((box: IndexedErgoBox) =>
               ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box))
             )
         );
@@ -400,7 +397,7 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     try {
       const box = await this.client.getBoxById(boxId);
 
-      return !(box as any).spentTransactionId;
+      return !box.spentTransactionId;
     } catch (error) {
       const baseError =
         'Failed to check if box is unspent and valid using Ergo Node:';
