@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/ergo",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "this project contains ergo chain for Rosen-bridge",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
@@ -20,9 +20,9 @@
   },
   "license": "GPL-3.0",
   "dependencies": {
-    "@rosen-bridge/minimum-fee": "^0.1.11",
+    "@rosen-bridge/minimum-fee": "^0.1.13",
     "@rosen-bridge/rosen-extractor": "^0.1.11",
-    "@rosen-chains/abstract-chain": "^0.1.14",
+    "@rosen-chains/abstract-chain": "^0.1.15",
     "blakejs": "^1.2.1",
     "ergo-lib-wasm-nodejs": "^0.24.0",
     "json-bigint": "^1.0.0"
