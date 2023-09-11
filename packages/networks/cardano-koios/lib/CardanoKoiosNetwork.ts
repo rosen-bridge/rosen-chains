@@ -315,7 +315,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
           throw new UnexpectedApiError(baseError + e.message);
         }
       });
-    return boxes.slice(offset, limit);
+    return boxes.slice(offset, offset + limit);
   };
 
   /**
@@ -326,7 +326,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   isBoxUnspentAndValid = async (boxId: string): Promise<boolean> => {
     const [txId, index] = boxId.split('.');
     const tx = await this.client
-      .postTxUtxos({ _tx_hashes: [txId] })
+      .postTxInfo({ _tx_hashes: [txId] })
       .then((res) => (res.length === 0 ? undefined : res[0]))
       .catch((e) => {
         const baseError = `Failed to get transaction [${txId}] UTxOs from Koios: `;
@@ -401,7 +401,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   getUtxo = async (boxId: string): Promise<CardanoUtxo> => {
     const [txId, index] = boxId.split('.');
     const tx = await this.client
-      .postTxUtxos({ _tx_hashes: [txId] })
+      .postTxInfo({ _tx_hashes: [txId] })
       .then((res) => res[0])
       .catch((e) => {
         const baseError = `Failed to get transaction [${txId}] UTxOs from Koios: `;

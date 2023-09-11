@@ -139,14 +139,14 @@ export const mockPostAddressInfo = (utxoSet: AddressInfoItemUtxoSetItem[]) => {
 };
 
 /**
- * mock `postTxUtxos` and `postCredentialUtxos` of cardano koios client
+ * mock only inputs and outputs of `postTxInfo` api and `postCredentialUtxos` of cardano koios client
  */
 export const mockUtxoValidation = (
   txUtxos: TxUtxos | undefined,
   credentialUtxos: CredentialUtxos
 ) => {
   jest.mocked(cardanoKoiosClientFactory).mockReturnValueOnce({
-    postTxUtxos: async () => (txUtxos ? [txUtxos] : []),
+    postTxInfo: async () => (txUtxos ? [txUtxos] : []),
     postCredentialUtxos: async () => credentialUtxos,
   } as any);
 };
@@ -162,10 +162,10 @@ export const mockPostAddressInfoNoHistory = () => {
 };
 
 /**
- * mock `postTxUtxos` of cardano koios client
+ * mock only inputs and outputs of cardano koios client `postTxInfo` api
  */
 export const mockPostTxUtxos = (utxos: TxUtxos) => {
   jest.mocked(cardanoKoiosClientFactory).mockReturnValueOnce({
-    postTxUtxos: async () => [utxos],
+    postTxInfo: async () => [utxos],
   } as any);
 };
