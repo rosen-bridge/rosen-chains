@@ -110,7 +110,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     const requiredAssets = order
       .map((order) => order.assets)
       .reduce(ChainUtils.sumAssetBalance, {
-        nativeToken: this.getMinimumNativeToken(),
+        nativeToken: this.getMinimumNativeToken() + this.configs.fee,
         tokens: [],
       });
 
