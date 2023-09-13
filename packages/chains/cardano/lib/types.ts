@@ -1,4 +1,7 @@
-import { ChainConfigs } from '@rosen-chains/abstract-chain';
+import {
+  ChainConfigs,
+  PaymentTransactionJsonModel,
+} from '@rosen-chains/abstract-chain';
 import { BigNum } from '@emurgo/cardano-serialization-lib-nodejs';
 
 interface CardanoConfigs extends ChainConfigs {
@@ -46,6 +49,10 @@ interface UtxoBoxesAssets {
   assets: Map<string, BigNum>;
 }
 
+interface CardanoTransactionJsonModel extends PaymentTransactionJsonModel {
+  inputUtxos: Array<string>;
+}
+
 export {
   CardanoConfigs,
   CardanoAsset,
@@ -54,4 +61,5 @@ export {
   CardanoBoxCandidate,
   CardanoTx,
   UtxoBoxesAssets,
+  CardanoTransactionJsonModel,
 };

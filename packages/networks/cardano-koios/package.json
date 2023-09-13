@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/cardano-koios-network",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "cardano koios network package for rosen cardano chain",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
@@ -25,7 +25,7 @@
     "@rosen-bridge/rosen-extractor": "^0.1.11",
     "@rosen-bridge/tokens": "^0.2.0",
     "@rosen-chains/abstract-chain": "^0.1.15",
-    "@rosen-chains/cardano": "^0.1.16",
+    "@rosen-chains/cardano": "^0.1.17",
     "@rosen-clients/cardano-koios": "^1.0.3",
     "json-bigint": "^1.0.0"
   },

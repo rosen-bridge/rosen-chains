@@ -1,9 +1,9 @@
 import {
   PaymentTransaction,
-  PaymentTransactionJsonModel,
   TransactionType,
 } from '@rosen-chains/abstract-chain';
 import { CARDANO_CHAIN } from './constants';
+import { CardanoTransactionJsonModel } from './types';
 
 class CardanoTransaction implements PaymentTransaction {
   eventId: string;
@@ -11,18 +11,21 @@ class CardanoTransaction implements PaymentTransaction {
   txBytes: Uint8Array;
   txId: string;
   txType: TransactionType;
+  inputUtxos: Array<string>;
 
   constructor(
     eventId: string,
     txBytes: Uint8Array,
     txId: string,
-    txType: TransactionType
+    txType: TransactionType,
+    inputUtxos: Array<string>
   ) {
     this.network = CARDANO_CHAIN;
     this.eventId = eventId;
     this.txBytes = txBytes;
     this.txId = txId;
     this.txType = txType;
+    this.inputUtxos = inputUtxos;
   }
 
   /**
@@ -30,12 +33,13 @@ class CardanoTransaction implements PaymentTransaction {
    * @returns CardanoTransaction object
    */
   static fromJson = (jsonString: string): CardanoTransaction => {
-    const obj = JSON.parse(jsonString) as PaymentTransactionJsonModel;
+    const obj = JSON.parse(jsonString) as CardanoTransactionJsonModel;
     return new CardanoTransaction(
       obj.eventId,
       Buffer.from(obj.txBytes, 'hex'),
       obj.txId,
-      obj.txType as TransactionType
+      obj.txType as TransactionType,
+      obj.inputUtxos
     );
   };
 
@@ -50,6 +54,7 @@ class CardanoTransaction implements PaymentTransaction {
       txBytes: this.getTxHexString(),
       txId: this.txId,
       txType: this.txType,
+      inputUtxos: this.inputUtxos,
     });
   };
 

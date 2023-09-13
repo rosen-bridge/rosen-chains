@@ -83,7 +83,7 @@ describe('CardanoChain', () => {
      * - call the function
      * - check returned value
      * @expected
-     * - PaymentTransaction txType, eventId, and network should be as
+     * - PaymentTransaction txType, eventId, network and inputUtxos should be as
      *   expected
      * - extracted order of generated transaction should be the same as input
      *   order
@@ -126,6 +126,9 @@ describe('CardanoChain', () => {
       expect(cardanoTx.txType).toEqual(payment1.txType);
       expect(cardanoTx.eventId).toEqual(payment1.eventId);
       expect(cardanoTx.network).toEqual(payment1.network);
+      expect(cardanoTx.inputUtxos).toEqual(
+        bankBoxes.map((utxo) => JsonBI.stringify(utxo))
+      );
 
       // extracted order of generated transaction should be the same as input order
       const extractedOrder = cardanoChain.extractTransactionOrder(cardanoTx);
@@ -159,7 +162,7 @@ describe('CardanoChain', () => {
      * - call the function
      * - check returned value
      * @expected
-     * - PaymentTransaction txType, eventId, and network should be as
+     * - PaymentTransaction txType, eventId, network and inputUtxos should be as
      *   expected
      * - extracted order of generated transaction should be the same as input
      *   order
@@ -202,6 +205,9 @@ describe('CardanoChain', () => {
       expect(cardanoTx.txType).toEqual(payment.txType);
       expect(cardanoTx.eventId).toEqual(payment.eventId);
       expect(cardanoTx.network).toEqual(payment.network);
+      expect(cardanoTx.inputUtxos).toEqual(
+        bankBoxes.slice(2).map((utxo) => JsonBI.stringify(utxo))
+      );
 
       // extracted order of generated transaction should be the same as input order
       const extractedOrder = cardanoChain.extractTransactionOrder(cardanoTx);
