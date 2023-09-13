@@ -99,7 +99,10 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         0n,
         true
       ),
-      { nativeToken: this.getMinimumNativeToken(), tokens: [] }
+      {
+        nativeToken: this.getMinimumNativeToken() + this.configs.fee,
+        tokens: [],
+      }
     );
 
     // check if there are enough assets in address
