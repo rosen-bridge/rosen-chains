@@ -264,7 +264,13 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
       CardanoWasm.hash_transaction(txBody).to_bytes()
     ).toString('hex');
 
-    const cardanoTx = new CardanoTransaction(eventId, txBytes, txId, txType);
+    const cardanoTx = new CardanoTransaction(
+      eventId,
+      txBytes,
+      txId,
+      txType,
+      bankBoxes.map((box) => JSONBigInt.stringify(box))
+    );
 
     this.logger.info(
       `Cardano transaction [${txId}] as type [${txType}] generated for event [${eventId}]`
@@ -328,14 +334,16 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     requiredSign: number
   ): Promise<PaymentTransaction> => {
     const tx = Serializer.deserialize(transaction.txBytes);
+    const cardanoTx = transaction as CardanoTransaction;
     return this.signFunction(hash_transaction(tx.body()).to_bytes()).then(
       (signature: string) => {
         const signedTx = this.buildSignedTransaction(tx.body(), signature);
         return new CardanoTransaction(
-          transaction.eventId,
+          cardanoTx.eventId,
           Serializer.serialize(signedTx),
-          transaction.txId,
-          transaction.txType
+          cardanoTx.txId,
+          cardanoTx.txType,
+          cardanoTx.inputUtxos
         );
       }
     );
@@ -349,6 +357,8 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
   getTransactionAssets = async (
     transaction: PaymentTransaction
   ): Promise<TransactionAssetBalance> => {
+    // TODO: transaction argument is of type CardanoTransaction
+    //  should do a casting and improve extracting input box assets (#52)
     const tx = Serializer.deserialize(transaction.txBytes);
     const txBody = tx.body();
 
