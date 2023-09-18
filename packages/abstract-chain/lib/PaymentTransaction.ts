@@ -12,8 +12,7 @@ abstract class PaymentTransaction {
     txId: string,
     eventId: string,
     txBytes: Uint8Array,
-    txType: TransactionType,
-    inputUtxos: Array<string>
+    txType: TransactionType
   ) {
     this.network = chain;
     this.eventId = eventId;

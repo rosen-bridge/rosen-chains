@@ -5,12 +5,7 @@ import {
 import { CARDANO_CHAIN } from './constants';
 import { CardanoTransactionJsonModel } from './types';
 
-class CardanoTransaction implements PaymentTransaction {
-  eventId: string;
-  network: string;
-  txBytes: Uint8Array;
-  txId: string;
-  txType: TransactionType;
+class CardanoTransaction extends PaymentTransaction {
   inputUtxos: Array<string>;
 
   constructor(
@@ -20,11 +15,7 @@ class CardanoTransaction implements PaymentTransaction {
     txType: TransactionType,
     inputUtxos: Array<string>
   ) {
-    this.network = CARDANO_CHAIN;
-    this.eventId = eventId;
-    this.txBytes = txBytes;
-    this.txId = txId;
-    this.txType = txType;
+    super(CARDANO_CHAIN, txId, eventId, txBytes, txType);
     this.inputUtxos = inputUtxos;
   }
 
