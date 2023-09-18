@@ -987,6 +987,13 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
 
     return order;
   };
+
+  /**
+   * converts json representation of the payment transaction to ErgoTransaction
+   * @returns ErgoTransaction object
+   */
+  PaymentTransactionFromJson = (jsonString: string): ErgoTransaction =>
+    ErgoTransaction.fromJson(jsonString);
 }
 
 export default ErgoChain;

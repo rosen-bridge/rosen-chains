@@ -764,6 +764,13 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     witnesses.set_vkeys(vkeyWitnesses);
     return CardanoWasm.Transaction.new(txBody, witnesses);
   };
+
+  /**
+   * converts json representation of the payment transaction to CardanoTransaction
+   * @returns CardanoTransaction object
+   */
+  PaymentTransactionFromJson = (jsonString: string): CardanoTransaction =>
+    CardanoTransaction.fromJson(jsonString);
 }
 
 export default CardanoChain;
