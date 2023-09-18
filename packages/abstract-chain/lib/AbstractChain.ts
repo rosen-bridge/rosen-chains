@@ -9,11 +9,11 @@ import {
   ConfirmationStatus,
   EventTrigger,
   PaymentOrder,
-  PaymentTransaction,
   SigningStatus,
   TransactionAssetBalance,
   TransactionType,
 } from './types';
+import PaymentTransaction from './PaymentTransaction';
 
 abstract class AbstractChain {
   protected network: AbstractChainNetwork<unknown>;
@@ -239,6 +239,14 @@ abstract class AbstractChain {
    * @returns RWT token id
    */
   abstract getRWTToken: () => string;
+
+  /**
+   * converts json representation of the payment transaction to PaymentTransaction
+   * @returns PaymentTransaction object
+   */
+  abstract PaymentTransactionFromJson: (
+    jsonString: string
+  ) => PaymentTransaction;
 }
 
 export default AbstractChain;
