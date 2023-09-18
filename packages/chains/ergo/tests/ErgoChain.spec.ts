@@ -664,9 +664,9 @@ describe('ErgoChain', () => {
         wasm.ReducedTransaction.sigma_parse_bytes(
           Buffer.from(transactionTestData.transaction2UnsignedSerialized, 'hex')
         ).sigma_serialize_bytes(),
+        TransactionType.payment,
         [],
-        [],
-        TransactionType.payment
+        []
       );
 
       // mock a config that has more fee comparing to mocked transaction fee
@@ -718,9 +718,9 @@ describe('ErgoChain', () => {
         wasm.ReducedTransaction.sigma_parse_bytes(
           Buffer.from(transactionTestData.transaction2UnsignedSerialized, 'hex')
         ).sigma_serialize_bytes(),
+        TransactionType.payment,
         [],
-        [],
-        TransactionType.payment
+        []
       );
 
       // mock a config that has less fee comparing to mocked transaction fee
@@ -1402,9 +1402,9 @@ describe('ErgoChain', () => {
         ergoTestUtils
           .toTransaction(transactionTestData.transaction0)
           .sigma_serialize_bytes(),
+        TransactionType.payment,
         [],
-        [],
-        TransactionType.payment
+        []
       );
 
       // run test
@@ -1447,9 +1447,9 @@ describe('ErgoChain', () => {
         ergoTestUtils
           .toTransaction(transactionTestData.transaction0)
           .sigma_serialize_bytes(),
+        TransactionType.payment,
         [],
-        [],
-        TransactionType.payment
+        []
       );
 
       // run test
@@ -1485,9 +1485,9 @@ describe('ErgoChain', () => {
         wasm.ReducedTransaction.sigma_parse_bytes(
           Buffer.from(transactionTestData.transaction2UnsignedSerialized, 'hex')
         ).sigma_serialize_bytes(),
+        TransactionType.payment,
         [],
-        [],
-        TransactionType.payment
+        []
       );
 
       // run test
@@ -1543,9 +1543,9 @@ describe('ErgoChain', () => {
         wasm.ReducedTransaction.sigma_parse_bytes(
           Buffer.from(transactionTestData.transaction2UnsignedSerialized, 'hex')
         ).sigma_serialize_bytes(),
+        TransactionType.payment,
         [],
-        [],
-        TransactionType.payment
+        []
       );
 
       // run test & check thrown exception
@@ -2355,9 +2355,9 @@ describe('ErgoChain', () => {
         ergoTestUtils
           .toTransaction(transactionTestData.transaction0)
           .sigma_serialize_bytes(),
+        TransactionType.payment,
         [],
-        [],
-        TransactionType.payment
+        []
       );
       const expectedOrder = transactionTestData.transaction0Order;
       const config: ErgoConfigs = {

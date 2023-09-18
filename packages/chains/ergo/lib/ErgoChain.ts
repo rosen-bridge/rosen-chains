@@ -282,9 +282,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       txId,
       eventId,
       txBytes,
+      txType,
       inputs.map((boxBytes) => Buffer.from(boxBytes, 'hex')),
-      dataInputs.map((boxBytes) => Buffer.from(boxBytes, 'hex')),
-      txType
+      dataInputs.map((boxBytes) => Buffer.from(boxBytes, 'hex'))
     );
 
     this.logger.info(
@@ -599,9 +599,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
           ergoTx.txId,
           ergoTx.eventId,
           Serializer.signedSerialize(signedTx),
+          ergoTx.txType,
           ergoTx.inputBoxes,
-          ergoTx.dataInputs,
-          ergoTx.txType
+          ergoTx.dataInputs
         );
       }
     );

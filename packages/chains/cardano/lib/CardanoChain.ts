@@ -27,7 +27,7 @@ import {
   UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
 import { blake2b } from 'blakejs';
-import * as JSONBigInt from 'json-bigint';
+import JSONBigInt from '@rosen-bridge/json-bigint';
 import CardanoTransaction from './CardanoTransaction';
 import CardanoUtils from './CardanoUtils';
 import cardanoUtils from './CardanoUtils';
@@ -265,9 +265,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     ).toString('hex');
 
     const cardanoTx = new CardanoTransaction(
+      txId,
       eventId,
       txBytes,
-      txId,
       txType,
       bankBoxes.map((box) => JSONBigInt.stringify(box))
     );
@@ -339,9 +339,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
       (signature: string) => {
         const signedTx = this.buildSignedTransaction(tx.body(), signature);
         return new CardanoTransaction(
+          cardanoTx.txId,
           cardanoTx.eventId,
           Serializer.serialize(signedTx),
-          cardanoTx.txId,
           cardanoTx.txType,
           cardanoTx.inputUtxos
         );
@@ -360,6 +360,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     // TODO: transaction argument is of type CardanoTransaction
     //  should do a casting and improve extracting input box assets (#52)
     const tx = Serializer.deserialize(transaction.txBytes);
+    const cardanoTx = transaction as CardanoTransaction;
     const txBody = tx.body();
 
     let inputAssets: AssetBalance = {
@@ -367,13 +368,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
       tokens: [],
     };
     // extract input box assets
-    for (let i = 0; i < txBody.inputs().len(); i++) {
-      const input = txBody.inputs().get(i);
-
-      const box: CardanoUtxo = await this.network.getUtxo(
-        cardanoUtils.getBoxId(input)
-      );
-      const boxAssets = this.getBoxInfo(box).assets;
+    for (let i = 0; i < cardanoTx.inputUtxos.length; i++) {
+      const input = JSONBigInt.parse(cardanoTx.inputUtxos[i]) as CardanoUtxo;
+      const boxAssets = this.getBoxInfo(input).assets;
       inputAssets = ChainUtils.sumAssetBalance(inputAssets, boxAssets);
     }
 

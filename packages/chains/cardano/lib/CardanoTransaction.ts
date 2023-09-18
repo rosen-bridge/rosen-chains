@@ -14,9 +14,9 @@ class CardanoTransaction implements PaymentTransaction {
   inputUtxos: Array<string>;
 
   constructor(
+    txId: string,
     eventId: string,
     txBytes: Uint8Array,
-    txId: string,
     txType: TransactionType,
     inputUtxos: Array<string>
   ) {
@@ -35,9 +35,9 @@ class CardanoTransaction implements PaymentTransaction {
   static fromJson = (jsonString: string): CardanoTransaction => {
     const obj = JSON.parse(jsonString) as CardanoTransactionJsonModel;
     return new CardanoTransaction(
+      obj.txId,
       obj.eventId,
       Buffer.from(obj.txBytes, 'hex'),
-      obj.txId,
       obj.txType as TransactionType,
       obj.inputUtxos
     );
