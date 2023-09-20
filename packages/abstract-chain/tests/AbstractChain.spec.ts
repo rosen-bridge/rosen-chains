@@ -34,6 +34,7 @@ describe('AbstractChain', () => {
       eventId: 'mockedNetworkId',
       txBytes: Buffer.from('mockedTxBytes'),
       txType: TransactionType.payment,
+      toJson: () => '',
     };
     const network = new TestChainNetwork();
 

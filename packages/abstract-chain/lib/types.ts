@@ -73,14 +73,6 @@ enum SigningStatus {
   UnSigned,
 }
 
-interface PaymentTransaction {
-  network: string;
-  txId: string;
-  eventId: string;
-  txBytes: Uint8Array;
-  txType: TransactionType;
-}
-
 interface PaymentTransactionJsonModel {
   network: string;
   txId: string;
@@ -115,7 +107,6 @@ export {
   SinglePayment,
   PaymentOrder,
   EventTrigger,
-  PaymentTransaction,
   PaymentTransactionJsonModel,
   ConfirmationStatus,
   TransactionType,

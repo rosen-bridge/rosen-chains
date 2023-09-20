@@ -10,14 +10,9 @@ import ergoNodeClientFactory, {
 import * as ergoLib from 'ergo-lib-wasm-nodejs';
 import { BlockHeaders, ErgoStateContext } from 'ergo-lib-wasm-nodejs';
 import all from 'it-all';
-import JsonBigIntFactory from 'json-bigint';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
 import handleApiError from './handleApiError';
-
-const JsonBigInt = JsonBigIntFactory({
-  alwaysParseAsBig: true,
-  useNativeBigInt: true,
-});
 
 const TX_FETCHING_PAGE_SIZE = 50;
 const BOX_FETCHING_PAGE_SIZE = 50;

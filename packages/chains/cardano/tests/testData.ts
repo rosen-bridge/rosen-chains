@@ -240,7 +240,13 @@ export const transaction1PaymentTransaction = `
    "eventId":"2bedc6e54ede7748e5efc7df689a0a89b281ac1d92d09054650d5f27a25d5b8a",
    "txBytes":"84a400848258202d10e4c431dc9d6f35319720ba6fa9d1973fa4e4d9802fd1cae01540d1b1b9e30082582077b76da1660bd58993b9e9c4382cf773b1a0fb6a505d75964a162ff86fccd21e0282582092d99216cefcf40ff63f223061cf111950bed5c21da459ab540f439a92b8e94200825820ecb1361fba075163d41bd38bb532ffd0a6e0c1971d15c28c3f002c9282a420e4000182825839019c60f528076136b6c7caf599bd93f57ae4564f9aa69cdb59d2ba473118765b6a41502a9a6f6e1c5da31143e5572e7e5fb7bc5f498bc1cda5821a001e8480a1581cef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286a14b52737445524776546573741864825839019d6c179773d4e6590e282c37296ecc31cc2a10a45742772dfbc582666aebc9e1e5ac448cf5bfbfa68056d88273cb4cdcf277bfcecd56bc4e821a082a9b50a3581c48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9ba1515273744572676f546f6b656e7654657374191388581ccfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6bea15143617264616e6f546f6b656e76546573741864581cef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286a14b5273744552477654657374190384021a000f42400318a4a0f5f6",
    "txId":"0066ad9bffa8579a6a7b6f5b6d8fdab20107eca2a2f8435235271173532acab1",
-   "txType":"payment"
+   "txType":"payment",
+   "inputUtxos": [
+    "{\\"txId\\":\\"2d10e4c431dc9d6f35319720ba6fa9d1973fa4e4d9802fd1cae01540d1b1b9e3\\",\\"index\\":0,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000,\\"fingerprint\\":\\"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz\\"}]}",
+    "{\\"txId\\":\\"f5bbdeba6cc2ef8eac2fb24879d3a11df3b067a4fc5d1559ccf2ae21f0129631\\",\\"index\\":2,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000,\\"fingerprint\\":\\"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz\\"}]}",
+    "{\\"txId\\":\\"92d99216cefcf40ff63f223061cf111950bed5c21da459ab540f439a92b8e942\\",\\"index\\":0,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000,\\"fingerprint\\":\\"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz\\"}]}",
+    "{\\"txId\\":\\"ecb1361fba075163d41bd38bb532ffd0a6e0c1971d15c28c3f002c9282a420e4\\",\\"index\\":0,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000,\\"fingerprint\\":\\"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz\\"}]}"
+  ]
 }
 `;
 

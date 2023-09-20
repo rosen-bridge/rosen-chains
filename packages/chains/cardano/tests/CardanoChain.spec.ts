@@ -15,11 +15,8 @@ import {
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
-import {
-  hash_transaction,
-  Transaction,
-} from '@emurgo/cardano-serialization-lib-nodejs';
-import JSONBigInt from 'json-bigint';
+import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
+import JsonBI from '@rosen-bridge/json-bigint';
 
 const spyOn = jest.spyOn;
 
@@ -65,10 +62,6 @@ describe('CardanoChain', () => {
       signFn
     );
   };
-  const JsonBI = JSONBigInt({
-    useNativeBigInt: true,
-    alwaysParseAsBig: true,
-  });
 
   describe('generateTransaction', () => {
     const network = new TestCardanoNetwork();
@@ -428,7 +421,6 @@ describe('CardanoChain', () => {
      * @dependencies
      * @scenario
      * - mock PaymentTransaction
-     * - mock getUtxo of cardano network
      * - call the function
      * - check returned value
      * @expected
@@ -439,10 +431,6 @@ describe('CardanoChain', () => {
       const paymentTx = CardanoTransaction.fromJson(
         TestData.transaction1PaymentTransaction
       );
-
-      // mock getUtxo of cardano network
-      const getUtxSpy = spyOn(network, 'getUtxo');
-      getUtxSpy.mockResolvedValue(bankBoxes[3]);
 
       // call the function
       const cardanoChain = generateChainObject(network);

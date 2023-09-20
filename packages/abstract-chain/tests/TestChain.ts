@@ -21,6 +21,7 @@ class TestChain extends AbstractChain {
   isTxInMempool = this.notImplemented;
   getMinimumNativeToken = this.notImplemented;
   getRWTToken = this.notImplemented;
+  PaymentTransactionFromJson = this.notImplemented;
 
   getTransactionAssets = (
     transaction: PaymentTransaction

@@ -5,12 +5,7 @@ import {
 import { ERGO_CHAIN } from './constants';
 import { ErgoTransactionJsonModel } from './types';
 
-class ErgoTransaction implements PaymentTransaction {
-  network: string;
-  txId: string;
-  eventId: string;
-  txBytes: Uint8Array;
-  txType: TransactionType;
+class ErgoTransaction extends PaymentTransaction {
   inputBoxes: Array<Uint8Array>;
   dataInputs: Array<Uint8Array>;
 
@@ -18,15 +13,11 @@ class ErgoTransaction implements PaymentTransaction {
     txId: string,
     eventId: string,
     txBytes: Uint8Array,
+    txType: TransactionType,
     inputBoxes: Array<Uint8Array>,
-    dataInputs: Array<Uint8Array>,
-    txType: TransactionType
+    dataInputs: Array<Uint8Array>
   ) {
-    this.network = ERGO_CHAIN;
-    this.txId = txId;
-    this.eventId = eventId;
-    this.txBytes = txBytes;
-    this.txType = txType;
+    super(ERGO_CHAIN, txId, eventId, txBytes, txType);
     this.inputBoxes = inputBoxes;
     this.dataInputs = dataInputs;
   }
@@ -41,9 +32,9 @@ class ErgoTransaction implements PaymentTransaction {
       obj.txId,
       obj.eventId,
       Buffer.from(obj.txBytes, 'hex'),
+      obj.txType as TransactionType,
       obj.inputBoxes.map((box) => Buffer.from(box, 'hex')),
-      obj.dataInputs.map((box) => Buffer.from(box, 'hex')),
-      obj.txType as TransactionType
+      obj.dataInputs.map((box) => Buffer.from(box, 'hex'))
     );
   };
 
