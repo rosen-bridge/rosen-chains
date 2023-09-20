@@ -16,16 +16,11 @@ import {
   mockUtxoValidation,
 } from './mocked/CardanoKoiosClient.mock';
 import * as testData from './testData';
-import JsonBigIntFactory from 'json-bigint';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
 jest.mock('@rosen-clients/cardano-koios');
 
 describe('CardanoKoiosNetwork', () => {
-  const JsonBigInt = JsonBigIntFactory({
-    alwaysParseAsBig: true,
-    useNativeBigInt: true,
-  });
-
   const mockNetwork = () =>
     new CardanoKoiosNetwork('https://test.url', 'lockAddress', {
       idKeys: {},

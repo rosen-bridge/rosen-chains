@@ -29,6 +29,7 @@ import ErgoUtils from './ErgoUtils';
 import AbstractErgoNetwork from './network/AbstractErgoNetwork';
 import Serializer from './Serializer';
 import { ErgoConfigs, GuardsPkConfig } from './types';
+import JsonBI from '@rosen-bridge/json-bigint';
 
 class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
   static feeBoxErgoTree =
@@ -108,7 +109,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     // check if there are enough assets in address
     if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
       const neededErgs = requiredAssets.nativeToken.toString();
-      const neededTokens = ErgoUtils.JsonBI.stringify(requiredAssets.tokens);
+      const neededTokens = JsonBI.stringify(requiredAssets.tokens);
       throw new NotEnoughAssetsError(
         `Locked assets cannot cover required assets. Erg: ${neededErgs}, Tokens: ${neededTokens}`
       );
@@ -145,7 +146,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     // check if boxes covered requirements
     if (!coveredBoxes.covered) {
       const neededErgs = requiredAssets.nativeToken.toString();
-      const neededTokens = ErgoUtils.JsonBI.stringify(requiredAssets.tokens);
+      const neededTokens = JsonBI.stringify(requiredAssets.tokens);
       throw new NotEnoughValidBoxesError(
         `Available boxes didn't cover required assets. Erg: ${neededErgs}, Tokens: ${neededTokens}`
       );

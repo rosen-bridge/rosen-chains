@@ -357,8 +357,6 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
   getTransactionAssets = async (
     transaction: PaymentTransaction
   ): Promise<TransactionAssetBalance> => {
-    // TODO: transaction argument is of type CardanoTransaction
-    //  should do a casting and improve extracting input box assets (#52)
     const tx = Serializer.deserialize(transaction.txBytes);
     const cardanoTx = transaction as CardanoTransaction;
     const txBody = tx.body();
