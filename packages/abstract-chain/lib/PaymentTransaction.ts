@@ -1,6 +1,7 @@
 import { TransactionType } from './types';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
-abstract class PaymentTransaction {
+class PaymentTransaction {
   network: string;
   txId: string;
   eventId: string;
@@ -22,10 +23,17 @@ abstract class PaymentTransaction {
   }
 
   /**
-   * converts CardanoTransaction to json
+   * converts PaymentTransaction to json
    * @returns json representation of the payment transaction
    */
-  abstract toJson: () => string;
+  toJson = (): string =>
+    JsonBigInt.stringify({
+      network: this.network,
+      eventId: this.eventId,
+      txBytes: Buffer.from(this.txBytes).toString('hex'),
+      txId: this.txId,
+      txType: this.txType,
+    });
 }
 
 export default PaymentTransaction;
