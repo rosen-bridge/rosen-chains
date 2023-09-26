@@ -30,6 +30,7 @@ import AbstractErgoNetwork from './network/AbstractErgoNetwork';
 import Serializer from './Serializer';
 import { ErgoConfigs, GuardsPkConfig } from './types';
 import JsonBI from '@rosen-bridge/json-bigint';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
 class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
   static feeBoxErgoTree =
@@ -81,10 +82,16 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     inputs: Array<string>,
     dataInputs: Array<string>
   ): Promise<PaymentTransaction> => {
+    this.logger.debug(
+      `Generating Ergo transaction for Order: ${JsonBigInt.stringify(order)}`
+    );
     // calculate required assets
     const orderRequiredAssets = order
       .map((order) => order.assets)
       .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
+    this.logger.debug(
+      `Order required assets: ${JsonBigInt.stringify(orderRequiredAssets)}`
+    );
     const inputAssets = inputs
       .map(
         (serializedBox) =>
@@ -93,6 +100,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
           ).assets
       )
       .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
+    this.logger.debug(
+      `Pre-selected boxes assets: ${JsonBigInt.stringify(inputAssets)}`
+    );
     const requiredAssets = ChainUtils.sumAssetBalance(
       ChainUtils.subtractAssetBalance(
         orderRequiredAssets,
@@ -104,6 +114,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         nativeToken: this.getMinimumNativeToken() + this.configs.fee,
         tokens: [],
       }
+    );
+    this.logger.debug(
+      `Required assets: ${JsonBigInt.stringify(requiredAssets)}`
     );
 
     // check if there are enough assets in address
@@ -177,6 +190,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         ErgoUtils.getBoxAssets(box)
       );
     });
+    this.logger.debug(`Input assets: ${JsonBigInt.stringify(remainingAssets)}`);
 
     // generate data input boxes objects
     const dataInBoxes = dataInputs.map((serializedBox) =>
@@ -226,6 +240,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         this.configs.minBoxValue
       );
     });
+    this.logger.debug(
+      `Remaining assets: ${JsonBigInt.stringify(remainingAssets)}`
+    );
 
     // create change box
     const boxBuilder = new wasm.ErgoBoxCandidateBuilder(

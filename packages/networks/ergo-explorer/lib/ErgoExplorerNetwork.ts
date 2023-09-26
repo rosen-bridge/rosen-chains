@@ -56,8 +56,11 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
    */
   public getHeight = async () => {
     try {
-      const { height } = await this.client.v1.getApiV1Networkstate();
-      return Number(height);
+      const state = await this.client.v1.getApiV1Networkstate();
+      this.logger.debug(
+        `requested 'getApiV1Networkstate'. res: ${JsonBigInt.stringify(state)}`
+      );
+      return Number(state.height);
     } catch (error: any) {
       return handleApiError(error, 'Failed to get height from Ergo Explorer:');
     }
@@ -69,10 +72,13 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
    */
   public getTxConfirmation = async (txId: string) => {
     try {
-      const { numConfirmations } = await this.client.v1.getApiV1TransactionsP1(
-        txId
+      const tx = await this.client.v1.getApiV1TransactionsP1(txId);
+      this.logger.debug(
+        `requested 'getApiV1TransactionsP1' for txId [${txId}]. res: ${JsonBigInt.stringify(
+          tx
+        )}`
       );
-      return Number(numConfirmations);
+      return Number(tx.numConfirmations);
     } catch (error: any) {
       const baseError = 'Failed to get tx confirmations from Ergo Explorer:';
       return handleApiError(error, baseError, {
@@ -94,6 +100,11 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
     try {
       const balance = await this.client.v1.getApiV1AddressesP1BalanceConfirmed(
         address
+      );
+      this.logger.debug(
+        `requested 'getApiV1AddressesP1BalanceConfirmed' for address [${address}]. res: ${JsonBigInt.stringify(
+          balance
+        )}`
       );
 
       return {
@@ -132,6 +143,11 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
       }
 
       const txIds = blockTransactions.map((tx) => tx.id);
+      this.logger.debug(
+        `requested block transaction ids with 'getApiV1BlocksP1' for blockId [${blockId}]. res: ${JsonBigInt.stringify(
+          txIds
+        )}`
+      );
 
       return txIds;
     } catch (error: any) {
@@ -163,6 +179,11 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
       const {
         block: { header },
       } = await this.client.v1.getApiV1BlocksP1(blockId);
+      this.logger.debug(
+        `requested block header with 'getApiV1BlocksP1' for blockId [${blockId}]. res: ${JsonBigInt.stringify(
+          header
+        )}`
+      );
       return {
         hash: blockId,
         parentHash: header.parentId,
@@ -212,6 +233,11 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
     try {
       const possibleMalformedTx = await this.client.v1.getApiV1TransactionsP1(
         txId
+      );
+      this.logger.debug(
+        `requested 'getApiV1TransactionsP1' for txId [${txId}] and blockId [${blockId}]. res: ${JsonBigInt.stringify(
+          possibleMalformedTx
+        )}`
       );
       /**
        * The following conversion is needed because the api result of explorer may
@@ -291,6 +317,9 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
     try {
       const mempoolTxIterator = this.getOneMempoolTx();
       const txs = await all(mempoolTxIterator);
+      this.logger.debug(
+        `requested mempool transactions. res: ${JsonBigInt.stringify(txs)}`
+      );
       return txs
         .map(this.fixMalformedMempoolTx)
         .map((tx) => ergoLib.Transaction.from_json(JsonBigInt.stringify(tx)));
@@ -314,11 +343,19 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
     limit: number
   ) => {
     try {
-      const { items: boxes } =
-        await this.client.v1.getApiV1BoxesUnspentByaddressP1(address, {
+      const res = await this.client.v1.getApiV1BoxesUnspentByaddressP1(
+        address,
+        {
           offset: offset,
           limit: limit,
-        });
+        }
+      );
+      this.logger.debug(
+        `requested 'getApiV1BoxesUnspentByaddressP1' for address [${address}]. res: ${JsonBigInt.stringify(
+          res
+        )}`
+      );
+      const boxes = res.items;
 
       if (!boxes) {
         return [];
@@ -362,6 +399,12 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
             limit: BOX_FETCHING_PAGE_SIZE,
           }
         );
+        this.logger.debug(
+          `requested 'getApiV1BoxesUnspentBytokenidP1' for tokenId [${tokenId}][page:${currentPage}]. res: ${JsonBigInt.stringify(
+            boxesPage
+          )}`
+        );
+
         if (!boxesPage.items?.length) break;
 
         eligibleBoxes.push(
@@ -392,6 +435,11 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
         offset: 0,
         limit: 10,
       });
+      this.logger.debug(
+        `requested 'getApiV1BlocksHeaders'. res: ${JsonBigInt.stringify(
+          lastBlocks
+        )}`
+      );
 
       if (!lastBlocks) {
         throw new Error(
@@ -437,6 +485,11 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
   public isBoxUnspentAndValid = async (boxId: string) => {
     try {
       const box = await this.client.v1.getApiV1BoxesP1(boxId);
+      this.logger.debug(
+        `requested 'getApiV1BoxesP1' for boxId [${boxId}]. res: ${JsonBigInt.stringify(
+          box
+        )}`
+      );
 
       return !box.spentTransactionId;
     } catch (error: any) {
