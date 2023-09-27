@@ -25,6 +25,7 @@ import {
   TxInfoItemOutputsItemAssetListItem,
 } from '@rosen-clients/cardano-koios';
 import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
 class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   private client: ReturnType<typeof cardanoKoiosClientFactory>;
@@ -49,6 +50,9 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     return this.client
       .getTip()
       .then((block) => {
+        this.logger.debug(
+          `requested 'getTip'. res: ${JsonBigInt.stringify(block)}`
+        );
         const height = block[0].block_no;
         if (height) return Number(height);
         throw new KoiosNullValueError('Height of last block is null');
@@ -74,6 +78,11 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     return this.client
       .postTxStatus({ _tx_hashes: [transactionId] })
       .then((res) => {
+        this.logger.debug(
+          `requested 'postTxStatus' for txId [${transactionId}]. res: ${JsonBigInt.stringify(
+            res
+          )}`
+        );
         const confirmation = res[0].num_confirmations;
         if (confirmation) return Number(confirmation);
         return -1;
@@ -105,6 +114,11 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
       addressInfo = await this.client.postAddressInfo({
         _addresses: [address],
       });
+      this.logger.debug(
+        `requested 'postAddressInfo' for address [${address}]. res: ${JsonBigInt.stringify(
+          addressInfo
+        )}`
+      );
     } catch (e: any) {
       const baseError = `Failed to get address [${address}] assets from Koios: `;
       if (e.response) {
@@ -127,6 +141,11 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
       addressAssets = await this.client.postAddressAssets({
         _addresses: [address],
       });
+      this.logger.debug(
+        `requested 'postAddressAssets' for address [${address}]. res: ${JsonBigInt.stringify(
+          addressAssets
+        )}`
+      );
     } catch (e: any) {
       const baseError = `Failed to get address [${address}] assets from Koios: `;
       if (e.response) {
@@ -166,6 +185,11 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     return this.client
       .postBlockTxs({ _block_hashes: [blockId] })
       .then((res) => {
+        this.logger.debug(
+          `requested 'postBlockTxs' for blockId [${blockId}]. res: ${JsonBigInt.stringify(
+            res
+          )}`
+        );
         const txIds = res[0].tx_hashes;
         if (!txIds)
           throw new KoiosNullValueError(`Block tx hashes list is null`);
@@ -192,6 +216,11 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     return this.client
       .postBlockInfo({ _block_hashes: [blockId] })
       .then((res) => {
+        this.logger.debug(
+          `requested 'postBlockInfo' for blockId [${blockId}]. res: ${JsonBigInt.stringify(
+            res
+          )}`
+        );
         const block = res[0];
         if (!block.block_height || !block.hash || !block.parent_hash)
           throw new KoiosNullValueError(`Block info data are null`);
@@ -225,7 +254,14 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   ): Promise<CardanoTx> => {
     const koiosTx = await this.client
       .postTxInfo({ _tx_hashes: [transactionId] })
-      .then((res) => res[0])
+      .then((res) => {
+        this.logger.debug(
+          `requested 'postTxInfo' for txId [${transactionId}]. res: ${JsonBigInt.stringify(
+            res
+          )}`
+        );
+        return res[0];
+      })
       .catch((e) => {
         const baseError = `Failed to get transaction [${transactionId}] from Koios: `;
         if (e.response) {
@@ -300,6 +336,11 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     const boxes = await this.client
       .postAddressInfo({ _addresses: [address] })
       .then((res) => {
+        this.logger.debug(
+          `requested 'postAddressInfo' for address [${address}]. res: ${JsonBigInt.stringify(
+            res
+          )}`
+        );
         if (res.length === 0) return [];
         const utxos = res[0].utxo_set;
         if (!utxos) throw new KoiosNullValueError(`Address UTxO list is null`);
@@ -327,7 +368,14 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     const [txId, index] = boxId.split('.');
     const tx = await this.client
       .postTxInfo({ _tx_hashes: [txId] })
-      .then((res) => (res.length === 0 ? undefined : res[0]))
+      .then((res) => {
+        this.logger.debug(
+          `requested 'postTxUtxos' for txId [${txId}]. res: ${JsonBigInt.stringify(
+            res
+          )}`
+        );
+        return res.length === 0 ? undefined : res[0];
+      })
       .catch((e) => {
         const baseError = `Failed to get transaction [${txId}] UTxOs from Koios: `;
         if (e.response) {
@@ -362,7 +410,11 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
           throw new UnexpectedApiError(baseError + e.message);
         }
       });
-
+    this.logger.debug(
+      `requested 'postCredentialUtxos' for box cred [${boxAddressCred}]. res: ${JsonBigInt.stringify(
+        utxos
+      )}`
+    );
     const box = utxos.find(
       (utxo) => utxo.tx_hash === txId && utxo.tx_index?.toString() === index
     );
@@ -377,6 +429,9 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     return this.client
       .getTip()
       .then((block) => {
+        this.logger.debug(
+          `requested 'getTip'. res: ${JsonBigInt.stringify(block)}`
+        );
         const slot = block[0].abs_slot;
         if (slot) return Number(slot);
         throw new KoiosNullValueError('Slot of last block is null');
@@ -402,7 +457,14 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     const [txId, index] = boxId.split('.');
     const tx = await this.client
       .postTxInfo({ _tx_hashes: [txId] })
-      .then((res) => res[0])
+      .then((res) => {
+        this.logger.debug(
+          `requested 'postTxInfo' for txId [${txId}]. res: ${JsonBigInt.stringify(
+            res
+          )}`
+        );
+        return res[0];
+      })
       .catch((e) => {
         const baseError = `Failed to get transaction [${txId}] UTxOs from Koios: `;
         if (e.response) {

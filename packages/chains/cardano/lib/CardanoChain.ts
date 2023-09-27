@@ -40,6 +40,7 @@ import {
   CardanoConfigs,
   CardanoUtxo,
 } from './types';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
 class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
   declare network: AbstractCardanoNetwork;
@@ -106,6 +107,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[]
   ): Promise<PaymentTransaction> => {
+    this.logger.debug(
+      `Generating Cardano transaction for Order: ${JsonBigInt.stringify(order)}`
+    );
     // calculate required assets
     const requiredAssets = order
       .map((order) => order.assets)
@@ -113,6 +117,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
         nativeToken: this.getMinimumNativeToken() + this.configs.fee,
         tokens: [],
       });
+    this.logger.debug(
+      `Required assets: ${JsonBigInt.stringify(requiredAssets)}`
+    );
 
     if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
       const neededADA = requiredAssets.nativeToken.toString();
@@ -242,6 +249,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     const changeAmount: CardanoWasm.Value =
       CardanoWasm.Value.new(changeBoxLovelace);
     changeAmount.set_multiasset(changeBoxMultiAsset);
+    this.logger.debug(`Change box amount: ${changeAmount.to_json()}`);
     const changeBox = CardanoWasm.TransactionOutput.new(
       CardanoWasm.Address.from_bech32(this.configs.lockAddress),
       changeAmount

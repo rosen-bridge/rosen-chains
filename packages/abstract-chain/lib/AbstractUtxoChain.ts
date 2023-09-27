@@ -57,6 +57,7 @@ abstract class AbstractUtxoChain<BoxType> extends AbstractChain {
         offset,
         GET_BOX_API_LIMIT
       );
+      this.logger.debug(`fetched [${boxes.length}] boxes`);
       offset += GET_BOX_API_LIMIT;
 
       // end process if there are no more boxes
@@ -66,20 +67,29 @@ abstract class AbstractUtxoChain<BoxType> extends AbstractChain {
       for (const box of boxes) {
         let trackedBox: BoxType | undefined = box;
         let boxInfo = this.getBoxInfo(box);
+        this.logger.debug(`processing box [${boxInfo.id}] for covering`);
 
         // track boxes
         let skipBox = false;
         while (trackMap.has(boxInfo.id)) {
           trackedBox = trackMap.get(boxInfo.id);
           if (!trackedBox) {
+            this.logger.debug(`box [${boxInfo.id}] is tracked to nothing`);
             skipBox = true;
             break;
           }
+          const previousBoxId = boxInfo.id;
           boxInfo = this.getBoxInfo(trackedBox);
+          this.logger.debug(
+            `box [${previousBoxId}] is tracked to box [${boxInfo.id}]`
+          );
         }
 
         // if tracked to no box or forbidden box, skip it
-        if (skipBox || forbiddenBoxIds.includes(boxInfo.id)) continue;
+        if (skipBox || forbiddenBoxIds.includes(boxInfo.id)) {
+          this.logger.debug(`box [${boxInfo.id}] is skipped`);
+          continue;
+        }
 
         // check and add if box assets are useful to requirements
         let isUseful = false;
@@ -92,6 +102,9 @@ abstract class AbstractUtxoChain<BoxType> extends AbstractChain {
             const token = uncoveredTokens[tokenIndex];
             if (token.value > boxToken.value) token.value -= boxToken.value;
             else uncoveredTokens.splice(tokenIndex, 1);
+            this.logger.debug(
+              `box [${boxInfo.id}] is selected due to need of token [${token.id}]`
+            );
           }
         });
         if (isUseful || uncoveredNativeToken > 0n) {
@@ -100,10 +113,14 @@ abstract class AbstractUtxoChain<BoxType> extends AbstractChain {
               ? boxInfo.assets.nativeToken
               : uncoveredNativeToken;
           result.push(trackedBox!);
-        }
+          this.logger.debug(`box [${boxInfo.id}] is selected`);
+        } else this.logger.debug(`box [${boxInfo.id}] is ignored`);
 
         // end process if requirements are satisfied
-        if (!isRequirementRemaining()) break;
+        if (!isRequirementRemaining()) {
+          this.logger.debug(`requirements satisfied`);
+          break;
+        }
       }
     }
 

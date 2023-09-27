@@ -53,8 +53,11 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
    */
   public getHeight = async () => {
     try {
-      const { fullHeight } = await this.client.getNodeInfo();
-      return Number(fullHeight);
+      const nodeInfo = await this.client.getNodeInfo();
+      this.logger.debug(
+        `requested 'getNodeInfo'. res: ${JsonBigInt.stringify(nodeInfo)}`
+      );
+      return Number(nodeInfo.fullHeight);
     } catch (error: any) {
       return handleApiError(error, 'Failed to get height from Ergo Node:');
     }
@@ -66,8 +69,13 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
    */
   public getTxConfirmation = async (txId: string) => {
     try {
-      const { numConfirmations } = await this.client.getTxById(txId);
-      return Number(numConfirmations);
+      const tx = await this.client.getTxById(txId);
+      this.logger.debug(
+        `requested 'getTxById' for txId [${txId}]. res: ${JsonBigInt.stringify(
+          tx
+        )}`
+      );
+      return Number(tx.numConfirmations);
     } catch (error: any) {
       const baseError = 'Failed to get tx confirmations from Ergo Node:';
       return handleApiError(error, baseError, {
@@ -87,8 +95,13 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
    */
   public getAddressAssets = async (address: string) => {
     try {
-      const { confirmed } = await this.client.getAddressBalanceTotal(address);
-
+      const balance = await this.client.getAddressBalanceTotal(address);
+      this.logger.debug(
+        `requested 'getAddressBalanceTotal' for address [${address}]. res: ${JsonBigInt.stringify(
+          balance
+        )}`
+      );
+      const confirmed = balance.confirmed;
       if (!confirmed) {
         return {
           nativeToken: 0n,
@@ -133,6 +146,11 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
         blockId
       );
       const txIds = transactions.map((tx) => tx.id);
+      this.logger.debug(
+        `requested block transaction ids with 'getBlockTransactionsById' for blockId [${blockId}]. res: ${JsonBigInt.stringify(
+          txIds
+        )}`
+      );
 
       if (txIds.includes(undefined)) {
         throw new FailedError(
@@ -160,6 +178,11 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
   public getBlockInfo = async (blockId: string) => {
     try {
       const blockInfo = await this.client.getBlockHeaderById(blockId);
+      this.logger.debug(
+        `requested block header with 'getBlockHeaderById' for blockId [${blockId}]. res: ${JsonBigInt.stringify(
+          blockInfo
+        )}`
+      );
 
       return {
         hash: blockId,
@@ -195,6 +218,11 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     try {
       const blockTxs = await this.client.getBlockTransactionsById(blockId);
       const tx = blockTxs.transactions.find((tx) => tx.id === txId);
+      this.logger.debug(
+        `requested transaction with 'getBlockTransactionsById' for txId [${txId}] and blockId [${blockId}]. res: ${JsonBigInt.stringify(
+          tx
+        )}`
+      );
       if (!tx) throw Error(`tx [${txId}] is not in block [${blockId}]`);
       return ergoLib.Transaction.from_json(JsonBigInt.stringify(tx));
     } catch (error) {
@@ -247,6 +275,9 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     try {
       const txsPageIterator = this.getOneMempoolTx();
       const txs = await all(txsPageIterator);
+      this.logger.debug(
+        `requested mempool transactions. res: ${JsonBigInt.stringify(txs)}`
+      );
       return txs
         .filter((tx) => tx.id)
         .map((tx) => ergoLib.Transaction.from_json(JsonBigInt.stringify(tx)));
@@ -269,10 +300,16 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
     offset: number,
     limit: number
   ) => {
-    return await this.client.getBoxesByAddressUnspent(address, {
+    const res = await this.client.getBoxesByAddressUnspent(address, {
       offset: offset,
       limit: limit,
     });
+    this.logger.debug(
+      `requested 'getBoxesByAddressUnspent' for address [${address}]. res: ${JsonBigInt.stringify(
+        res
+      )}`
+    );
+    return res;
   };
 
   /**
@@ -391,6 +428,11 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
   public isBoxUnspentAndValid = async (boxId: string) => {
     try {
       const box = await this.client.getBoxById(boxId);
+      this.logger.debug(
+        `requested 'getBoxById' for boxId [${boxId}]. res: ${JsonBigInt.stringify(
+          box
+        )}`
+      );
 
       return !box.spentTransactionId;
     } catch (error) {
