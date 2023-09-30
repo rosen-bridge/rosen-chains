@@ -1219,7 +1219,8 @@ describe('ErgoChain', () => {
     });
 
     /**
-     * @target ErgoChain.verifyEvent should return true when event is valid
+     * @target ErgoChain.verifyEvent should return false when
+     * output box creation height is more than a year ago
      * @dependencies
      * @scenario
      * - mock an event
