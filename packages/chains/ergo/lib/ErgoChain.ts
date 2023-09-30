@@ -23,7 +23,7 @@ import {
 } from '@rosen-chains/abstract-chain';
 import { blake2b } from 'blakejs';
 import * as wasm from 'ergo-lib-wasm-nodejs';
-import { ERGO_CHAIN } from './constants';
+import { ERGO_CHAIN, NUMBER_OF_BLOCKS_PER_YEAR } from './constants';
 import ErgoTransaction from './ErgoTransaction';
 import ErgoUtils from './ErgoUtils';
 import AbstractErgoNetwork from './network/AbstractErgoNetwork';
@@ -454,6 +454,17 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       );
       const blockHeight = (await this.network.getBlockInfo(event.sourceBlockId))
         .height;
+      for (let i = 0; i < tx.outputs().len(); i++) {
+        const box = tx.outputs().get(i);
+        if (blockHeight - box.creation_height() > NUMBER_OF_BLOCKS_PER_YEAR) {
+          this.logger.info(
+            `Event [${eventId}] is not valid, box [${box
+              .box_id()
+              .to_str()}] creation_height [${box.creation_height()}] is more than a year ago`
+          );
+          return false;
+        }
+      }
       const data = this.network.extractor.get(
         Buffer.from(tx.sigma_serialize_bytes()).toString('hex')
       );
