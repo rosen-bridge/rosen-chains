@@ -4,11 +4,16 @@ interface ConfirmationConfigs {
   cold: number;
   manual: number;
 }
+
+interface AddressConfigs {
+  lock: string;
+  cold: string;
+  permit: string;
+}
 interface ChainConfigs {
   fee: bigint;
   confirmations: ConfirmationConfigs;
-  lockAddress: string;
-  coldStorageAddress: string;
+  addresses: AddressConfigs;
   rwtId: string;
 }
 

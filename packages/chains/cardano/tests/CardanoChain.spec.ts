@@ -33,9 +33,11 @@ describe('CardanoChain', () => {
     fee: 1000000n,
     minBoxValue: minBoxValue,
     txTtl: 64,
-    lockAddress:
-      'addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs',
-    coldStorageAddress: 'cold',
+    addresses: {
+      lock: 'addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs',
+      cold: 'cold',
+      permit: 'permit',
+    },
     rwtId: rwtId,
     confirmations: {
       observation: observationTxConfirmation,
@@ -138,7 +140,7 @@ describe('CardanoChain', () => {
       );
       expectedRequiredAssets.nativeToken += minBoxValue + configs.fee;
       expect(getCovBoxesSpy).toHaveBeenCalledWith(
-        configs.lockAddress,
+        configs.addresses.lock,
         expectedRequiredAssets,
         TestData.transaction1InputIds,
         new Map()
@@ -599,7 +601,7 @@ describe('CardanoChain', () => {
       // call the function
       const result = testInstance.callGetTransactionsBoxMapping(
         transactions,
-        configs.lockAddress
+        configs.addresses.lock
       );
 
       // check returned value
@@ -640,7 +642,7 @@ describe('CardanoChain', () => {
       const trackingTokenId = 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz';
       const result = testInstance.callGetTransactionsBoxMapping(
         transactions,
-        configs.lockAddress,
+        configs.addresses.lock,
         trackingTokenId
       );
 
@@ -682,7 +684,7 @@ describe('CardanoChain', () => {
       const trackingTokenId = 'asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p0';
       const result = testInstance.callGetTransactionsBoxMapping(
         transactions,
-        configs.lockAddress,
+        configs.addresses.lock,
         trackingTokenId
       );
 
@@ -1508,10 +1510,8 @@ describe('CardanoChain', () => {
       );
 
       // create a new CardanoChain object with custom lock address
-      const newConfigs = {
-        ...configs,
-        lockAddress: 'TEST',
-      };
+      const newConfigs = structuredClone(configs);
+      newConfigs.addresses.lock = 'TEST';
       const cardanoChain = new CardanoChain(
         network,
         newConfigs,

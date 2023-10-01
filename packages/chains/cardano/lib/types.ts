@@ -6,7 +6,6 @@ import { BigNum } from '@emurgo/cardano-serialization-lib-nodejs';
 
 interface CardanoConfigs extends ChainConfigs {
   minBoxValue: bigint;
-  lockAddress: string;
   txTtl: number;
   aggregatedPublicKey: string;
 }

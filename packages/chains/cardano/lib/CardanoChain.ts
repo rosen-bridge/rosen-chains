@@ -78,7 +78,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
       // skip change box (last box & address equal to bank address)
       if (
         i === tx.body().outputs().len() - 1 &&
-        output.address().to_bech32() === this.configs.lockAddress
+        output.address().to_bech32() === this.configs.addresses.lock
       )
         continue;
 
@@ -141,11 +141,11 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
       serializedSignedTransactions.map((serializedTx) =>
         CardanoWasm.Transaction.from_bytes(Buffer.from(serializedTx, 'hex'))
       ),
-      this.configs.lockAddress
+      this.configs.addresses.lock
     );
 
     const coveredBoxes = await this.getCoveringBoxes(
-      this.configs.lockAddress,
+      this.configs.addresses.lock,
       requiredAssets,
       forbiddenBoxIds,
       trackMap
@@ -216,7 +216,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
       );
       const inputBox = CardanoWasm.TransactionInput.new(txHash, box.index);
       txBuilder.add_input(
-        CardanoWasm.Address.from_bech32(this.configs.lockAddress),
+        CardanoWasm.Address.from_bech32(this.configs.addresses.lock),
         inputBox,
         CardanoWasm.Value.new(orderValue)
       );
@@ -251,7 +251,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     changeAmount.set_multiasset(changeBoxMultiAsset);
     this.logger.debug(`Change box amount: ${changeAmount.to_json()}`);
     const changeBox = CardanoWasm.TransactionOutput.new(
-      CardanoWasm.Address.from_bech32(this.configs.lockAddress),
+      CardanoWasm.Address.from_bech32(this.configs.addresses.lock),
       changeAmount
     );
     txBuilder.add_output(changeBox);
@@ -626,7 +626,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     // check change box
     const changeBoxIndex = tx.body().outputs().len() - 1;
     const changeBox = tx.body().outputs().get(changeBoxIndex);
-    if (changeBox.address().to_bech32() !== this.configs.lockAddress) {
+    if (changeBox.address().to_bech32() !== this.configs.addresses.lock) {
       this.logger.debug(
         `Tx [${transaction.txId}] invalid: Change box address is wrong`
       );

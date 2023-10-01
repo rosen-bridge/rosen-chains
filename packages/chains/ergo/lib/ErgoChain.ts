@@ -142,15 +142,15 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       serializedSignedTransactions.map((serializedTx) =>
         Serializer.signedDeserialize(Buffer.from(serializedTx, 'hex'))
       ),
-      this.configs.lockAddress
+      this.configs.addresses.lock
     );
-    (await this.getMempoolBoxMapping(this.configs.lockAddress)).forEach(
+    (await this.getMempoolBoxMapping(this.configs.addresses.lock)).forEach(
       (value, key) => trackMap.set(key, value)
     );
 
     // call getCovering to get enough boxes
     const coveredBoxes = await this.getCoveringBoxes(
-      this.configs.lockAddress,
+      this.configs.addresses.lock,
       requiredAssets,
       forbiddenBoxIds,
       trackMap
@@ -252,7 +252,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         )
       ),
       wasm.Contract.new(
-        wasm.Address.from_base58(this.configs.lockAddress).to_ergo_tree()
+        wasm.Address.from_base58(this.configs.addresses.lock).to_ergo_tree()
       ),
       currentHeight
     );
@@ -279,7 +279,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       outBoxCandidates,
       currentHeight,
       wasm.BoxValue.from_i64(wasm.I64.from_str(this.configs.fee.toString())),
-      wasm.Address.from_base58(this.configs.lockAddress)
+      wasm.Address.from_base58(this.configs.addresses.lock)
     );
     txCandidate.set_data_inputs(inData);
     const tx = txCandidate.build();
@@ -382,7 +382,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         output.ergo_tree().to_base16_bytes() === ErgoChain.feeBoxErgoTree ||
         (tx.output_candidates().len() - i === 2 &&
           output.ergo_tree().to_base16_bytes() ===
-            wasm.Address.from_base58(this.configs.lockAddress)
+            wasm.Address.from_base58(this.configs.addresses.lock)
               .to_ergo_tree()
               .to_base16_bytes())
       )
@@ -552,7 +552,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
 
     const box = outputBoxes.get(outputBoxes.len() - 2);
     const boxErgoTree = box.ergo_tree().to_base16_bytes();
-    const lockErgoTree = wasm.Address.from_base58(this.configs.lockAddress)
+    const lockErgoTree = wasm.Address.from_base58(this.configs.addresses.lock)
       .to_ergo_tree()
       .to_base16_bytes();
     if (boxErgoTree === lockErgoTree) {
@@ -989,7 +989,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     for (let i = 0; i < tx.outputs().len(); i++) {
       const output = tx.outputs().get(i);
       const boxErgoTree = output.ergo_tree().to_base16_bytes();
-      const lockErgoTree = wasm.Address.from_base58(this.configs.lockAddress)
+      const lockErgoTree = wasm.Address.from_base58(this.configs.addresses.lock)
         .to_ergo_tree()
         .to_base16_bytes();
 
