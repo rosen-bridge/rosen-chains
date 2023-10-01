@@ -20,8 +20,11 @@ describe('AbstractChain', () => {
         cold: 7,
         manual: 8,
       },
-      lockAddress: 'lock_addr',
-      coldStorageAddress: 'cold_addr',
+      addresses: {
+        lock: 'lock_addr',
+        cold: 'cold_addr',
+        permit: 'permit_addr',
+      },
       rwtId: 'rwt',
     };
     return new TestChain(network, config);
