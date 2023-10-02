@@ -13,6 +13,7 @@ export default defineConfig({
     },
     mockReset: true,
     watch: false,
+    threads: false,
   },
   plugins: [wasm(), topLevelAwait()],
 });
