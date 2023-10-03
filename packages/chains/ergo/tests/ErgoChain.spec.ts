@@ -2432,24 +2432,20 @@ describe('ErgoChain', () => {
      * order successfully
      * @dependencies
      * @scenario
-     * - mock PaymentTransaction
+     * - mock serialized transaction
      * - run test
      * - check returned value
      * @expected
      * - it should return mocked transaction order
      */
     it('should extract transaction order successfully', () => {
-      // mock PaymentTransaction
-      const paymentTx = new ErgoTransaction(
-        'txId',
-        'eventId',
+      // mock serialized transaction
+      const serializedTx = Buffer.from(
         ergoTestUtils
           .toTransaction(transactionTestData.transaction0)
-          .sigma_serialize_bytes(),
-        TransactionType.payment,
-        [],
-        []
-      );
+          .sigma_serialize_bytes()
+      ).toString('hex');
+
       const expectedOrder = transactionTestData.transaction0Order;
       const config: ErgoConfigs = {
         fee: 1100000n,
@@ -2476,7 +2472,7 @@ describe('ErgoChain', () => {
         feeRatioDivisor,
         signFunction
       );
-      const result = ergoChain.extractSignedTransactionOrder(paymentTx);
+      const result = ergoChain.extractSignedTransactionOrder(serializedTx);
 
       // check returned value
       expect(result).toEqual(expectedOrder);

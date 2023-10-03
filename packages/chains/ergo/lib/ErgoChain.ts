@@ -977,13 +977,15 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
 
   /**
    * extracts payment order of a signed transaction
-   * @param signedTransaction The PaymentTransaction
+   * @param serializedTransaction hex representation of sigma-serialized-bytes of the transaction
    * @returns the transaction payment order (list of single payments)
    */
   extractSignedTransactionOrder = (
-    signedTransaction: PaymentTransaction
+    serializedTransaction: string
   ): PaymentOrder => {
-    const tx = Serializer.signedDeserialize(signedTransaction.txBytes);
+    const tx = Serializer.signedDeserialize(
+      Buffer.from(serializedTransaction, 'hex')
+    );
 
     const order: PaymentOrder = [];
     for (let i = 0; i < tx.outputs().len(); i++) {
@@ -1023,6 +1025,20 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
    */
   PaymentTransactionFromJson = (jsonString: string): ErgoTransaction =>
     ErgoTransaction.fromJson(jsonString);
+
+  /**
+   * get a transaction by its id
+   * returning serialized tx or throw an error
+   * if the tx doesn't belong to the block
+   * @param txId
+   * @param blockId
+   */
+  getTransaction = async (txId: string, blockId: string): Promise<string> =>
+    Buffer.from(
+      Serializer.signedSerialize(
+        await this.network.getTransaction(txId, blockId)
+      )
+    ).toString('hex');
 }
 
 export default ErgoChain;
