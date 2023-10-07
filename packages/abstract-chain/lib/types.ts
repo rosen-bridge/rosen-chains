@@ -9,6 +9,7 @@ interface AddressConfigs {
   lock: string;
   cold: string;
   permit: string;
+  fraud: string;
 }
 interface ChainConfigs {
   fee: bigint;

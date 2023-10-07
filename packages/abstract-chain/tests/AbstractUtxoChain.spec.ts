@@ -19,6 +19,7 @@ describe('AbstractUtxoChain', () => {
         lock: 'lock_addr',
         cold: 'cold_addr',
         permit: 'permit_addr',
+        fraud: 'fraud_addr',
       },
       rwtId: 'rwt',
     };

@@ -37,6 +37,7 @@ describe('CardanoChain', () => {
       lock: 'addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs',
       cold: 'cold',
       permit: 'permit',
+      fraud: 'fraud',
     },
     rwtId: rwtId,
     confirmations: {
