@@ -44,7 +44,7 @@ export const testTokenMap = `
         }
       },
       "cardano" : {
-        "fingerprint" : "lovelace",
+        "fingerprint" : "ada",
         "policyId" : "",
         "assetName" : "414441",
         "decimals" : 6,
