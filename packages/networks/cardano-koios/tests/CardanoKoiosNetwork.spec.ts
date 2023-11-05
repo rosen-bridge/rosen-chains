@@ -219,7 +219,7 @@ describe('CardanoKoiosNetwork', () => {
       const result = await network.getBlockTransactionIds(testData.blockId);
 
       // check returned value
-      expect(result).toEqual(testData.txHashes);
+      expect(result).toEqual(testData.txHashes.map((block) => block.tx_hash));
     });
   });
 
