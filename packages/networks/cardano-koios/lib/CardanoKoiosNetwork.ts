@@ -35,11 +35,12 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     koiosUrl: string,
     lockAddress: string,
     tokens: RosenTokens,
+    authToken?: string,
     logger?: AbstractLogger
   ) {
     super(logger);
     this.extractor = new CardanoRosenExtractor(lockAddress, tokens, logger);
-    this.client = cardanoKoiosClientFactory(koiosUrl);
+    this.client = cardanoKoiosClientFactory(koiosUrl, authToken);
   }
 
   /**
@@ -156,19 +157,14 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
         throw new UnexpectedApiError(baseError + e.message);
       }
     }
-    if (addressAssets.length !== 0) {
-      if (!addressAssets[0].asset_list)
-        throw new KoiosNullValueError('Address asset_list is null');
-      const assets = addressAssets[0].asset_list;
-      tokens = assets.map((asset) => {
-        if (!asset.fingerprint || !asset.quantity)
-          throw new KoiosNullValueError('Asset info is null');
-        return {
-          id: asset.fingerprint,
-          value: BigInt(asset.quantity),
-        };
-      });
-    }
+    tokens = addressAssets.map((asset) => {
+      if (!asset.fingerprint || !asset.quantity)
+        throw new KoiosNullValueError('Asset info is null');
+      return {
+        id: asset.fingerprint,
+        value: BigInt(asset.quantity),
+      };
+    });
 
     return {
       nativeToken: nativeToken,
@@ -190,10 +186,11 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
             res
           )}`
         );
-        const txIds = res[0].tx_hashes;
-        if (!txIds)
-          throw new KoiosNullValueError(`Block tx hashes list is null`);
-        return txIds;
+        return res.map((block) => {
+          const txId = block.tx_hash;
+          if (!txId) throw new KoiosNullValueError(`Block tx hash is null`);
+          return txId;
+        });
       })
       .catch((e) => {
         const baseError = `Failed to get block [${blockId}] transaction ids from Koios: `;

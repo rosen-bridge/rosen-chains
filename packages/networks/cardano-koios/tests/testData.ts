@@ -9,6 +9,7 @@ export const address =
 export const addressBalance = '99000000';
 export const addressAssets = [
   {
+    address: address,
     decimals: 0n,
     quantity: '15888202094',
     policy_id: '0dad352d8f0d5ce3f5be8b025d6a16141ecceab5a921871792d91f47',
@@ -16,6 +17,7 @@ export const addressAssets = [
     fingerprint: 'asset1p40r0eun2alszlxhj7k4uylya4cj54lxkjjmsm',
   },
   {
+    address: address,
     decimals: 0n,
     quantity: '1866325',
     policy_id: '8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b9',
@@ -28,9 +30,18 @@ export const blockId =
 export const parentBlockId =
   '6dc89c6e28360410df837ddebad0b8c2a7c73f561cd4ba66a976dc3d3bce';
 export const txHashes = [
-  '65eebe2262738d1c3a2ac57ce7aa7987613cd8835e7ffe1b44be6cc513464e9a',
-  'ffc5558b0041a0531c2e99ced50c066c77afb56c0608716632bde93e92572d95',
-  '51b640cf0a9b5a241d3fd39174ce414e53b375c1f53904951dd59fa420c29141',
+  {
+    block_hash: blockId,
+    tx_hash: '65eebe2262738d1c3a2ac57ce7aa7987613cd8835e7ffe1b44be6cc513464e9a',
+  },
+  {
+    block_hash: blockId,
+    tx_hash: 'ffc5558b0041a0531c2e99ced50c066c77afb56c0608716632bde93e92572d95',
+  },
+  {
+    block_hash: blockId,
+    tx_hash: '51b640cf0a9b5a241d3fd39174ce414e53b375c1f53904951dd59fa420c29141',
+  },
 ];
 export const oldBlockheight = 7000000n;
 export const noMetadataTxId =
