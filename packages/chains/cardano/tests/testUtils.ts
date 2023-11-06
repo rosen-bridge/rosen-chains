@@ -115,3 +115,13 @@ export const adaToLovelace = (ada: number): bigint =>
   BigInt((ada * 1000000).toString());
 
 export const generateRandomId = (): string => randomBytes(32).toString('hex');
+
+export const protocolParameters = {
+  minFeeA: 44,
+  minFeeB: 155381,
+  poolDeposit: '500000000',
+  keyDeposit: '2000000',
+  maxValueSize: 4000,
+  maxTxSize: 8000,
+  coinsPerUtxoSize: '4311',
+};
