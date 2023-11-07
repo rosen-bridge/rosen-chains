@@ -10,7 +10,7 @@ import {
   CardanoUtxo,
   CardanoTx,
   CardanoAsset,
-  CardanoProtocolParams,
+  CardanoProtocolParameters,
 } from '@rosen-chains/cardano';
 import { RosenTokens } from '@rosen-bridge/tokens';
 import {
@@ -537,7 +537,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    * gets required parameters of Cardano Protocol
    * @returns an object containing required protocol parameters
    */
-  getProtocolParameters = async (): Promise<CardanoProtocolParams> => {
+  getProtocolParameters = async (): Promise<CardanoProtocolParameters> => {
     const allParams = await this.client.getEpochParams();
     const epochParams = allParams[0];
     this.logger.debug(

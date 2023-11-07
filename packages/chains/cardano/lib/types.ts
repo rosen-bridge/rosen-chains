@@ -52,7 +52,7 @@ interface CardanoTransactionJsonModel extends PaymentTransactionJsonModel {
   inputUtxos: Array<string>;
 }
 
-interface CardanoProtocolParams {
+interface CardanoProtocolParameters {
   minFeeA: number;
   minFeeB: number;
   poolDeposit: string;
@@ -71,5 +71,5 @@ export {
   CardanoTx,
   UtxoBoxesAssets,
   CardanoTransactionJsonModel,
-  CardanoProtocolParams,
+  CardanoProtocolParameters,
 };

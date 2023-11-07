@@ -1,6 +1,10 @@
 import { AbstractCardanoNetwork } from '../../lib';
 import { BlockInfo, ConfirmationStatus } from '@rosen-chains/abstract-chain';
-import { CardanoProtocolParams, CardanoTx, CardanoUtxo } from '../../lib/types';
+import {
+  CardanoProtocolParameters,
+  CardanoTx,
+  CardanoUtxo,
+} from '../../lib/types';
 import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import { protocolParameters } from '../testUtils';
 
@@ -63,7 +67,7 @@ class TestCardanoNetwork extends AbstractCardanoNetwork {
     throw Error('Not mocked');
   };
 
-  getProtocolParameters = (): Promise<CardanoProtocolParams> =>
+  getProtocolParameters = (): Promise<CardanoProtocolParameters> =>
     Promise.resolve(protocolParameters);
 }
 

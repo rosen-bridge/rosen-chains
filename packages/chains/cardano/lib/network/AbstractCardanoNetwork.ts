@@ -1,5 +1,5 @@
 import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
-import { CardanoProtocolParams, CardanoTx, CardanoUtxo } from '../types';
+import { CardanoProtocolParameters, CardanoTx, CardanoUtxo } from '../types';
 import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 
@@ -32,7 +32,7 @@ abstract class AbstractCardanoNetwork extends AbstractUtxoChainNetwork<
    * gets required parameters of Cardano Protocol
    * @returns an object containing required protocol parameters
    */
-  abstract getProtocolParameters: () => Promise<CardanoProtocolParams>;
+  abstract getProtocolParameters: () => Promise<CardanoProtocolParameters>;
 }
 
 export default AbstractCardanoNetwork;
