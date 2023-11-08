@@ -7,6 +7,7 @@ import {
   CardanoAsset,
   CardanoBoxCandidate,
   CardanoProtocolParameters,
+  CardanoMetadata,
 } from '@rosen-chains/cardano';
 import { RosenTokens } from '@rosen-bridge/tokens';
 import {
@@ -604,13 +605,10 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
    */
   protected parseMetadata = (
     metadata: BlockFrostTxMetadata
-  ): Record<string, Record<string, any>> => {
-    const result: Record<string, Record<string, any>> = {};
+  ): CardanoMetadata => {
+    const result: CardanoMetadata = {};
     metadata.forEach((labelObject) => {
-      result[labelObject.label] = labelObject.json_metadata as Record<
-        string,
-        any
-      >;
+      result[labelObject.label] = labelObject.json_metadata;
     });
     return result;
   };
