@@ -580,3 +580,48 @@ export const unspentBoxId =
   '454426c78db02b32a02274d926850fad261bb08b3dbfac962ba38c5118856dc6.0';
 export const boxId =
   '98884bf40d8ebbd89ad78c6deaa31f0cc47938d941bfc0452bbc9a13aeb37cd3.0';
+
+export const epochParams = {
+  epoch_no: 447,
+  min_fee_a: 44,
+  min_fee_b: 155381,
+  max_block_size: 90112,
+  max_tx_size: 16384,
+  max_bh_size: 1100,
+  key_deposit: '2000000',
+  pool_deposit: '500000000',
+  max_epoch: 18,
+  optimal_pool_count: 500,
+  influence: 0.3,
+  monetary_expand_rate: 0.003,
+  treasury_growth_rate: 0.2,
+  decentralisation: 0,
+  extra_entropy: null,
+  protocol_major: 8,
+  protocol_minor: 0,
+  min_utxo_value: '0',
+  min_pool_cost: '170000000',
+  nonce: '3cf0a6c3179f521101ceef355b1b3e3d782846f0b9161dd7095e096bbb6536bf',
+  block_hash:
+    '376ca52b4759cb2a7aa255cbfc93b615c40366d7d043f168796eaa054f622dd9',
+  cost_models: {},
+  price_mem: 0.0577,
+  price_step: 0.0000721,
+  max_tx_ex_mem: 14000000,
+  max_tx_ex_steps: 10000000000,
+  max_block_ex_mem: 62000000,
+  max_block_ex_steps: 20000000000,
+  max_val_size: 5000,
+  collateral_percent: 150,
+  max_collateral_inputs: 3,
+  coins_per_utxo_size: '4310',
+};
+export const expectedRequiredParams = {
+  minFeeA: 44,
+  minFeeB: 155381,
+  poolDeposit: '500000000',
+  keyDeposit: '2000000',
+  maxValueSize: 5000,
+  maxTxSize: 16384,
+  coinsPerUtxoSize: '4310',
+};

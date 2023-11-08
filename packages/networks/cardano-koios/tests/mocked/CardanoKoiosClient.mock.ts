@@ -161,3 +161,12 @@ export const mockPostTxUtxos = (utxos: TxUtxos) => {
     postTxInfo: async () => [utxos],
   } as any);
 };
+
+/**
+ * mock `getEpochParams` of cardano koios client
+ */
+export const mockGetEpochParams = () => {
+  jest.mocked(cardanoKoiosClientFactory).mockReturnValueOnce({
+    getEpochParams: async () => [testData.epochParams],
+  } as any);
+};

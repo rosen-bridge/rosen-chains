@@ -31,7 +31,7 @@ import JSONBigInt from '@rosen-bridge/json-bigint';
 import CardanoTransaction from './CardanoTransaction';
 import CardanoUtils from './CardanoUtils';
 import cardanoUtils from './CardanoUtils';
-import { CARDANO_CHAIN, txBuilderConfig } from './constants';
+import { CARDANO_CHAIN } from './constants';
 import AbstractCardanoNetwork from './network/AbstractCardanoNetwork';
 import Serializer from './Serializer';
 import {
@@ -159,7 +159,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     }
     const bankBoxes = coveredBoxes.boxes;
 
-    const txBuilder = CardanoWasm.TransactionBuilder.new(txBuilderConfig);
+    const txBuilder = CardanoWasm.TransactionBuilder.new(
+      await this.getTxBuilderConfig()
+    );
     let orderValue = BigNum.zero();
     const orderAssets: Map<string, bigint> = new Map();
 
@@ -777,6 +779,31 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
    */
   PaymentTransactionFromJson = (jsonString: string): CardanoTransaction =>
     CardanoTransaction.fromJson(jsonString);
+
+  /**
+   * generates transaction builder config using protocol params
+   * @returns TransactionBuilderConfig
+   */
+  protected getTxBuilderConfig =
+    async (): Promise<CardanoWasm.TransactionBuilderConfig> => {
+      const params = await this.network.getProtocolParameters();
+      return CardanoWasm.TransactionBuilderConfigBuilder.new()
+        .fee_algo(
+          CardanoWasm.LinearFee.new(
+            CardanoWasm.BigNum.from_str(params.minFeeA.toString()),
+            CardanoWasm.BigNum.from_str(params.minFeeB.toString())
+          )
+        )
+        .pool_deposit(CardanoWasm.BigNum.from_str(params.poolDeposit))
+        .key_deposit(CardanoWasm.BigNum.from_str(params.keyDeposit))
+        .coins_per_utxo_byte(
+          CardanoWasm.BigNum.from_str(params.coinsPerUtxoSize)
+        )
+        .max_value_size(params.maxValueSize)
+        .max_tx_size(params.maxTxSize)
+        .prefer_pure_change(true)
+        .build();
+    };
 }
 
 export default CardanoChain;

@@ -10,6 +10,7 @@ import {
   CardanoUtxo,
   CardanoTx,
   CardanoAsset,
+  CardanoProtocolParameters,
 } from '@rosen-chains/cardano';
 import { RosenTokens } from '@rosen-bridge/tokens';
 import {
@@ -529,6 +530,43 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
       index: Number(input.tx_index),
       value: BigInt(input.value),
       assets: input.asset_list.map(this.parseAssetList),
+    };
+  };
+
+  /**
+   * gets required parameters of Cardano Protocol
+   * @returns an object containing required protocol parameters
+   */
+  getProtocolParameters = async (): Promise<CardanoProtocolParameters> => {
+    const allParams = await this.client.getEpochParams();
+    const epochParams = allParams[0];
+    this.logger.debug(
+      `requested 'getEpochParams'. index 0: ${JsonBigInt.stringify(
+        epochParams
+      )}`
+    );
+
+    if (
+      !epochParams.min_fee_a ||
+      !epochParams.min_fee_b ||
+      !epochParams.pool_deposit ||
+      !epochParams.key_deposit ||
+      !epochParams.max_val_size ||
+      !epochParams.max_tx_size ||
+      !epochParams.coins_per_utxo_size
+    )
+      throw new KoiosNullValueError(
+        `Some required Cardano protocol params are undefined or null `
+      );
+
+    return {
+      minFeeA: epochParams.min_fee_a,
+      minFeeB: epochParams.min_fee_b,
+      poolDeposit: epochParams.pool_deposit,
+      keyDeposit: epochParams.key_deposit,
+      maxValueSize: epochParams.max_val_size,
+      maxTxSize: epochParams.max_tx_size,
+      coinsPerUtxoSize: epochParams.coins_per_utxo_size,
     };
   };
 }
