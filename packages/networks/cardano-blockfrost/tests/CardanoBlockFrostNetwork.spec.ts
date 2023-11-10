@@ -403,7 +403,7 @@ describe('CardanoBlockFrostNetwork', () => {
       const result = await network.getAddressBoxes(testData.address, 0, 100);
 
       // check returned value
-      expect(result.map((box) => box)).toEqual(testData.expectedAddressUtxoSet);
+      expect(result).toEqual(testData.expectedAddressUtxoSet);
     });
 
     /**
@@ -426,7 +426,7 @@ describe('CardanoBlockFrostNetwork', () => {
       const result = await network.getAddressBoxes(testData.address, 0, 100);
 
       // check returned value
-      expect(result.map((box) => box)).toEqual([]);
+      expect(result).toEqual([]);
     });
 
     /**
@@ -449,7 +449,7 @@ describe('CardanoBlockFrostNetwork', () => {
       const result = await network.getAddressBoxes(testData.address, 0, 100);
 
       // check returned value
-      expect(result.map((box) => box)).toEqual([]);
+      expect(result).toEqual([]);
     });
   });
 

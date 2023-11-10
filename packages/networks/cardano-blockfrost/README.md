@@ -35,7 +35,6 @@ const cardanoBlockFrostNetwork = new CardanoBlockFrostNetwork(
   'lockAddress', // bridge lock address in Cardano (used in CardanoRosenExtractor)
   tokens, // bridge supported tokens config, provided by `rosen-bridge/contract`
   undefined // backend url, uses main blockFrost backend if no url is passed
-  loggerFactory('BlockFrostNetwork') // logger (optional)
 );
 
 const height = await cardanoBlockFrostNetwork.getHeight();

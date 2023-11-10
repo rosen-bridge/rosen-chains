@@ -68,7 +68,7 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
           `requested 'blocksLatest'. res: ${JsonBigInt.stringify(block)}`
         );
         const height = block.height;
-        if (height) return Number(height);
+        if (height) return height;
         throw new BlockFrostNullValueError('Height of last block is null');
       })
       .catch((e) => {
@@ -82,7 +82,7 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
   };
 
   /**
-   * gets confirmation for a transaction
+   * gets confirmation for a transaction (returns -1 if tx is not mined or found)
    * @param transactionId the transaction id
    * @returns the transaction confirmation
    */
@@ -131,14 +131,14 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
         );
         const assets = res.amount;
         // get ADA value
-        const loveLaceAmount = assets.find(
+        const lovelaceAmount = assets.find(
           (token) => token.unit === 'lovelace'
         )?.quantity;
-        if (!loveLaceAmount)
+        if (!lovelaceAmount)
           throw new BlockFrostNullValueError(
             `Found assets for address without lovelace`
           );
-        nativeToken = BigInt(loveLaceAmount);
+        nativeToken = BigInt(lovelaceAmount);
         // get tokens value
         assets.forEach((asset) => {
           if (asset.unit === 'lovelace') return;
@@ -606,11 +606,10 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
   protected parseMetadata = (
     metadata: BlockFrostTxMetadata
   ): CardanoMetadata => {
-    const result: CardanoMetadata = {};
-    metadata.forEach((labelObject) => {
+    return metadata.reduce((result: CardanoMetadata, labelObject) => {
       result[labelObject.label] = labelObject.json_metadata;
-    });
-    return result;
+      return result;
+    }, {});
   };
 
   /**
