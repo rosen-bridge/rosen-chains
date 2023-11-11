@@ -1,3 +1,4 @@
 const BLOCKFROST_NETWORK = 'blockfrost';
+const PAGE_ITEM_COUNT = 20;
 
-export { BLOCKFROST_NETWORK };
+export { BLOCKFROST_NETWORK, PAGE_ITEM_COUNT };

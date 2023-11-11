@@ -5,6 +5,7 @@ import {
 } from '@blockfrost/blockfrost-js';
 import * as testData from '../testData';
 import { components } from '@blockfrost/openapi';
+import { PAGE_ITEM_COUNT } from '../../lib';
 
 const serverNotFoundError = new BlockfrostServerError({
   status_code: 404,
@@ -113,7 +114,10 @@ export const mockAddressesUtxos = (
   client: BlockFrostAPI,
   result: components['schemas']['address_utxo_content']
 ) => {
-  vi.spyOn(client, 'addressesUtxos').mockResolvedValue(result);
+  const addressUtxoSpy = vi.spyOn(client, 'addressesUtxos');
+  for (let i = 0; i < result.length; i += PAGE_ITEM_COUNT)
+    addressUtxoSpy.mockResolvedValueOnce(result.slice(i, i + PAGE_ITEM_COUNT));
+  addressUtxoSpy.mockResolvedValue([]);
 };
 
 /**

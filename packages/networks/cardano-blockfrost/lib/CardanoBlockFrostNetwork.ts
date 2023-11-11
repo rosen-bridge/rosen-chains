@@ -14,6 +14,7 @@ import {
   AssetBalance,
   BlockInfo,
   FailedError,
+  ImpossibleBehavior,
   NetworkError,
   TokenInfo,
   UnexpectedApiError,
@@ -27,6 +28,7 @@ import {
   BlockFrostOutput,
   BlockFrostTxMetadata,
   CardanoBalance,
+  BlockFrostAddressUtxos,
 } from './types';
 import {
   BlockFrostAPI,
@@ -35,6 +37,8 @@ import {
 } from '@blockfrost/blockfrost-js';
 import blake2b from 'blake2b';
 import { bech32 } from 'bech32';
+import { PAGE_ITEM_COUNT } from './constants';
+import { components } from '@blockfrost/openapi';
 
 class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
   protected client: BlockFrostAPI;
@@ -88,26 +92,25 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
    */
   getTxConfirmation = async (transactionId: string): Promise<number> => {
     const currentHeight = await this.getHeight();
-    const txHeight = await this.client
-      .txs(transactionId)
-      .then((res) => {
-        this.logger.debug(
-          `requested 'txs' for txId [${transactionId}]. res: ${JsonBigInt.stringify(
-            res
-          )}`
-        );
-        return res.block_height;
-      })
-      .catch((e) => {
-        const baseError = `Failed to get confirmation for tx [${transactionId}] from BlockFrost: `;
-        if (e instanceof BlockfrostServerError && e.status_code === 404) {
-          return -1;
-        } else if (e instanceof BlockfrostClientError) {
-          throw new NetworkError(baseError + e.message);
-        } else {
-          throw new UnexpectedApiError(baseError + e.message);
-        }
-      });
+    let txHeight = -1;
+    try {
+      const txInfo = await this.client.txs(transactionId);
+      this.logger.debug(
+        `requested 'txs' for txId [${transactionId}]. res: ${JsonBigInt.stringify(
+          txInfo
+        )}`
+      );
+      txHeight = txInfo.block_height;
+    } catch (e: any) {
+      const baseError = `Failed to get confirmation for tx [${transactionId}] from BlockFrost: `;
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        this.logger.debug(baseError + `Transaction is not found`);
+      } else if (e instanceof BlockfrostClientError) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
     if (txHeight === -1) return txHeight;
     return currentHeight - txHeight;
   };
@@ -241,68 +244,62 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
     transactionId: string,
     blockId: string
   ): Promise<CardanoTx> => {
-    const txInfo = await this.client
-      .txs(transactionId)
-      .then((res) => {
-        this.logger.debug(
-          `requested 'txs' for txId [${transactionId}]. res: ${JsonBigInt.stringify(
-            res
-          )}`
-        );
-        return res;
-      })
-      .catch((e) => {
-        const baseError = `Failed to get transaction [${transactionId}] from BlockFrost: `;
-        if (e instanceof BlockfrostServerError && e.status_code === 404) {
-          throw new FailedError(baseError + e.message);
-        } else if (e instanceof BlockfrostClientError) {
-          throw new NetworkError(baseError + e.message);
-        } else {
-          throw new UnexpectedApiError(baseError + e.message);
-        }
-      });
+    let txInfo: components['schemas']['tx_content'];
+    try {
+      txInfo = await this.client.txs(transactionId);
+      this.logger.debug(
+        `requested 'txs' for txId [${transactionId}]. res: ${JsonBigInt.stringify(
+          txInfo
+        )}`
+      );
+    } catch (e: any) {
+      const baseError = `Failed to get transaction [${transactionId}] from BlockFrost: `;
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        throw new FailedError(baseError + e.message);
+      } else if (e instanceof BlockfrostClientError) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
 
-    const txUtxos = await this.client
-      .txsUtxos(transactionId)
-      .then((res) => {
-        this.logger.debug(
-          `requested 'txsUtxos' for txId [${transactionId}]. res: ${JsonBigInt.stringify(
-            res
-          )}`
-        );
-        return res;
-      })
-      .catch((e) => {
-        const baseError = `Failed to get transaction [${transactionId}] utxos from BlockFrost: `;
-        if (e instanceof BlockfrostServerError && e.status_code === 404) {
-          throw new FailedError(baseError + e.message);
-        } else if (e instanceof BlockfrostClientError) {
-          throw new NetworkError(baseError + e.message);
-        } else {
-          throw new UnexpectedApiError(baseError + e.message);
-        }
-      });
+    let txUtxos: components['schemas']['tx_content_utxo'];
+    try {
+      txUtxos = await this.client.txsUtxos(transactionId);
+      this.logger.debug(
+        `requested 'txsUtxos' for txId [${transactionId}]. res: ${JsonBigInt.stringify(
+          txUtxos
+        )}`
+      );
+    } catch (e: any) {
+      const baseError = `Failed to get transaction [${transactionId}] utxos from BlockFrost: `;
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        throw new FailedError(baseError + e.message);
+      } else if (e instanceof BlockfrostClientError) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
 
-    const txMetadata = await this.client
-      .txsMetadata(transactionId)
-      .then((res) => {
-        this.logger.debug(
-          `requested 'txsMetadata' for txId [${transactionId}]. res: ${JsonBigInt.stringify(
-            res
-          )}`
-        );
-        return res;
-      })
-      .catch((e) => {
-        const baseError = `Failed to get transaction [${transactionId}] metadata from BlockFrost: `;
-        if (e instanceof BlockfrostServerError && e.status_code === 404) {
-          throw new FailedError(baseError + e.message);
-        } else if (e instanceof BlockfrostClientError) {
-          throw new NetworkError(baseError + e.message);
-        } else {
-          throw new UnexpectedApiError(baseError + e.message);
-        }
-      });
+    let txMetadata: components['schemas']['tx_content_metadata'];
+    try {
+      txMetadata = await this.client.txsMetadata(transactionId);
+      this.logger.debug(
+        `requested 'txsMetadata' for txId [${transactionId}]. res: ${JsonBigInt.stringify(
+          txMetadata
+        )}`
+      );
+    } catch (e: any) {
+      const baseError = `Failed to get transaction [${transactionId}] metadata from BlockFrost: `;
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        throw new FailedError(baseError + e.message);
+      } else if (e instanceof BlockfrostClientError) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
 
     if (txInfo.block !== blockId)
       throw new FailedError(
@@ -350,28 +347,40 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
     offset: number,
     limit: number
   ): Promise<Array<CardanoUtxo>> => {
-    const count = limit;
-    const page = 1 + Math.ceil(offset / limit);
-    return this.client
-      .addressesUtxos(address, { count, page })
-      .then((res) => {
+    const count = PAGE_ITEM_COUNT;
+    let page = 1 + Math.floor(offset / limit);
+    const firstBoxIndex = (page - 1) * PAGE_ITEM_COUNT;
+    const boxes: BlockFrostAddressUtxos = [];
+
+    while ((page - 1) * PAGE_ITEM_COUNT < offset + limit) {
+      let addressUtxos: BlockFrostAddressUtxos;
+      try {
+        addressUtxos = await this.client.addressesUtxos(address, {
+          count,
+          page,
+        });
         this.logger.debug(
           `requested 'addressesUtxos' for address [${address}]. res: ${JsonBigInt.stringify(
-            res
+            addressUtxos
           )}`
         );
-        return res.map(this.convertToCardanoUTxO);
-      })
-      .catch((e) => {
+        boxes.push(...addressUtxos);
+      } catch (e: any) {
         const baseError = `Failed to get address [${address}] UTxOs from BlockFrost: `;
         if (e instanceof BlockfrostServerError && e.status_code === 404) {
-          return [];
+          this.logger.debug(baseError + `Address has no transaction history`);
         } else if (e instanceof BlockfrostClientError) {
           throw new NetworkError(baseError + e.message);
         } else {
           throw new UnexpectedApiError(baseError + e.message);
         }
-      });
+      }
+      page++;
+    }
+
+    return boxes
+      .slice(offset - firstBoxIndex, limit)
+      .map(this.convertToCardanoUTxO);
   };
 
   /**
@@ -381,56 +390,59 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
    */
   isBoxUnspentAndValid = async (boxId: string): Promise<boolean> => {
     const [txId, index] = boxId.split('.');
-    const txUtxos = await this.client
-      .txsUtxos(txId)
-      .then((res) => {
-        this.logger.debug(
-          `requested 'txsUtxos' for txId [${txId}]. res: ${JsonBigInt.stringify(
-            res
-          )}`
-        );
-        return res;
-      })
-      .catch((e) => {
-        const baseError = `Failed to get transaction [${txId}] utxos from BlockFrost: `;
-        if (e instanceof BlockfrostServerError && e.status_code === 404) {
-          this.logger.debug(`Transaction [${txId}] is not found`);
-          return undefined;
-        } else if (e instanceof BlockfrostClientError) {
-          throw new NetworkError(baseError + e.message);
-        } else {
-          throw new UnexpectedApiError(baseError + e.message);
-        }
-      });
-    if (!txUtxos || txUtxos.outputs.length <= Number(index)) {
+
+    let txUtxos: components['schemas']['tx_content_utxo'];
+    try {
+      txUtxos = await this.client.txsUtxos(txId);
       this.logger.debug(
-        `Utxo [${boxId}] is invalid: Failed to find the utxo in transaction [${txId}]`
+        `requested 'txsUtxos' for txId [${txId}]. res: ${JsonBigInt.stringify(
+          txUtxos
+        )}`
+      );
+    } catch (e: any) {
+      const baseError = `Failed to get transaction [${txId}] utxos from BlockFrost: `;
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        this.logger.debug(
+          `Utxo [${boxId}] is invalid: Transaction [${txId}] is not found`
+        );
+        return false;
+      } else if (e instanceof BlockfrostClientError) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
+    if (txUtxos.outputs.length <= Number(index)) {
+      this.logger.debug(
+        `Utxo [${boxId}] is invalid: Transaction [${txId}] doesn't have index [${index}]`
       );
       return false;
     }
     const address = txUtxos.outputs[Number(index)].address;
-    const box = await this.client
-      .addressesUtxosAll(address)
-      .then((res) => {
-        this.logger.debug(
-          `requested 'addressesUtxosAll' for address [${address}]. res: ${JsonBigInt.stringify(
-            res
-          )}`
+    let addressUtxos: BlockFrostAddressUtxos;
+    try {
+      addressUtxos = await this.client.addressesUtxosAll(address);
+      this.logger.debug(
+        `requested 'addressesUtxosAll' for address [${address}]. res: ${JsonBigInt.stringify(
+          addressUtxos
+        )}`
+      );
+    } catch (e: any) {
+      const baseError = `Failed to get address [${address}] UTxOs from BlockFrost: `;
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        throw new ImpossibleBehavior(
+          `Found box [${boxId}] for address [${address}] with no transaction history`
         );
-        return res.find(
-          (utxo) => utxo.tx_hash === txId && utxo.output_index === Number(index)
-        );
-      })
-      .catch((e) => {
-        const baseError = `Failed to get address [${address}] UTxOs from BlockFrost: `;
-        if (e instanceof BlockfrostServerError && e.status_code === 404) {
-          return undefined;
-        } else if (e instanceof BlockfrostClientError) {
-          throw new NetworkError(baseError + e.message);
-        } else {
-          throw new UnexpectedApiError(baseError + e.message);
-        }
-      });
+      } else if (e instanceof BlockfrostClientError) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
+    const box = addressUtxos.find(
+      (utxo) => utxo.tx_hash === txId && utxo.output_index === Number(index)
+    );
+
     if (box) return true;
     this.logger.debug(
       `box [${boxId}] is spent: Box was not found in address [${address}] UTxOs`
@@ -470,44 +482,45 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
    */
   getUtxo = async (boxId: string): Promise<CardanoUtxo> => {
     const [txId, index] = boxId.split('.');
-    const utxo = await this.client
-      .txsUtxos(txId)
-      .then((res): CardanoUtxo | undefined => {
-        this.logger.debug(
-          `requested 'txsUtxos' for txId [${txId}]. res: ${JsonBigInt.stringify(
-            res
-          )}`
-        );
-        if (res.outputs.length <= Number(index)) {
-          this.logger.debug(
-            `Transaction [${txId}] outputs does not have index [${index}]`
-          );
-          return undefined;
-        }
-        const boxCandidate = this.convertToCardanoBoxCandidate(
-          res.outputs[Number(index)]
-        );
-        return {
-          txId: txId,
-          index: Number(index),
-          value: boxCandidate.value,
-          assets: boxCandidate.assets,
-        };
-      })
-      .catch((e) => {
-        const baseError = `Failed to get transaction [${txId}] utxos from BlockFrost: `;
-        if (e instanceof BlockfrostServerError && e.status_code === 404) {
-          this.logger.debug(`Transaction [${txId}] is not found`);
-          return undefined;
-        } else if (e instanceof BlockfrostClientError) {
-          throw new NetworkError(baseError + e.message);
-        } else {
-          throw new UnexpectedApiError(baseError + e.message);
-        }
-      });
+    const baseFailedError = `Utxo [${boxId}] is not found: `;
 
-    if (!utxo) throw new FailedError(`Utxo [${boxId}] is not found`);
-    return utxo;
+    let txUtxos: components['schemas']['tx_content_utxo'];
+    try {
+      txUtxos = await this.client.txsUtxos(txId);
+      this.logger.debug(
+        `requested 'txsUtxos' for txId [${txId}]. res: ${JsonBigInt.stringify(
+          txUtxos
+        )}`
+      );
+    } catch (e: any) {
+      const baseError = `Failed to get transaction [${txId}] utxos from BlockFrost: `;
+      if (e instanceof BlockfrostServerError && e.status_code === 404) {
+        throw new FailedError(
+          baseFailedError + `Transaction [${txId}] is not found`
+        );
+      } else if (e instanceof BlockfrostClientError) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
+
+    if (txUtxos.outputs.length <= Number(index)) {
+      throw new FailedError(
+        baseFailedError +
+          `Transaction [${txId}] outputs does not have index [${index}]`
+      );
+    }
+
+    const boxCandidate = this.convertToCardanoBoxCandidate(
+      txUtxos.outputs[Number(index)]
+    );
+    return {
+      txId: txId,
+      index: Number(index),
+      value: boxCandidate.value,
+      assets: boxCandidate.assets,
+    };
   };
 
   /**

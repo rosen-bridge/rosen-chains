@@ -363,26 +363,6 @@ describe('CardanoBlockFrostNetwork', () => {
     });
   });
 
-  describe('getMempoolTransactions', () => {
-    /**
-     * @target `CardanoBlockFrostNetwork.getMempoolTransactions` should return empty list
-     * @dependencies
-     * @scenario
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should be empty list
-     */
-    it('should return empty list', async () => {
-      // run test
-      const network = mockNetwork();
-      const result = await network.getMempoolTransactions();
-
-      // check returned value
-      expect(result).toEqual([]);
-    });
-  });
-
   describe('getAddressBoxes', () => {
     /**
      * @target `CardanoBlockFrostNetwork.getAddressBoxes` should return address Utxos
