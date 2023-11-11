@@ -348,7 +348,7 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
     limit: number
   ): Promise<Array<CardanoUtxo>> => {
     const count = PAGE_ITEM_COUNT;
-    let page = 1 + Math.floor(offset / limit);
+    let page = 1 + Math.floor(offset / PAGE_ITEM_COUNT);
     const firstBoxIndex = (page - 1) * PAGE_ITEM_COUNT;
     const boxes: BlockFrostAddressUtxos = [];
 
@@ -379,7 +379,7 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
     }
 
     return boxes
-      .slice(offset - firstBoxIndex, limit)
+      .slice(offset - firstBoxIndex, offset - firstBoxIndex + limit)
       .map(this.convertToCardanoUTxO);
   };
 
