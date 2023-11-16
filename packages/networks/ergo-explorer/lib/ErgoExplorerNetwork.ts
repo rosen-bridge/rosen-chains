@@ -318,7 +318,9 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
       const mempoolTxIterator = this.getOneMempoolTx();
       const txs = await all(mempoolTxIterator);
       this.logger.debug(
-        `requested mempool transactions. res: ${JsonBigInt.stringify(txs)}`
+        `requested mempool transactions. res: ${JsonBigInt.stringify(
+          txs.map((tx) => tx.id)
+        )}`
       );
       return txs
         .map(this.fixMalformedMempoolTx)

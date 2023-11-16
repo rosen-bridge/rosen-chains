@@ -885,6 +885,13 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       }
     });
 
+    this.logger.debug(
+      `Generated box mapping using [${
+        transactions.length
+      }] txs. Mapping: ${Array.from(trackMap.entries()).map(
+        ([key, value]) => `${key}: ${value?.box_id().to_str()}`
+      )}`
+    );
     return trackMap;
   };
 
