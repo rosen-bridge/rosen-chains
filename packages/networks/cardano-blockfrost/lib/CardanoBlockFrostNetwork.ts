@@ -8,6 +8,7 @@ import {
   CardanoBoxCandidate,
   CardanoProtocolParameters,
   CardanoMetadata,
+  CardanoUtils,
 } from '@rosen-chains/cardano';
 import { RosenTokens } from '@rosen-bridge/tokens';
 import {
@@ -147,12 +148,8 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
           if (asset.unit === 'lovelace') return;
           const policyId = asset.unit.slice(0, 56);
           const assetName = asset.unit.slice(56);
-          const fingerprint = this.generateAssetFingerprint(
-            policyId,
-            assetName
-          );
           tokens.push({
-            id: fingerprint,
+            id: CardanoUtils.generateAssetId(policyId, assetName),
             value: BigInt(asset.quantity),
           });
         });
@@ -524,24 +521,6 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
   };
 
   /**
-   * generates asset fingerprint from policyId and assetName
-   * @param policyId
-   * @param assetName
-   * @returns asset fingerprint
-   */
-  protected generateAssetFingerprint = (
-    policyId: string,
-    assetName: string
-  ): string => {
-    const policyIdBuffer = Buffer.from(policyId, 'hex');
-    const assetNameBuffer = Buffer.from(assetName, 'hex');
-    const assetHash = blake2b(20)
-      .update(new Uint8Array([...policyIdBuffer, ...assetNameBuffer]))
-      .digest('binary');
-    return bech32.encode('asset', bech32.toWords(assetHash));
-  };
-
-  /**
    * converts CardanoAssets object from BlockFrostAsset
    * @param asset BlockFrostAsset object
    * @returns CardanoAssets object
@@ -563,12 +542,10 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
       if (asset.unit === 'lovelace') return;
       const policyId = asset.unit.slice(0, 56);
       const assetName = asset.unit.slice(56);
-      const fingerprint = this.generateAssetFingerprint(policyId, assetName);
       cardanoAssets.push({
         policy_id: policyId,
         asset_name: assetName,
         quantity: BigInt(asset.quantity),
-        fingerprint: fingerprint,
       });
     });
 

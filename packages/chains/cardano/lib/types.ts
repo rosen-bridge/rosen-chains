@@ -2,7 +2,6 @@ import {
   ChainConfigs,
   PaymentTransactionJsonModel,
 } from '@rosen-chains/abstract-chain';
-import { BigNum } from '@emurgo/cardano-serialization-lib-nodejs';
 
 interface CardanoConfigs extends ChainConfigs {
   minBoxValue: bigint;

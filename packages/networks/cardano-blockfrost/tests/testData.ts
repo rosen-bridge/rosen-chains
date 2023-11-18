@@ -256,7 +256,6 @@ export const rosenTransactionInCardanoTx: CardanoTx = {
         {
           policy_id: '8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b9',
           asset_name: '52535457',
-          fingerprint: 'asset1vwun0a52xjv5tc2x92wgr6x3p6q3u4frnmq8q0',
           quantity: 1455n,
         },
       ],
@@ -276,7 +275,6 @@ export const rosenTransactionInCardanoTx: CardanoTx = {
         {
           policy_id: '8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b9',
           asset_name: '52535457',
-          fingerprint: 'asset1vwun0a52xjv5tc2x92wgr6x3p6q3u4frnmq8q0',
           quantity: 1455n,
         },
       ],
@@ -452,7 +450,6 @@ export const differentMetadataTransactionInCardanoTx: CardanoTx = {
         {
           policy_id: '40fa2aa67258b4ce7b5782f74831d46a84c59a0ff0c28262fab21728',
           asset_name: '436c61794e6174696f6e39353837',
-          fingerprint: 'asset14yxvcdm6u4mqz8dcud8nv0vvxf74ufaqt3shvg',
           quantity: 1n,
         },
       ],
@@ -484,7 +481,6 @@ export const differentMetadataTransactionInCardanoTx: CardanoTx = {
         {
           policy_id: '40fa2aa67258b4ce7b5782f74831d46a84c59a0ff0c28262fab21728',
           asset_name: '436c61794e6174696f6e39353837',
-          fingerprint: 'asset14yxvcdm6u4mqz8dcud8nv0vvxf74ufaqt3shvg',
           quantity: 1n,
         },
       ],
@@ -509,7 +505,6 @@ export const addressAssets = [
     quantity: '15888202094',
     policy_id: '0dad352d8f0d5ce3f5be8b025d6a16141ecceab5a921871792d91f47',
     asset_name: '5273455247',
-    fingerprint: 'asset1p40r0eun2alszlxhj7k4uylya4cj54lxkjjmsm',
   },
   {
     address: address,
@@ -517,7 +512,6 @@ export const addressAssets = [
     quantity: '1866325',
     policy_id: '8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b9',
     asset_name: '52535457',
-    fingerprint: 'asset1vwun0a52xjv5tc2x92wgr6x3p6q3u4frnmq8q0',
   },
 ];
 
@@ -634,7 +628,6 @@ export const expectedAddressUtxoSet = [
         policy_id: '0dad352d8f0d5ce3f5be8b025d6a16141ecceab5a921871792d91f47',
         asset_name: '5273455247',
         quantity: 64576047n,
-        fingerprint: 'asset1p40r0eun2alszlxhj7k4uylya4cj54lxkjjmsm',
       },
     ],
   },
@@ -647,7 +640,6 @@ export const expectedAddressUtxoSet = [
         policy_id: '0dad352d8f0d5ce3f5be8b025d6a16141ecceab5a921871792d91f47',
         asset_name: '5273455247',
         quantity: 57617503n,
-        fingerprint: 'asset1p40r0eun2alszlxhj7k4uylya4cj54lxkjjmsm',
       },
     ],
   },
@@ -776,7 +768,6 @@ export const txUtxo: CardanoUtxo = {
       policy_id: '0dad352d8f0d5ce3f5be8b025d6a16141ecceab5a921871792d91f47',
       asset_name: '5273455247',
       quantity: 64576047n,
-      fingerprint: 'asset1p40r0eun2alszlxhj7k4uylya4cj54lxkjjmsm',
     },
   ],
 };

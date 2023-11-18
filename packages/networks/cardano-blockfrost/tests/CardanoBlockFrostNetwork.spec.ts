@@ -152,7 +152,7 @@ describe('CardanoBlockFrostNetwork', () => {
       expect(result).toEqual({
         nativeToken: testData.addressBalance,
         tokens: testData.addressAssets.map((asset) => ({
-          id: asset.fingerprint,
+          id: `${asset.policy_id}.${asset.asset_name}`,
           value: BigInt(asset.quantity),
         })),
       });

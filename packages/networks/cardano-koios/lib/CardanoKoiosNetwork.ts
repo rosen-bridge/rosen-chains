@@ -11,6 +11,7 @@ import {
   CardanoTx,
   CardanoAsset,
   CardanoProtocolParameters,
+  CardanoUtils,
 } from '@rosen-chains/cardano';
 import { RosenTokens } from '@rosen-bridge/tokens';
 import {
@@ -159,10 +160,10 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
       }
     }
     tokens = addressAssets.map((asset) => {
-      if (!asset.fingerprint || !asset.quantity)
+      if (!asset.policy_id || !asset.asset_name || !asset.quantity)
         throw new KoiosNullValueError('Asset info is null');
       return {
-        id: asset.fingerprint,
+        id: CardanoUtils.generateAssetId(asset.policy_id, asset.asset_name),
         value: BigInt(asset.quantity),
       };
     });
@@ -493,21 +494,13 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   private parseAssetList = (
     asset: TxInfoItemOutputsItemAssetListItem
   ): CardanoAsset => {
-    if (
-      !(
-        asset.policy_id &&
-        asset.asset_name &&
-        asset.quantity &&
-        asset.fingerprint
-      )
-    )
+    if (!(asset.policy_id && asset.asset_name && asset.quantity))
       throw new KoiosNullValueError('UTxO asset info items are null');
 
     return {
       policy_id: asset.policy_id,
       asset_name: asset.asset_name,
       quantity: BigInt(asset.quantity),
-      fingerprint: asset.fingerprint,
     };
   };
 
