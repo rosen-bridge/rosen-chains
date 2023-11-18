@@ -502,7 +502,8 @@ describe('CardanoChain', () => {
       );
 
       // call the function
-      const trackingTokenId = 'asset17q7r59zlc3dgw0venc80pdv566q6yguw03f0d9';
+      const trackingTokenId =
+        'a0028f350aaabe0545fdcb56b039bfb08e4bb4d8c4d7c3c7d481c235.484f534b59';
       const cardanoChain = generateChainObject(network);
       const result = await cardanoChain.getMempoolBoxMapping(
         trackingAddress,
@@ -539,7 +540,8 @@ describe('CardanoChain', () => {
       );
 
       // call the function
-      const trackingTokenId = 'asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2';
+      const trackingTokenId =
+        '48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b.5273744572676f546f6b656e7654657374';
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
         transactions
       );
@@ -640,7 +642,8 @@ describe('CardanoChain', () => {
       );
 
       // call the function
-      const trackingTokenId = 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz';
+      const trackingTokenId =
+        'ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286.5273744552477654657374';
       const result = testInstance.callGetTransactionsBoxMapping(
         transactions,
         configs.addresses.lock,

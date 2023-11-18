@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/cardano",
-  "version": "2.3.1",
+  "version": "3.0.0",
   "description": "this project contains cardano chain for Rosen-bridge",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",

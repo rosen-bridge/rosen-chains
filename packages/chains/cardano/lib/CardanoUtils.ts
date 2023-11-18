@@ -1,69 +1,50 @@
+import { CardanoUtxo, CardanoBoxCandidate, CardanoAsset } from './types';
 import {
-  CardanoUtxo,
-  CardanoAssetInfo,
-  UtxoBoxesAssets,
-  CardanoBoxCandidate,
-} from './types';
-import { AssetBalance, TokenInfo } from '@rosen-chains/abstract-chain';
+  AssetBalance,
+  ChainUtils,
+  TokenInfo,
+} from '@rosen-chains/abstract-chain';
 import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
-import { TokenMap } from '@rosen-bridge/tokens';
-import { CARDANO_CHAIN } from './constants';
 import { BigNum } from '@emurgo/cardano-serialization-lib-nodejs';
-import blake2b from 'blake2b';
-import { bech32 } from 'bech32';
 
 class CardanoUtils {
   /**
-   * calculates amount of lovelace and assets in utxo boxes
-   * @param boxes the utxogenerateTransaction boxes
+   * generates asset id from policyId and assetName
+   * @param asset
+   * @returns
    */
-  static calculateInputBoxesAssets = (
-    boxes: CardanoUtxo[]
-  ): UtxoBoxesAssets => {
-    const assets: Map<string, BigNum> = new Map();
-    let changeBoxLovelace: CardanoWasm.BigNum = CardanoWasm.BigNum.zero();
-    boxes.forEach((box) => {
-      changeBoxLovelace = changeBoxLovelace.checked_add(
-        this.bigIntToBigNum(box.value)
-      );
-
-      box.assets.forEach((boxAsset) => {
-        const assetsInfo = `${boxAsset.policy_id},${boxAsset.asset_name}`;
-        const currentValue =
-          assets.get(assetsInfo) || CardanoWasm.BigNum.zero();
-
-        assets.set(
-          assetsInfo,
-          currentValue.checked_add(
-            this.bigIntToBigNum(BigInt(boxAsset.quantity))
-          )
-        );
-      });
-    });
-    return {
-      lovelace: changeBoxLovelace,
-      assets: assets,
-    };
-  };
+  static generateAssetId = (policyId: string, assetName: string) =>
+    `${policyId}.${assetName}`;
 
   /**
-   * returns asset policy id and asset name from tokenMap, throws error if fingerprint not found
-   * @param fingerprint asset fingerprint
-   * @param tokenMap to search for fingerprint
+   * generates asset id from CardanoAsset object
+   * @param asset
+   * @returns
    */
-  static getCardanoAssetInfo = (
-    fingerprint: string,
-    tokenMap: TokenMap
-  ): CardanoAssetInfo => {
-    const token = tokenMap.search(CARDANO_CHAIN, {
-      [tokenMap.getIdKey(CARDANO_CHAIN)]: fingerprint,
-    });
-    if (token.length === 0)
-      throw new Error(`Asset fingerprint [${fingerprint}] not found in config`);
-    return {
-      policyId: token[0][CARDANO_CHAIN]['policyId'],
-      assetName: token[0][CARDANO_CHAIN]['assetName'],
-    };
+  static getAssetId = (asset: CardanoAsset) =>
+    this.generateAssetId(asset.policy_id, asset.asset_name);
+
+  /**
+   * calculates total amount of lovelace and assets in list of CardanoUtxo
+   * @param utxos
+   */
+  static calculateUtxoAssets = (utxos: CardanoUtxo[]): AssetBalance => {
+    return utxos
+      .map(
+        (utxo): AssetBalance => ({
+          nativeToken: utxo.value,
+          tokens: utxo.assets.map(
+            (asset): TokenInfo => ({
+              id: this.getAssetId(asset),
+              value: asset.quantity,
+            })
+          ),
+        })
+      )
+      .reduce(ChainUtils.sumAssetBalance, {
+        nativeToken: 0n,
+        tokens: [],
+      });
   };
 
   /**
@@ -81,9 +62,11 @@ class CardanoUtils {
         for (let j = 0; j < asset.keys().len(); j++) {
           const assetName = asset.keys().get(j);
           const assetAmount = asset.get(assetName)!;
-          const fingerprint = this.createFingerprint(scriptHash, assetName);
           tokens.push({
-            id: fingerprint,
+            id: this.generateAssetId(
+              scriptHash.to_hex(),
+              this.assetNameToHex(assetName)
+            ),
             value: BigInt(assetAmount.to_str()),
           });
         }
@@ -104,22 +87,12 @@ class CardanoUtils {
   };
 
   /**
-   * create fingerprint from policy id and asset name
-   * @param policyId in Uint8Array
-   * @param assetName in Uint8Array
+   * gets assetName hex from CardanoWasm.AssetName object
+   * @param assetName
+   * @returns
    */
-  static createFingerprint = (
-    policyId: CardanoWasm.ScriptHash,
-    assetName: CardanoWasm.AssetName
-  ): string => {
-    const policyIdBytes = policyId.to_bytes();
-    const assetNameBytes = Buffer.from(assetName.to_js_value(), 'hex');
-    const hashBuf = blake2b(20)
-      .update(new Uint8Array([...policyIdBytes, ...assetNameBytes]))
-      .digest('binary');
-    const words = bech32.toWords(hashBuf);
-    return bech32.encode('asset', words);
-  };
+  static assetNameToHex = (assetName: CardanoWasm.AssetName): string =>
+    Buffer.from(assetName.name()).toString('hex');
 
   /**
    * get box id from CardanoWasm.TransactionInput or CardanoUtxo

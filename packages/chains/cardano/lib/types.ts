@@ -14,12 +14,6 @@ interface CardanoAsset {
   policy_id: string;
   asset_name: string;
   quantity: bigint;
-  fingerprint: string;
-}
-
-interface CardanoAssetInfo {
-  policyId: string;
-  assetName: string;
 }
 
 interface CardanoUtxo {
@@ -45,11 +39,6 @@ interface CardanoTx {
   metadata?: CardanoMetadata;
 }
 
-interface UtxoBoxesAssets {
-  lovelace: BigNum;
-  assets: Map<string, BigNum>;
-}
-
 interface CardanoTransactionJsonModel extends PaymentTransactionJsonModel {
   inputUtxos: Array<string>;
 }
@@ -67,12 +56,10 @@ interface CardanoProtocolParameters {
 export {
   CardanoConfigs,
   CardanoAsset,
-  CardanoAssetInfo,
   CardanoUtxo,
   CardanoBoxCandidate,
   CardanoMetadata,
   CardanoTx,
-  UtxoBoxesAssets,
   CardanoTransactionJsonModel,
   CardanoProtocolParameters,
 };
