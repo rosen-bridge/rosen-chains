@@ -87,7 +87,8 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
           )}`
         );
         const confirmation = res[0].num_confirmations;
-        if (confirmation) return Number(confirmation);
+        if (confirmation !== undefined && confirmation !== null)
+          return Number(confirmation);
         return -1;
       })
       .catch((e) => {
