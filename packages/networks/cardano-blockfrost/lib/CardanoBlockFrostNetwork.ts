@@ -36,8 +36,6 @@ import {
   BlockfrostClientError,
   BlockfrostServerError,
 } from '@blockfrost/blockfrost-js';
-import blake2b from 'blake2b';
-import { bech32 } from 'bech32';
 import { PAGE_ITEM_COUNT } from './constants';
 import { components } from '@blockfrost/openapi';
 
