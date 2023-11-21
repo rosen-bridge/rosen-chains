@@ -225,31 +225,10 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     );
 
     // create change output
-    const changeBoxMultiAsset = CardanoWasm.MultiAsset.new();
-    remainingAssets.tokens.forEach((asset) => {
-      const assetInfo = asset.id.split('.');
-      const policyId: CardanoWasm.ScriptHash = CardanoWasm.ScriptHash.from_hex(
-        assetInfo[0]
-      );
-      const assetName: CardanoWasm.AssetName = CardanoWasm.AssetName.new(
-        Buffer.from(assetInfo[1], 'hex')
-      );
-      changeBoxMultiAsset.set_asset(
-        policyId,
-        assetName,
-        CardanoUtils.bigIntToBigNum(asset.value)
-      );
-    });
-    const changeBoxLovelace = CardanoWasm.BigNum.from_str(
-      (remainingAssets.nativeToken - this.configs.fee).toString()
-    );
-
-    const changeAmount: CardanoWasm.Value =
-      CardanoWasm.Value.new(changeBoxLovelace);
-    changeAmount.set_multiasset(changeBoxMultiAsset);
-    const changeBox = CardanoWasm.TransactionOutput.new(
-      CardanoWasm.Address.from_bech32(this.configs.addresses.lock),
-      changeAmount
+    remainingAssets.nativeToken -= this.configs.fee;
+    const changeBox = CardanoUtils.createTransactionOutput(
+      remainingAssets,
+      this.configs.addresses.lock
     );
     txBuilder.add_output(changeBox);
 

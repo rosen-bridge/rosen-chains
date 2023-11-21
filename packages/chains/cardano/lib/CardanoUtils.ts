@@ -125,6 +125,42 @@ class CardanoUtils {
     value: candidate.value,
     assets: structuredClone(candidate.assets),
   });
+
+  /**
+   * creates a box candidate by assets and address
+   * @param assets
+   * @param address
+   * @returns
+   */
+  static createTransactionOutput = (
+    assets: AssetBalance,
+    address: string
+  ): CardanoWasm.TransactionOutput => {
+    const changeBoxMultiAsset = CardanoWasm.MultiAsset.new();
+    assets.tokens.forEach((asset) => {
+      const assetInfo = asset.id.split('.');
+      const policyId: CardanoWasm.ScriptHash = CardanoWasm.ScriptHash.from_hex(
+        assetInfo[0]
+      );
+      const assetName: CardanoWasm.AssetName = CardanoWasm.AssetName.new(
+        Buffer.from(assetInfo[1], 'hex')
+      );
+      changeBoxMultiAsset.set_asset(
+        policyId,
+        assetName,
+        CardanoUtils.bigIntToBigNum(asset.value)
+      );
+    });
+
+    const changeAmount: CardanoWasm.Value = CardanoWasm.Value.new(
+      CardanoWasm.BigNum.from_str(assets.nativeToken.toString())
+    );
+    changeAmount.set_multiasset(changeBoxMultiAsset);
+    return CardanoWasm.TransactionOutput.new(
+      CardanoWasm.Address.from_bech32(address),
+      changeAmount
+    );
+  };
 }
 
 export default CardanoUtils;
