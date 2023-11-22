@@ -140,7 +140,7 @@ describe('CardanoKoiosNetwork', () => {
       expect(result).toEqual({
         nativeToken: BigInt(testData.addressBalance),
         tokens: testData.addressAssets.map((asset) => ({
-          id: asset.fingerprint,
+          id: `${asset.policy_id}.${asset.asset_name}`,
           value: BigInt(asset.quantity),
         })),
       });

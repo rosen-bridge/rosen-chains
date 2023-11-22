@@ -158,12 +158,14 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
       );
     }
     const bankBoxes = coveredBoxes.boxes;
+    // calculate input boxes assets
+    let remainingAssets = CardanoUtils.calculateUtxoAssets(bankBoxes);
+    this.logger.debug(`Input assets: ${JsonBigInt.stringify(remainingAssets)}`);
 
     const txBuilder = CardanoWasm.TransactionBuilder.new(
       await this.getTxBuilderConfig()
     );
     let orderValue = BigNum.zero();
-    const orderAssets: Map<string, bigint> = new Map();
 
     // add outputs
     order.forEach((order) => {
@@ -175,38 +177,33 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
         CardanoUtils.bigIntToBigNum(order.assets.nativeToken)
       );
 
+      // reduce order value from remaining assets
+      remainingAssets = ChainUtils.subtractAssetBalance(
+        remainingAssets,
+        order.assets
+      );
+
       // create order output
       const address = CardanoWasm.Address.from_bech32(order.address);
       const value = CardanoWasm.Value.new(
         CardanoUtils.bigIntToBigNum(order.assets.nativeToken)
       );
       // inserting assets
-      const paymentMultiAsset = CardanoWasm.MultiAsset.new();
+      const orderMultiAsset = CardanoWasm.MultiAsset.new();
       order.assets.tokens.forEach((asset) => {
-        // accumulate assets
-        if (orderAssets.has(asset.id)) {
-          orderAssets.set(asset.id, orderAssets.get(asset.id)! + asset.value);
-        } else {
-          orderAssets.set(asset.id, asset.value);
-        }
-        const paymentAssetInfo = CardanoUtils.getCardanoAssetInfo(
-          asset.id,
-          this.tokenMap
+        const assetInfo = asset.id.split('.');
+        const policyId: CardanoWasm.ScriptHash =
+          CardanoWasm.ScriptHash.from_hex(assetInfo[0]);
+        const assetName: CardanoWasm.AssetName = CardanoWasm.AssetName.new(
+          Buffer.from(assetInfo[1], 'hex')
         );
-        const paymentAssetPolicyId: CardanoWasm.ScriptHash =
-          CardanoWasm.ScriptHash.from_hex(paymentAssetInfo.policyId);
-        const paymentAssetAssetName: CardanoWasm.AssetName =
-          CardanoWasm.AssetName.new(
-            Buffer.from(paymentAssetInfo.assetName, 'hex')
-          );
-        const paymentAssets = CardanoWasm.Assets.new();
-        paymentAssets.insert(
-          paymentAssetAssetName,
+        orderMultiAsset.set_asset(
+          policyId,
+          assetName,
           CardanoUtils.bigIntToBigNum(asset.value)
         );
-        paymentMultiAsset.insert(paymentAssetPolicyId, paymentAssets);
       });
-      value.set_multiasset(paymentMultiAsset);
+      value.set_multiasset(orderMultiAsset);
       const orderBox = CardanoWasm.TransactionOutput.new(address, value);
       txBuilder.add_output(orderBox);
     });
@@ -223,38 +220,15 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
         CardanoWasm.Value.new(orderValue)
       );
     });
+    this.logger.debug(
+      `Remaining assets: ${JsonBigInt.stringify(remainingAssets)}`
+    );
 
     // create change output
-    const inputBoxesAssets = CardanoUtils.calculateInputBoxesAssets(bankBoxes);
-    const changeBoxMultiAsset = CardanoWasm.MultiAsset.new();
-    inputBoxesAssets.assets.forEach((value, key) => {
-      const assetInfo = key.split(',');
-      const assetName = CardanoWasm.AssetName.new(
-        Buffer.from(assetInfo[1], 'hex')
-      );
-      const policyId = CardanoWasm.ScriptHash.from_hex(assetInfo[0]);
-      const fingerprint = CardanoUtils.createFingerprint(policyId, assetName);
-      const spentValue = CardanoUtils.bigIntToBigNum(
-        orderAssets.get(fingerprint) || 0n
-      );
-      if (value.compare(spentValue) === 0) return;
-      changeBoxMultiAsset.set_asset(
-        policyId,
-        assetName,
-        value.checked_sub(spentValue)
-      );
-    });
-    const changeBoxLovelace = inputBoxesAssets.lovelace
-      .checked_sub(orderValue)
-      .checked_sub(CardanoUtils.bigIntToBigNum(this.configs.fee));
-
-    const changeAmount: CardanoWasm.Value =
-      CardanoWasm.Value.new(changeBoxLovelace);
-    changeAmount.set_multiasset(changeBoxMultiAsset);
-    this.logger.debug(`Change box amount: ${changeAmount.to_json()}`);
-    const changeBox = CardanoWasm.TransactionOutput.new(
-      CardanoWasm.Address.from_bech32(this.configs.addresses.lock),
-      changeAmount
+    remainingAssets.nativeToken -= this.configs.fee;
+    const changeBox = CardanoUtils.createTransactionOutput(
+      remainingAssets,
+      this.configs.addresses.lock
     );
     txBuilder.add_output(changeBox);
 
@@ -299,7 +273,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
       assets: {
         nativeToken: BigInt(box.value),
         tokens: box.assets.map((asset) => ({
-          id: asset.fingerprint,
+          id: CardanoUtils.getAssetId(asset),
           value: BigInt(asset.quantity),
         })),
       },
@@ -421,7 +395,11 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
           // check if box satisfy conditions
           if (output.address !== address) continue;
           if (tokenId) {
-            if (!output.assets.find((asset) => asset.fingerprint === tokenId))
+            if (
+              !output.assets.find(
+                (asset) => CardanoUtils.getAssetId(asset) === tokenId
+              )
+            )
               continue;
           }
 
@@ -721,14 +699,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
               for (let j = 0; j < asset.keys().len(); j++) {
                 const assetName = asset.keys().get(j);
                 const assetAmount = asset.get(assetName)!;
-                const fingerprint = cardanoUtils.createFingerprint(
-                  scriptHash,
-                  assetName
-                );
                 boxAssets.push({
-                  fingerprint: fingerprint,
                   policy_id: scriptHash.to_hex(),
-                  asset_name: assetName.to_hex(),
+                  asset_name: CardanoUtils.assetNameToHex(assetName),
                   quantity: BigInt(assetAmount.to_str()),
                 });
               }
