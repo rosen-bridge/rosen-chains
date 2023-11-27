@@ -17,6 +17,8 @@ import { Fee } from '@rosen-bridge/minimum-fee';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
 import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 import JsonBI from '@rosen-bridge/json-bigint';
+import Serializer from '../lib/Serializer';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
 const spyOn = jest.spyOn;
 
@@ -1529,6 +1531,48 @@ describe('CardanoChain', () => {
 
       // check returned value
       expect(result).toEqual(false);
+    });
+  });
+
+  describe('rawTxToPaymentTransaction', () => {
+    const network = new TestCardanoNetwork();
+
+    /**
+     * @target CardanoChain.rawTxToPaymentTransaction should generate transaction successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - mock getUtxo
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction order
+     */
+    it('should generate transaction successfully', async () => {
+      // mock PaymentTransaction
+      const expectedTx = CardanoTransaction.fromJson(
+        TestData.transaction5PaymentTransaction
+      );
+      const rawTxJsonString = Transaction.from_bytes(
+        expectedTx.txBytes
+      ).to_json();
+      expectedTx.eventId = '';
+      expectedTx.txType = TransactionType.manual;
+
+      // mock getUtxo
+      const getUtxoSpy = spyOn(network, 'getUtxo');
+      expectedTx.inputUtxos.forEach((utxo) =>
+        getUtxoSpy.mockResolvedValueOnce(JsonBigInt.parse(utxo) as CardanoUtxo)
+      );
+
+      // call the function
+      const cardanoChain = generateChainObject(network);
+      const result = await cardanoChain.rawTxToPaymentTransaction(
+        rawTxJsonString
+      );
+
+      // check returned value
+      expect(result.toJson()).toEqual(expectedTx.toJson());
     });
   });
 });

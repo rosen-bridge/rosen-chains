@@ -254,7 +254,7 @@ abstract class AbstractChain {
    */
   abstract rawTxToPaymentTransaction: (
     rawTxJsonString: string
-  ) => PaymentTransaction;
+  ) => Promise<PaymentTransaction>;
 
   /**
    * returns chain config
