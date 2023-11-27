@@ -1538,7 +1538,7 @@ describe('CardanoChain', () => {
     const network = new TestCardanoNetwork();
 
     /**
-     * @target CardanoChain.rawTxToPaymentTransaction should generate transaction successfully
+     * @target CardanoChain.rawTxToPaymentTransaction should construct transaction successfully
      * @dependencies
      * @scenario
      * - mock PaymentTransaction
@@ -1548,7 +1548,7 @@ describe('CardanoChain', () => {
      * @expected
      * - it should return mocked transaction order
      */
-    it('should generate transaction successfully', async () => {
+    it('should construct transaction successfully', async () => {
       // mock PaymentTransaction
       const expectedTx = CardanoTransaction.fromJson(
         TestData.transaction5PaymentTransaction

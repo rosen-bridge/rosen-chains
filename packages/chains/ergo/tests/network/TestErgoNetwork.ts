@@ -67,6 +67,10 @@ class TestErgoNetwork extends AbstractErgoNetwork {
   ): Promise<Array<ErgoBox>> => {
     throw Error('Not mocked');
   };
+
+  getBox = (boxId: string): Promise<ErgoBox> => {
+    throw Error('Not mocked');
+  };
 }
 
 export default TestErgoNetwork;

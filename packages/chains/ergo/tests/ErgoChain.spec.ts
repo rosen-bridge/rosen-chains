@@ -2490,4 +2490,49 @@ describe('ErgoChain', () => {
       expect(result).toEqual(expectedOrder);
     });
   });
+
+  describe('rawTxToPaymentTransaction', () => {
+    /**
+     * @target ErgoChain.rawTxToPaymentTransaction should construct transaction successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - mock a network object
+     *   - mock 'getHeight'
+     *   - mock 'getStateContext'
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction order
+     */
+    it('should construct transaction successfully', async () => {
+      // mock PaymentTransaction
+      const expectedTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction5PaymentTransaction
+      );
+      const rawTxJsonString = transactionTestData.transaction5UnsignedJson;
+      expectedTx.eventId = '';
+      expectedTx.txType = TransactionType.manual;
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getStateContext'
+      const getStateContextSpy = spyOn(network, 'getStateContext');
+      getStateContextSpy.mockResolvedValue(
+        transactionTestData.mockedStateContext
+      );
+      // mock getBox
+      const getBoxSpy = spyOn(network, 'getBox');
+      [...expectedTx.inputBoxes, ...expectedTx.dataInputs].forEach((box) =>
+        getBoxSpy.mockResolvedValueOnce(wasm.ErgoBox.sigma_parse_bytes(box))
+      );
+
+      // call the function
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.rawTxToPaymentTransaction(rawTxJsonString);
+
+      // check returned value
+      expect(result.toJson()).toEqual(expectedTx.toJson());
+    });
+  });
 });
