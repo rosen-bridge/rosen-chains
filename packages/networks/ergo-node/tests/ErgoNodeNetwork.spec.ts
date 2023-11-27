@@ -17,7 +17,7 @@ import {
   mockSendTransactionAsBytes,
 } from './mocked/ErgoNodeClient.mock';
 
-import { ErgoStateContext, Transaction } from 'ergo-lib-wasm-nodejs';
+import { ErgoBox, ErgoStateContext, Transaction } from 'ergo-lib-wasm-nodejs';
 import {
   testAddress,
   testAddressBalance,
@@ -33,6 +33,7 @@ import {
   testTransaction,
   testTransactionBytes,
 } from './testData';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
 vi.mock('@rosen-clients/ergo-node');
 
@@ -582,6 +583,32 @@ describe('ErgoNodeNetwork', () => {
       );
 
       expect(actualIsValid).toEqual(false);
+    });
+  });
+
+  describe('getBox', () => {
+    /**
+     * @target `ErgoNodeNetwork.getBox` should return the box successfully
+     * @dependencies
+     * @scenario
+     * - mock `getBoxById` of ergo node client
+     * @expected
+     * - returned expected box
+     */
+    it('should return the box successfully', async () => {
+      mockGetBoxById();
+      const network = getNetwork();
+      const serializedBox = testAddressBoxes[0];
+      const expectedBoxesBytes = Buffer.from(
+        ErgoBox.from_json(
+          JsonBigInt.stringify(serializedBox)
+        ).sigma_serialize_bytes()
+      ).toString('hex');
+
+      const box = await network.getBox(serializedBox.boxId);
+      expect(Buffer.from(box.sigma_serialize_bytes()).toString('hex')).toEqual(
+        expectedBoxesBytes
+      );
     });
   });
 });
