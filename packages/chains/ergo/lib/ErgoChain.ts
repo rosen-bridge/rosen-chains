@@ -283,7 +283,6 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     );
     txCandidate.set_data_inputs(inData);
     const tx = txCandidate.build();
-    console.log(tx.to_json());
 
     // create ReducedTransaction object
     const ctx = await this.network.getStateContext();
@@ -305,7 +304,6 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       inputs.map((boxBytes) => Buffer.from(boxBytes, 'hex')),
       dataInputs.map((boxBytes) => Buffer.from(boxBytes, 'hex'))
     );
-    console.log(ergoTx.toJson());
 
     this.logger.info(
       `Ergo transaction [${txId}] as type [${txType}] generated for event [${eventId}]`
