@@ -1046,6 +1046,63 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         await this.network.getTransaction(txId, blockId)
       )
     ).toString('hex');
+
+  /**
+   * generates PaymentTransaction object from raw tx json string
+   * @param rawTxJsonString
+   * @returns PaymentTransaction object
+   */
+  rawTxToPaymentTransaction = async (
+    rawTxJsonString: string
+  ): Promise<ErgoTransaction> => {
+    const tx = wasm.UnsignedTransaction.from_json(rawTxJsonString);
+
+    // get input boxes
+    const inErgoBoxes = wasm.ErgoBoxes.empty();
+    const serializedInputs: Array<Uint8Array> = [];
+    const inputs = tx.inputs();
+    for (let i = 0; i < inputs.len(); i++) {
+      const box = await this.network.getBox(inputs.get(i).box_id().to_str());
+      inErgoBoxes.add(box);
+      serializedInputs.push(box.sigma_serialize_bytes());
+    }
+
+    // get data input boxes
+    const dataInErgoBoxes = wasm.ErgoBoxes.empty();
+    const serializedDataInputs: Array<Uint8Array> = [];
+    const dataInputs = tx.data_inputs();
+    for (let i = 0; i < dataInputs.len(); i++) {
+      const box = await this.network.getBox(
+        dataInputs.get(i).box_id().to_str()
+      );
+      dataInErgoBoxes.add(box);
+      serializedDataInputs.push(box.sigma_serialize_bytes());
+    }
+
+    // create ReducedTransaction object
+    const ctx = await this.network.getStateContext();
+    const reducedTx = wasm.ReducedTransaction.from_unsigned_tx(
+      tx,
+      inErgoBoxes,
+      dataInErgoBoxes,
+      ctx
+    );
+
+    // create ErgoTransaction
+    const txBytes = Serializer.serialize(reducedTx);
+    const txId = reducedTx.unsigned_tx().id().to_str();
+    const ergoTx = new ErgoTransaction(
+      txId,
+      '',
+      txBytes,
+      TransactionType.manual,
+      serializedInputs,
+      serializedDataInputs
+    );
+
+    this.logger.info(`Parsed Ergo transaction [${txId}] successfully`);
+    return ergoTx;
+  };
 }
 
 export default ErgoChain;

@@ -34,6 +34,13 @@ abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork<
     offset?: number,
     limit?: number
   ) => Promise<Array<ErgoBox>>;
+
+  /**
+   * gets box by id
+   * @param boxId
+   * @returns the ergo box
+   */
+  abstract getBox: (boxId: string) => Promise<ErgoBox>;
 }
 
 export default AbstractErgoNetwork;

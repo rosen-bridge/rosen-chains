@@ -777,6 +777,38 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
         .prefer_pure_change(true)
         .build();
     };
+
+  /**
+   * generates PaymentTransaction object from raw tx json string
+   * @param rawTxJsonString
+   * @returns PaymentTransaction object
+   */
+  rawTxToPaymentTransaction = async (
+    rawTxJsonString: string
+  ): Promise<CardanoTransaction> => {
+    const tx = CardanoWasm.Transaction.from_json(rawTxJsonString);
+    const txBytes = Serializer.serialize(tx);
+    const txId = CardanoWasm.hash_transaction(tx.body()).to_hex();
+
+    const inputBoxes: Array<CardanoUtxo> = [];
+    const inputs = tx.body().inputs();
+    for (let i = 0; i < inputs.len(); i++) {
+      const utxoInfo = inputs.get(i);
+      const boxId = `${utxoInfo.transaction_id().to_hex()}.${utxoInfo.index}`;
+      inputBoxes.push(await this.network.getUtxo(boxId));
+    }
+
+    const cardanoTx = new CardanoTransaction(
+      txId,
+      '',
+      txBytes,
+      TransactionType.manual,
+      inputBoxes.map((box) => JSONBigInt.stringify(box))
+    );
+
+    this.logger.info(`Parsed Cardano transaction [${txId}] successfully`);
+    return cardanoTx;
+  };
 }
 
 export default CardanoChain;

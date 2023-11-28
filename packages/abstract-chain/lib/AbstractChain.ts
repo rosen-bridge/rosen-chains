@@ -248,6 +248,15 @@ abstract class AbstractChain {
   ) => PaymentTransaction;
 
   /**
+   * generates PaymentTransaction object from raw tx json string
+   * @param rawTxJsonString
+   * @returns PaymentTransaction object
+   */
+  abstract rawTxToPaymentTransaction: (
+    rawTxJsonString: string
+  ) => Promise<PaymentTransaction>;
+
+  /**
    * returns chain config
    * @assetId
    */
