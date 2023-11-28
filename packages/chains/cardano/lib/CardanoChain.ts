@@ -794,7 +794,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     const inputs = tx.body().inputs();
     for (let i = 0; i < inputs.len(); i++) {
       const utxoInfo = inputs.get(i);
-      const boxId = `${utxoInfo.transaction_id().to_hex()}.${utxoInfo.index}`;
+      const boxId = `${utxoInfo.transaction_id().to_hex()}.${utxoInfo.index()}`;
       inputBoxes.push(await this.network.getUtxo(boxId));
     }
 
