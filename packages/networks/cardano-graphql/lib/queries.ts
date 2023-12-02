@@ -151,3 +151,11 @@ query epochParams {
   }
 }
 `);
+
+export const submitTxMutation = gql(`
+mutation SubmitTransaction($transaction: String!) {
+  submitTransaction(transaction: $transaction) {
+    hash
+  }
+}
+`);

@@ -262,9 +262,10 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
    * @param transaction the transaction
    */
   submitTransaction = async (transaction: Transaction): Promise<void> => {
-    // TODO
-    throw Error(`submit transaction for graphql is not implemented`);
-    // await this.client.txSubmit(transaction.to_hex());
+    await this.client.mutate({
+      mutation: Queries.submitTxMutation,
+      variables: Variables.submitTxVariables(transaction.to_hex()),
+    });
   };
 
   /**
