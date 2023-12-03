@@ -3,6 +3,7 @@ import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import cardanoKoiosClientFactory, {
   AddressAssets,
   AddressInfo,
+  AssetInfo,
 } from '@rosen-clients/cardano-koios';
 import { KoiosNullValueError } from './types';
 import {
@@ -570,21 +571,16 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
    * gets token details (name, decimals)
    */
   getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
+    let tokenDetail: AssetInfo;
     try {
-      const tokenDetail = await this.client.postAssetInfo({
+      tokenDetail = await this.client.postAssetInfo({
         _asset_list: [tokenId.split('.')],
       });
-      console.log(
+      this.logger.debug(
         `requested 'postAssetInfo' for asset [${tokenId}]. res: ${JsonBigInt.stringify(
           tokenDetail
         )}`
       );
-
-      return {
-        tokenId: tokenId,
-        name: tokenDetail[0].token_registry_metadata?.name ?? UNKNOWN_TOKEN,
-        decimals: tokenDetail[0].token_registry_metadata?.decimals ?? 0,
-      };
     } catch (e: any) {
       const baseError = `Failed to get asset [${tokenId}] info from Koios: `;
       if (e.response) {
@@ -595,6 +591,13 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
         throw new UnexpectedApiError(baseError + e.message);
       }
     }
+
+    if (tokenDetail.length === 0) throw new FailedError(`Token not found`);
+    return {
+      tokenId: tokenId,
+      name: tokenDetail[0].token_registry_metadata?.name ?? UNKNOWN_TOKEN,
+      decimals: tokenDetail[0].token_registry_metadata?.decimals ?? 0,
+    };
   };
 }
 

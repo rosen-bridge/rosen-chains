@@ -643,9 +643,9 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
    * gets token details (name, decimals)
    */
   getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
-    const assetUnit = tokenId.split('.').join();
+    const assetUnit = tokenId.split('.').join('');
     return this.client
-      .assetsById(tokenId)
+      .assetsById(assetUnit)
       .then((res) => {
         this.logger.debug(
           `requested 'assetsById' for unit [${assetUnit}]. res: ${JsonBigInt.stringify(
@@ -659,8 +659,10 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
         };
       })
       .catch((e) => {
-        const baseError = `Failed to fetch token detail from BlockFrost: `;
-        if (e instanceof BlockfrostClientError) {
+        const baseError = `Failed to fetch token detail for unit [${assetUnit}] from BlockFrost: `;
+        if (e instanceof BlockfrostServerError && e.status_code === 404) {
+          throw new FailedError(`Token not found`);
+        } else if (e instanceof BlockfrostClientError) {
           throw new NetworkError(baseError + e.message);
         } else {
           throw new UnexpectedApiError(baseError + e.message);

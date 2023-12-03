@@ -514,14 +514,17 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
    * gets token details (name, decimals)
    */
   getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
+    const assetUnit = tokenId.split('.').join('');
     return this.client
       .query({
         query: Queries.assetDetail,
-        variables: Variables.assetIdVariables(tokenId),
+        variables: Variables.assetIdVariables(assetUnit),
       })
       .then((res) => {
         this.logger.debug(
-          `requested 'assetDetail'. res: ${JsonBigInt.stringify(res)}`
+          `requested 'assetDetail' for token [${assetUnit}]. res: ${JsonBigInt.stringify(
+            res
+          )}`
         );
         const assets = res.data.assets;
         if (assets.length === 0) throw new FailedError(`Asset not found`);
@@ -532,7 +535,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
         };
       })
       .catch((e) => {
-        const baseError = `Failed to fetch protocol params from GraphQL: `;
+        const baseError = `Failed to fetch token [${assetUnit}] info from GraphQL: `;
         throw this.handleClientError(e, baseError);
       });
   };
