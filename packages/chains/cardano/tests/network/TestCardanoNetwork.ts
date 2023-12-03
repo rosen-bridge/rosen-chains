@@ -1,5 +1,9 @@
 import { AbstractCardanoNetwork } from '../../lib';
-import { BlockInfo, ConfirmationStatus } from '@rosen-chains/abstract-chain';
+import {
+  BlockInfo,
+  ConfirmationStatus,
+  TokenDetail,
+} from '@rosen-chains/abstract-chain';
 import {
   CardanoProtocolParameters,
   CardanoTx,
@@ -64,6 +68,10 @@ class TestCardanoNetwork extends AbstractCardanoNetwork {
   };
 
   getBlockInfo = (blockId: string): Promise<BlockInfo> => {
+    throw Error('Not mocked');
+  };
+
+  getTokenDetail = (tokenId: string): Promise<TokenDetail> => {
     throw Error('Not mocked');
   };
 

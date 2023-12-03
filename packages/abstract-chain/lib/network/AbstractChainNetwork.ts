@@ -1,4 +1,4 @@
-import { AssetBalance, BlockInfo } from '../types';
+import { AssetBalance, BlockInfo, TokenDetail } from '../types';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/logger-interface';
 import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
 
@@ -66,6 +66,11 @@ abstract class AbstractChainNetwork<TxType> {
    * @returns list of transactions in mempool
    */
   abstract getMempoolTransactions: () => Promise<Array<TxType>>;
+
+  /**
+   * gets token details (name, decimals)
+   */
+  abstract getTokenDetail: (tokenId: string) => Promise<TokenDetail>;
 }
 
 export default AbstractChainNetwork;

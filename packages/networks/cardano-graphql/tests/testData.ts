@@ -1054,3 +1054,21 @@ export const requiredProtocolParams = {
   maxTxSize: 16384,
   coinsPerUtxoSize: '4310',
 };
+
+export const assetId =
+  '8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b9.52535457';
+export const assetDetailResult = {
+  data: {
+    assets: [
+      {
+        decimals: 9,
+        name: 'RSTW',
+      },
+    ],
+  },
+};
+export const assetDetail = {
+  tokenId: assetId,
+  name: 'RSTW',
+  decimals: 9,
+};

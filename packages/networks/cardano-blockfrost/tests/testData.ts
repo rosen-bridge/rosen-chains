@@ -815,3 +815,31 @@ export const expectedRequiredParams = {
   maxTxSize: 16384,
   coinsPerUtxoSize: '4310',
 };
+
+export const assetId =
+  '8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b9.52535457';
+export const assetByIdResult = {
+  asset: '8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b952535457',
+  policy_id: '8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b9',
+  asset_name: '52535457',
+  fingerprint: 'asset1vwun0a52xjv5tc2x92wgr6x3p6q3u4frnmq8q0',
+  quantity: '2000000000',
+  initial_mint_tx_hash: 'initial_mint_tx_hash',
+  mint_or_burn_count: 1,
+  onchain_metadata: null,
+  onchain_metadata_standard: null,
+  onchain_metadata_extra: null,
+  metadata: {
+    name: 'RSTW',
+    description: 'description',
+    ticker: 'ticker',
+    url: 'url',
+    logo: 'logo',
+    decimals: 9,
+  },
+};
+export const expectedTokenDetail = {
+  tokenId: assetId,
+  name: 'RSTW',
+  decimals: 9,
+};

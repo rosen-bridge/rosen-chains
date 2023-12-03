@@ -17,6 +17,7 @@ import {
   FailedError,
   ImpossibleBehavior,
   NetworkError,
+  TokenDetail,
   TokenInfo,
   UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
@@ -38,6 +39,7 @@ import {
 } from '@blockfrost/blockfrost-js';
 import { PAGE_ITEM_COUNT } from './constants';
 import { components } from '@blockfrost/openapi';
+import { UNKNOWN_TOKEN } from '@rosen-chains/abstract-chain';
 
 class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
   protected client: BlockFrostAPI;
@@ -629,6 +631,35 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
       })
       .catch((e) => {
         const baseError = `Failed to fetch current height from BlockFrost: `;
+        if (e instanceof BlockfrostClientError) {
+          throw new NetworkError(baseError + e.message);
+        } else {
+          throw new UnexpectedApiError(baseError + e.message);
+        }
+      });
+  };
+
+  /**
+   * gets token details (name, decimals)
+   */
+  getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
+    const assetUnit = tokenId.split('.').join();
+    return this.client
+      .assetsById(tokenId)
+      .then((res) => {
+        this.logger.debug(
+          `requested 'assetsById' for unit [${assetUnit}]. res: ${JsonBigInt.stringify(
+            res
+          )}`
+        );
+        return {
+          tokenId: tokenId,
+          name: res.metadata?.name ?? UNKNOWN_TOKEN,
+          decimals: res.metadata?.decimals ?? 0,
+        };
+      })
+      .catch((e) => {
+        const baseError = `Failed to fetch token detail from BlockFrost: `;
         if (e instanceof BlockfrostClientError) {
           throw new NetworkError(baseError + e.message);
         } else {

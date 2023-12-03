@@ -170,3 +170,12 @@ export const mockGetEpochParams = () => {
     getEpochParams: async () => [testData.epochParams],
   } as any);
 };
+
+/**
+ * mock `postAssetInfo` of cardano koios client
+ */
+export const mockPostAssetInfo = () => {
+  jest.mocked(cardanoKoiosClientFactory).mockReturnValueOnce({
+    postAssetInfo: async () => [testData.assetInfo],
+  } as any);
+};

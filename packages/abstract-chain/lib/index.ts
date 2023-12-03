@@ -5,7 +5,6 @@ export { default as AbstractUtxoChainNetwork } from './network/AbstractUtxoChain
 export { default as PaymentTransaction } from './PaymentTransaction';
 export { default as ChainUtils } from './ChainUtils';
 
-export { GET_BOX_API_LIMIT } from './constants';
-
+export * from './constants';
 export * from './types';
 export * from './errors';

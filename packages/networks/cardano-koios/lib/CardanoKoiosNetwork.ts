@@ -19,7 +19,9 @@ import {
   BlockInfo,
   FailedError,
   NetworkError,
+  TokenDetail,
   TokenInfo,
+  UNKNOWN_TOKEN,
   UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
 import {
@@ -562,6 +564,37 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
       maxTxSize: epochParams.max_tx_size,
       coinsPerUtxoSize: epochParams.coins_per_utxo_size,
     };
+  };
+
+  /**
+   * gets token details (name, decimals)
+   */
+  getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
+    try {
+      const tokenDetail = await this.client.postAssetInfo({
+        _asset_list: [tokenId.split('.')],
+      });
+      console.log(
+        `requested 'postAssetInfo' for asset [${tokenId}]. res: ${JsonBigInt.stringify(
+          tokenDetail
+        )}`
+      );
+
+      return {
+        tokenId: tokenId,
+        name: tokenDetail[0].token_registry_metadata?.name ?? UNKNOWN_TOKEN,
+        decimals: tokenDetail[0].token_registry_metadata?.decimals ?? 0,
+      };
+    } catch (e: any) {
+      const baseError = `Failed to get asset [${tokenId}] info from Koios: `;
+      if (e.response) {
+        throw new FailedError(baseError + e.response.data.reason);
+      } else if (e.request) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
   };
 }
 

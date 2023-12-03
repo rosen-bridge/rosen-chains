@@ -11,6 +11,7 @@ import {
   mockGetBoxesByAddressUnspent,
   mockGetLastHeaders,
   mockGetNodeInfo,
+  mockGetTokenById,
   mockGetTxById,
   mockGetTxByIdAndGetBlockTransactionsById,
   mockGetUnconfirmedTransactions,
@@ -19,6 +20,7 @@ import {
 
 import { ErgoBox, ErgoStateContext, Transaction } from 'ergo-lib-wasm-nodejs';
 import {
+  expectedTokenDetail,
   testAddress,
   testAddressBalance,
   testAddressBalanceWithInvalidTokens,
@@ -32,6 +34,7 @@ import {
   testPartialTransactionsWithAbsentIds,
   testTransaction,
   testTransactionBytes,
+  tokenId,
 } from './testData';
 import JsonBigInt from '@rosen-bridge/json-bigint';
 
@@ -609,6 +612,27 @@ describe('ErgoNodeNetwork', () => {
       expect(Buffer.from(box.sigma_serialize_bytes()).toString('hex')).toEqual(
         expectedBoxesBytes
       );
+    });
+  });
+
+  describe('getTokenDetail', () => {
+    /**
+     * @target `ErgoNodeNetwork.getTokenDetail` should return token detail successfully
+     * @dependencies
+     * @scenario
+     * - mock `getApiV1TokensP1` of ergo explorer client
+     * @expected
+     * - returned expected token info
+     */
+    it('should return token detail successfully', async () => {
+      mockGetTokenById();
+
+      // run test
+      const network = getNetwork();
+      const result = await network.getTokenDetail(tokenId);
+
+      // check returned value
+      expect(result).toEqual(expectedTokenDetail);
     });
   });
 });

@@ -13,6 +13,7 @@ import {
   testPartialTransactions,
   testTokenIdBoxes,
   testTransaction,
+  tokenApiResponse,
 } from '../testData';
 
 /**
@@ -189,6 +190,16 @@ export const mockGetApiV1BoxesP1 = () =>
   vi.mocked(ergoExplorerClientFactory).mockReturnValueOnce({
     v1: {
       getApiV1BoxesP1: async () => testBox,
+    },
+  } as any);
+
+/**
+ * mock `getApiV1TokensP1` of ergo explorer client
+ */
+export const mockGetApiV1TokensP1 = () =>
+  vi.mocked(ergoExplorerClientFactory).mockReturnValueOnce({
+    v1: {
+      getApiV1TokensP1: async () => tokenApiResponse,
     },
   } as any);
 

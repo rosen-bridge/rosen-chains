@@ -1193,3 +1193,21 @@ export const testBox = {
   spentTransactionId: null,
   mainChain: true,
 };
+
+export const tokenId =
+  '20fa2bf23962cdf51b07722d6237c0c7b8a44f78856c0f7ec308dc1ef1a92a51';
+export const tokenApiResponse = {
+  id: '20fa2bf23962cdf51b07722d6237c0c7b8a44f78856c0f7ec308dc1ef1a92a51',
+  boxId: '5348128964dfd86202ff1ea511b292ac6fe05cd3a75b77da2833bb12e773a65c',
+  emissionAmount: 1,
+  name: 'Emission Contract NFT',
+  description:
+    'Token which will be injected into emission contract box on height #777,217 . Marks emission contract box. ',
+  type: 'EIP-004',
+  decimals: 3,
+};
+export const expectedTokenDetail = {
+  tokenId: tokenId,
+  name: 'Emission Contract NFT',
+  decimals: 3,
+};

@@ -1,7 +1,12 @@
 import { AbstractLogger } from '@rosen-bridge/logger-interface';
 import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import { RosenTokens } from '@rosen-bridge/tokens';
-import { FailedError, UnexpectedApiError } from '@rosen-chains/abstract-chain';
+import {
+  FailedError,
+  TokenDetail,
+  UNKNOWN_TOKEN,
+  UnexpectedApiError,
+} from '@rosen-chains/abstract-chain';
 import { AbstractErgoNetwork } from '@rosen-chains/ergo';
 import ergoExplorerClientFactory from '@rosen-clients/ergo-explorer';
 import { UTransactionInfo } from '@rosen-clients/ergo-explorer/dist/src/v0/types';
@@ -527,6 +532,31 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
       return handleApiError(
         error,
         `Failed to get box [${boxId}] from Ergo Explorer:`
+      );
+    }
+  };
+
+  /**
+   * gets token details (name, decimals)
+   */
+  getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
+    try {
+      const tokenDetail = await this.client.v1.getApiV1TokensP1(tokenId);
+      this.logger.debug(
+        `requested 'getApiV1TokensP1' for token [${tokenId}]. index 0: ${JsonBigInt.stringify(
+          tokenDetail
+        )}`
+      );
+
+      return {
+        tokenId: tokenId,
+        name: tokenDetail.name ?? UNKNOWN_TOKEN,
+        decimals: tokenDetail.decimals ?? 0,
+      };
+    } catch (error: any) {
+      return handleApiError(
+        error,
+        `Failed to get token [${tokenId}] info from Ergo Explorer:`
       );
     }
   };

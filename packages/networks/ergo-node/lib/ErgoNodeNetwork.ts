@@ -1,7 +1,11 @@
 import { AbstractLogger } from '@rosen-bridge/logger-interface';
 import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import { RosenTokens } from '@rosen-bridge/tokens';
-import { FailedError } from '@rosen-chains/abstract-chain';
+import {
+  FailedError,
+  TokenDetail,
+  UNKNOWN_TOKEN,
+} from '@rosen-chains/abstract-chain';
 import { AbstractErgoNetwork } from '@rosen-chains/ergo';
 import ergoNodeClientFactory, {
   IndexedErgoBox,
@@ -470,6 +474,31 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
       return handleApiError(
         error,
         `Failed to get box [${boxId}] from Ergo Node:`
+      );
+    }
+  };
+
+  /**
+   * gets token details (name, decimals)
+   */
+  getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
+    try {
+      const tokenDetail = await this.client.getTokenById(tokenId);
+      this.logger.debug(
+        `requested 'getTokenById' for boxId [${tokenId}]. res: ${JsonBigInt.stringify(
+          tokenDetail
+        )}`
+      );
+
+      return {
+        tokenId: tokenId,
+        name: tokenDetail.name ?? UNKNOWN_TOKEN,
+        decimals: tokenDetail.decimals ?? 0,
+      };
+    } catch (error: any) {
+      return handleApiError(
+        error,
+        `Failed to get token [${tokenId}] info from Ergo Node:`
       );
     }
   };
