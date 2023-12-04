@@ -171,7 +171,9 @@ abstract class AbstractChain {
    * @returns an object containing the amount of each asset
    */
   getAddressAssets = async (address: string): Promise<AssetBalance> =>
-    await this.network.getAddressAssets(address);
+    address === ''
+      ? Promise.resolve({ nativeToken: 0n, tokens: [] })
+      : this.network.getAddressAssets(address);
 
   /**
    * gets the amount of each asset in the lock address
