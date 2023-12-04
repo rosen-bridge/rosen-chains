@@ -314,10 +314,8 @@ export const blockInfoResult = {
 };
 export const blockInfo = {
   hash: 'cd1176524a86b32a6aefea990fa4e64ae2b7a306309f524ed44b7029744e0f9c',
-  parentHash: {
-    __typename: 'Block',
-    hash: '3c4dc4bc12fd4a9ea64b25d667cd741b61b0f9a4dde114c2dc544d806ad4b84c',
-  },
+  parentHash:
+    '3c4dc4bc12fd4a9ea64b25d667cd741b61b0f9a4dde114c2dc544d806ad4b84c',
   height: 9474116,
 };
 

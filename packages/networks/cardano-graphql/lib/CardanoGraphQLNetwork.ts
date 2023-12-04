@@ -62,11 +62,11 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
   getHeight = async (): Promise<number> => {
     return this.client
       .query({
-        query: Queries.networkTip,
+        query: Queries.currentHeight,
       })
       .then((res) => {
         this.logger.debug(
-          `requested 'networkTip'. res: ${JsonBigInt.stringify(res)}`
+          `requested 'currentHeight'. res: ${JsonBigInt.stringify(res)}`
         );
         return res.data.cardano.tip.number;
       })
@@ -209,7 +209,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
         if (blocks.length === 0) throw new FailedError(`Block not found`);
         return {
           hash: blocks[0].hash,
-          parentHash: blocks[0].previousBlock,
+          parentHash: blocks[0].previousBlock.hash,
           height: blocks[0].number,
         };
       })
@@ -344,11 +344,11 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
   currentSlot = async (): Promise<number> => {
     return this.client
       .query({
-        query: Queries.networkTip,
+        query: Queries.currentSlot,
       })
       .then((res) => {
         this.logger.debug(
-          `requested 'networkTip'. res: ${JsonBigInt.stringify(res)}`
+          `requested 'currentSlot'. res: ${JsonBigInt.stringify(res)}`
         );
         return Number(res.data.cardano.tip.slotNo);
       })
@@ -481,10 +481,13 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
     metadata: GraphQLTxMetadata
   ): CardanoMetadata | undefined => {
     if (metadata.length === 0) return undefined;
-    return metadata.reduce((result: CardanoMetadata, labelObject) => {
-      result[labelObject.key] = labelObject.value;
-      return result;
-    }, {});
+    return metadata.reduce(
+      (result: CardanoMetadata, labelObject) => ({
+        ...result,
+        [labelObject.key]: labelObject.value,
+      }),
+      {}
+    );
   };
 
   /**

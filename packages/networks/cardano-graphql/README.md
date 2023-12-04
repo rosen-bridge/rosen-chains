@@ -26,7 +26,6 @@ yarn add @rosen-chains/cardano-graphql-network
 ## Usage
 
 ```ts
-import { CardanoChain } from '@rosen-chains/cardano';
 import CardanoGraphQLNetwork from '@rosen-chains/cardano-graphql-network';
 
 let tokens: RosenTokens;
