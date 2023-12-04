@@ -276,7 +276,9 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
       const txsPageIterator = this.getOneMempoolTx();
       const txs = await all(txsPageIterator);
       this.logger.debug(
-        `requested mempool transactions. res: ${JsonBigInt.stringify(txs)}`
+        `requested mempool transactions. res: ${JsonBigInt.stringify(
+          txs.map((tx) => tx.id)
+        )}`
       );
       return txs
         .filter((tx) => tx.id)
@@ -446,6 +448,29 @@ class ErgoNodeNetwork extends AbstractErgoNetwork {
           );
         },
       });
+    }
+  };
+
+  /**
+   * gets box by id
+   * @param boxId
+   * @returns the ergo box
+   */
+  getBox = async (boxId: string): Promise<ergoLib.ErgoBox> => {
+    try {
+      const box = await this.client.getBoxById(boxId);
+      this.logger.debug(
+        `requested 'getBoxById' for boxId [${boxId}]. res: ${JsonBigInt.stringify(
+          box
+        )}`
+      );
+
+      return ergoLib.ErgoBox.from_json(JsonBigInt.stringify(box));
+    } catch (error: any) {
+      return handleApiError(
+        error,
+        `Failed to get box [${boxId}] from Ergo Node:`
+      );
     }
   };
 }

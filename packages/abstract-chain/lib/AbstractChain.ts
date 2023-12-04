@@ -36,7 +36,7 @@ abstract class AbstractChain {
    * @param txType transaction type
    * @param order the payment order (list of single payments)
    * @param unsignedTransactions ongoing unsigned PaymentTransactions (used for preventing double spend)
-   * @param serializedSignedTransactions the serialized string of ongoing signed transactions (used for chainning transaction)
+   * @param serializedSignedTransactions the serialized string of ongoing signed transactions (used for chaining transaction)
    * @returns the generated PaymentTransaction
    */
   abstract generateTransaction: (
@@ -69,7 +69,7 @@ abstract class AbstractChain {
   /**
    * verifies transaction fee for a PaymentTransaction
    * @param transaction the PaymentTransaction
-   * @returns true if the transaction fee verified
+   * @returns true if the transaction fee is verified
    */
   abstract verifyTransactionFee: (transaction: PaymentTransaction) => boolean;
 
@@ -91,7 +91,7 @@ abstract class AbstractChain {
   /**
    * verifies additional conditions for a PaymentTransaction
    * @param transaction the PaymentTransaction
-   * @returns true if the transaction verified
+   * @returns true if the transaction is verified
    */
   verifyTransactionExtraConditions = (
     transaction: PaymentTransaction
@@ -103,7 +103,7 @@ abstract class AbstractChain {
    * verifies an event data with its corresponding lock transaction
    * @param event the event trigger model
    * @param feeConfig minimum fee and rsn ratio config for the event
-   * @returns true if the event verified
+   * @returns true if the event is verified
    */
   abstract verifyEvent: (
     event: EventTrigger,
@@ -125,7 +125,6 @@ abstract class AbstractChain {
    * requests the corresponding signer service to sign the transaction
    * @param transaction the transaction
    * @param requiredSign the required number of sign
-   * @param signFunction the function to sign transaction
    * @returns the signed transaction
    */
   abstract signTransaction: (
@@ -249,6 +248,15 @@ abstract class AbstractChain {
   abstract PaymentTransactionFromJson: (
     jsonString: string
   ) => PaymentTransaction;
+
+  /**
+   * generates PaymentTransaction object from raw tx json string
+   * @param rawTxJsonString
+   * @returns PaymentTransaction object
+   */
+  abstract rawTxToPaymentTransaction: (
+    rawTxJsonString: string
+  ) => Promise<PaymentTransaction>;
 
   /**
    * returns chain config

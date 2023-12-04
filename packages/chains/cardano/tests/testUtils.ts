@@ -13,13 +13,11 @@ export const mockBankBoxes = (): CardanoUtxo[] => {
         policy_id: 'cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be',
         asset_name: '43617264616e6f546f6b656e7654657374',
         quantity: 55n,
-        fingerprint: 'asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7',
       },
       {
         policy_id: '48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b',
         asset_name: '5273744572676f546f6b656e7654657374',
         quantity: 5000n,
-        fingerprint: 'asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2',
       },
     ],
   };
@@ -32,7 +30,6 @@ export const mockBankBoxes = (): CardanoUtxo[] => {
         policy_id: 'cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be',
         asset_name: '43617264616e6f546f6b656e7654657374',
         quantity: 45n,
-        fingerprint: 'asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7',
       },
     ],
   };
@@ -51,7 +48,6 @@ export const mockBankBoxes = (): CardanoUtxo[] => {
         policy_id: 'ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286',
         asset_name: '5273744552477654657374',
         quantity: 1000n,
-        fingerprint: 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz',
       },
     ],
   };
@@ -64,13 +60,11 @@ export const mockBankBoxes = (): CardanoUtxo[] => {
         policy_id: '8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b9',
         asset_name: '52535457',
         quantity: 30n,
-        fingerprint: 'asset1vwun0a52xjv5tc2x92wgr6x3p6q3u4frnmq8q0',
       },
       {
         policy_id: '8e3e19131f96c186335b23bf7983ab00867a987ca900abb27ae0f2b9',
         asset_name: '52535450',
         quantity: 40n,
-        fingerprint: 'asset10j94tmxef7rjgae9gq4r9qc66jhh6060teah0t',
       },
     ],
   };
@@ -115,3 +109,13 @@ export const adaToLovelace = (ada: number): bigint =>
   BigInt((ada * 1000000).toString());
 
 export const generateRandomId = (): string => randomBytes(32).toString('hex');
+
+export const protocolParameters = {
+  minFeeA: 44,
+  minFeeB: 155381,
+  poolDeposit: '500000000',
+  keyDeposit: '2000000',
+  maxValueSize: 4000,
+  maxTxSize: 8000,
+  coinsPerUtxoSize: '4311',
+};

@@ -2,7 +2,6 @@ import {
   ChainConfigs,
   PaymentTransactionJsonModel,
 } from '@rosen-chains/abstract-chain';
-import { BigNum } from '@emurgo/cardano-serialization-lib-nodejs';
 
 interface CardanoConfigs extends ChainConfigs {
   minBoxValue: bigint;
@@ -14,12 +13,6 @@ interface CardanoAsset {
   policy_id: string;
   asset_name: string;
   quantity: bigint;
-  fingerprint: string;
-}
-
-interface CardanoAssetInfo {
-  policyId: string;
-  assetName: string;
 }
 
 interface CardanoUtxo {
@@ -35,30 +28,37 @@ interface CardanoBoxCandidate {
   assets: Array<CardanoAsset>;
 }
 
+type CardanoMetadata = Record<string, string | Record<string, any>>;
+
 interface CardanoTx {
   id: string;
   inputs: CardanoUtxo[];
   outputs: CardanoBoxCandidate[];
   fee: bigint;
-  metadata?: Record<string, Record<string, any>>;
-}
-
-interface UtxoBoxesAssets {
-  lovelace: BigNum;
-  assets: Map<string, BigNum>;
+  metadata?: CardanoMetadata;
 }
 
 interface CardanoTransactionJsonModel extends PaymentTransactionJsonModel {
   inputUtxos: Array<string>;
 }
 
+interface CardanoProtocolParameters {
+  minFeeA: number;
+  minFeeB: number;
+  poolDeposit: string;
+  keyDeposit: string;
+  maxValueSize: number;
+  maxTxSize: number;
+  coinsPerUtxoSize: string;
+}
+
 export {
   CardanoConfigs,
   CardanoAsset,
-  CardanoAssetInfo,
   CardanoUtxo,
   CardanoBoxCandidate,
+  CardanoMetadata,
   CardanoTx,
-  UtxoBoxesAssets,
   CardanoTransactionJsonModel,
+  CardanoProtocolParameters,
 };

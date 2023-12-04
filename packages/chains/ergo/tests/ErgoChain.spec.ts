@@ -61,6 +61,7 @@ describe('ErgoChain', () => {
         lock: 'lock_addr',
         cold: 'cold_addr',
         permit: 'permit_addr',
+        fraud: 'fraud_addr',
       },
       rwtId: rwt,
       minBoxValue: 1000000n,
@@ -154,6 +155,7 @@ describe('ErgoChain', () => {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
           cold: 'cold_addr',
           permit: 'permit_addr',
+          fraud: 'fraud_addr',
         },
         rwtId: rwtId,
         minBoxValue: 300000n,
@@ -286,6 +288,7 @@ describe('ErgoChain', () => {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
           cold: 'cold_addr',
           permit: 'permit_addr',
+          fraud: 'fraud_addr',
         },
         rwtId: rwtId,
         minBoxValue: 300000n,
@@ -390,6 +393,7 @@ describe('ErgoChain', () => {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
           cold: 'cold_addr',
           permit: 'permit_addr',
+          fraud: 'fraud_addr',
         },
         rwtId: rwtId,
         minBoxValue: 300000n,
@@ -514,6 +518,7 @@ describe('ErgoChain', () => {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
           cold: 'cold_addr',
           permit: 'permit_addr',
+          fraud: 'fraud_addr',
         },
         rwtId: rwtId,
         minBoxValue: 300000n,
@@ -634,6 +639,7 @@ describe('ErgoChain', () => {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
           cold: 'cold_addr',
           permit: 'permit_addr',
+          fraud: 'fraud_addr',
         },
         rwtId: rwtId,
         minBoxValue: 1000000n,
@@ -695,6 +701,7 @@ describe('ErgoChain', () => {
           lock: 'lock_addr',
           cold: 'cold_addr',
           permit: 'permit_addr',
+          fraud: 'fraud_addr',
         },
         rwtId: rwtId,
         minBoxValue: 1000000n,
@@ -752,6 +759,7 @@ describe('ErgoChain', () => {
           lock: 'lock_addr',
           cold: 'cold_addr',
           permit: 'permit_addr',
+          fraud: 'fraud_addr',
         },
         rwtId: rwtId,
         minBoxValue: 1000000n,
@@ -1337,6 +1345,7 @@ describe('ErgoChain', () => {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
           cold: 'cold_addr',
           permit: 'permit_addr',
+          fraud: 'fraud_addr',
         },
         rwtId: rwtId,
         minBoxValue: 1000000n,
@@ -1389,6 +1398,7 @@ describe('ErgoChain', () => {
           lock: '9i1rTxaZpLprUkVHpY4YNyooksLuouiKqZ2v1J5nf8xFTXBCVcB',
           cold: 'cold_addr',
           permit: 'permit_addr',
+          fraud: 'fraud_addr',
         },
         rwtId: rwtId,
         minBoxValue: 1000000n,
@@ -1441,6 +1451,7 @@ describe('ErgoChain', () => {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
           cold: 'cold_addr',
           permit: 'permit_addr',
+          fraud: 'fraud_addr',
         },
         rwtId: rwtId,
         minBoxValue: 1000000n,
@@ -2432,24 +2443,20 @@ describe('ErgoChain', () => {
      * order successfully
      * @dependencies
      * @scenario
-     * - mock PaymentTransaction
+     * - mock serialized transaction
      * - run test
      * - check returned value
      * @expected
      * - it should return mocked transaction order
      */
     it('should extract transaction order successfully', () => {
-      // mock PaymentTransaction
-      const paymentTx = new ErgoTransaction(
-        'txId',
-        'eventId',
+      // mock serialized transaction
+      const serializedTx = Buffer.from(
         ergoTestUtils
           .toTransaction(transactionTestData.transaction0)
-          .sigma_serialize_bytes(),
-        TransactionType.payment,
-        [],
-        []
-      );
+          .sigma_serialize_bytes()
+      ).toString('hex');
+
       const expectedOrder = transactionTestData.transaction0Order;
       const config: ErgoConfigs = {
         fee: 1100000n,
@@ -2463,6 +2470,7 @@ describe('ErgoChain', () => {
           lock: 'nB3L2PD3LBtiNhDYK7XhZ8nVt6uekBXN7RcPUKgdKLXFcrJiSPxmQsUKuUkTRQ1hbvDrxEQAKYurGFbaGD1RPxU7XqQimD78j23HHMQKL1boUGsnNhCxaVNAYMcFbQNo355Af8cWkhAN6',
           cold: 'cold_addr',
           permit: 'permit_addr',
+          fraud: 'fraud',
         },
         rwtId: rwtId,
         minBoxValue: 1000000n,
@@ -2476,10 +2484,55 @@ describe('ErgoChain', () => {
         feeRatioDivisor,
         signFunction
       );
-      const result = ergoChain.extractSignedTransactionOrder(paymentTx);
+      const result = ergoChain.extractSignedTransactionOrder(serializedTx);
 
       // check returned value
       expect(result).toEqual(expectedOrder);
+    });
+  });
+
+  describe('rawTxToPaymentTransaction', () => {
+    /**
+     * @target ErgoChain.rawTxToPaymentTransaction should construct transaction successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - mock a network object
+     *   - mock 'getHeight'
+     *   - mock 'getStateContext'
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction order
+     */
+    it('should construct transaction successfully', async () => {
+      // mock PaymentTransaction
+      const expectedTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction5PaymentTransaction
+      );
+      const rawTxJsonString = transactionTestData.transaction5UnsignedJson;
+      expectedTx.eventId = '';
+      expectedTx.txType = TransactionType.manual;
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getStateContext'
+      const getStateContextSpy = spyOn(network, 'getStateContext');
+      getStateContextSpy.mockResolvedValue(
+        transactionTestData.mockedStateContext
+      );
+      // mock getBox
+      const getBoxSpy = spyOn(network, 'getBox');
+      [...expectedTx.inputBoxes, ...expectedTx.dataInputs].forEach((box) =>
+        getBoxSpy.mockResolvedValueOnce(wasm.ErgoBox.sigma_parse_bytes(box))
+      );
+
+      // call the function
+      const ergoChain = generateChainObject(network);
+      const result = await ergoChain.rawTxToPaymentTransaction(rawTxJsonString);
+
+      // check returned value
+      expect(result.toJson()).toEqual(expectedTx.toJson());
     });
   });
 });

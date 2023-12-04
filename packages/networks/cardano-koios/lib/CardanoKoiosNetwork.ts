@@ -10,6 +10,8 @@ import {
   CardanoUtxo,
   CardanoTx,
   CardanoAsset,
+  CardanoProtocolParameters,
+  CardanoUtils,
 } from '@rosen-chains/cardano';
 import { RosenTokens } from '@rosen-bridge/tokens';
 import {
@@ -35,11 +37,12 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
     koiosUrl: string,
     lockAddress: string,
     tokens: RosenTokens,
+    authToken?: string,
     logger?: AbstractLogger
   ) {
     super(logger);
     this.extractor = new CardanoRosenExtractor(lockAddress, tokens, logger);
-    this.client = cardanoKoiosClientFactory(koiosUrl);
+    this.client = cardanoKoiosClientFactory(koiosUrl, authToken);
   }
 
   /**
@@ -84,7 +87,8 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
           )}`
         );
         const confirmation = res[0].num_confirmations;
-        if (confirmation) return Number(confirmation);
+        if (confirmation !== undefined && confirmation !== null)
+          return Number(confirmation);
         return -1;
       })
       .catch((e) => {
@@ -156,19 +160,14 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
         throw new UnexpectedApiError(baseError + e.message);
       }
     }
-    if (addressAssets.length !== 0) {
-      if (!addressAssets[0].asset_list)
-        throw new KoiosNullValueError('Address asset_list is null');
-      const assets = addressAssets[0].asset_list;
-      tokens = assets.map((asset) => {
-        if (!asset.fingerprint || !asset.quantity)
-          throw new KoiosNullValueError('Asset info is null');
-        return {
-          id: asset.fingerprint,
-          value: BigInt(asset.quantity),
-        };
-      });
-    }
+    tokens = addressAssets.map((asset) => {
+      if (!asset.policy_id || !asset.asset_name || !asset.quantity)
+        throw new KoiosNullValueError('Asset info is null');
+      return {
+        id: CardanoUtils.generateAssetId(asset.policy_id, asset.asset_name),
+        value: BigInt(asset.quantity),
+      };
+    });
 
     return {
       nativeToken: nativeToken,
@@ -190,10 +189,11 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
             res
           )}`
         );
-        const txIds = res[0].tx_hashes;
-        if (!txIds)
-          throw new KoiosNullValueError(`Block tx hashes list is null`);
-        return txIds;
+        return res.map((block) => {
+          const txId = block.tx_hash;
+          if (!txId) throw new KoiosNullValueError(`Block tx hash is null`);
+          return txId;
+        });
       })
       .catch((e) => {
         const baseError = `Failed to get block [${blockId}] transaction ids from Koios: `;
@@ -495,21 +495,13 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   private parseAssetList = (
     asset: TxInfoItemOutputsItemAssetListItem
   ): CardanoAsset => {
-    if (
-      !(
-        asset.policy_id &&
-        asset.asset_name &&
-        asset.quantity &&
-        asset.fingerprint
-      )
-    )
+    if (!(asset.policy_id && asset.asset_name && asset.quantity))
       throw new KoiosNullValueError('UTxO asset info items are null');
 
     return {
       policy_id: asset.policy_id,
       asset_name: asset.asset_name,
       quantity: BigInt(asset.quantity),
-      fingerprint: asset.fingerprint,
     };
   };
 
@@ -532,6 +524,43 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
       index: Number(input.tx_index),
       value: BigInt(input.value),
       assets: input.asset_list.map(this.parseAssetList),
+    };
+  };
+
+  /**
+   * gets required parameters of Cardano Protocol
+   * @returns an object containing required protocol parameters
+   */
+  getProtocolParameters = async (): Promise<CardanoProtocolParameters> => {
+    const allParams = await this.client.getEpochParams();
+    const epochParams = allParams[0];
+    this.logger.debug(
+      `requested 'getEpochParams'. index 0: ${JsonBigInt.stringify(
+        epochParams
+      )}`
+    );
+
+    if (
+      !epochParams.min_fee_a ||
+      !epochParams.min_fee_b ||
+      !epochParams.pool_deposit ||
+      !epochParams.key_deposit ||
+      !epochParams.max_val_size ||
+      !epochParams.max_tx_size ||
+      !epochParams.coins_per_utxo_size
+    )
+      throw new KoiosNullValueError(
+        `Some required Cardano protocol params are undefined or null `
+      );
+
+    return {
+      minFeeA: epochParams.min_fee_a,
+      minFeeB: epochParams.min_fee_b,
+      poolDeposit: epochParams.pool_deposit,
+      keyDeposit: epochParams.key_deposit,
+      maxValueSize: epochParams.max_val_size,
+      maxTxSize: epochParams.max_tx_size,
+      coinsPerUtxoSize: epochParams.coins_per_utxo_size,
     };
   };
 }

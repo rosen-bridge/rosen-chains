@@ -22,6 +22,7 @@ class TestChain extends AbstractChain {
   getMinimumNativeToken = this.notImplemented;
   getRWTToken = this.notImplemented;
   PaymentTransactionFromJson = this.notImplemented;
+  rawTxToPaymentTransaction = this.notImplemented;
 
   getTransactionAssets = (
     transaction: PaymentTransaction

@@ -27,6 +27,7 @@ import {
   testAddressBoxesBytes,
   testBlockHeader,
   testBlockId,
+  testBox,
   testHeight,
   testMempoolTransactions,
   testPartialTransactions,
@@ -38,6 +39,7 @@ import {
   testTransactionWithNullSpendingProofBytes,
 } from './testData';
 import * as ergoLib from 'ergo-lib-wasm-nodejs';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
 vi.mock('@rosen-clients/ergo-explorer');
 
@@ -611,6 +613,32 @@ describe('ErgoExplorerNetwork', () => {
       );
 
       expect(actualIsValid).toEqual(false);
+    });
+  });
+
+  describe('getBox', () => {
+    /**
+     * @target `ErgoExplorerNetwork.getBox` should return the box successfully
+     * @dependencies
+     * @scenario
+     * - mock `mockGetApiV1BoxesP1` of ergo explorer client
+     * @expected
+     * - returned expected box
+     */
+    it('should return the box successfully', async () => {
+      mockGetApiV1BoxesP1();
+      const network = getNetwork();
+      const serializedBox = testBox;
+      const expectedBoxesBytes = Buffer.from(
+        ergoLib.ErgoBox.from_json(
+          JsonBigInt.stringify(serializedBox)
+        ).sigma_serialize_bytes()
+      ).toString('hex');
+
+      const box = await network.getBox(serializedBox.boxId);
+      expect(Buffer.from(box.sigma_serialize_bytes()).toString('hex')).toEqual(
+        expectedBoxesBytes
+      );
     });
   });
 });

@@ -3,6 +3,7 @@ import CardanoKoiosNetwork from '../lib';
 import {
   mockAddressAssets,
   mockEmptyAddressAssets,
+  mockGetEpochParams,
   mockGetTip,
   mockNoHistoryAddressAssets,
   mockPostAddressInfo,
@@ -139,7 +140,7 @@ describe('CardanoKoiosNetwork', () => {
       expect(result).toEqual({
         nativeToken: BigInt(testData.addressBalance),
         tokens: testData.addressAssets.map((asset) => ({
-          id: asset.fingerprint,
+          id: `${asset.policy_id}.${asset.asset_name}`,
           value: BigInt(asset.quantity),
         })),
       });
@@ -219,7 +220,7 @@ describe('CardanoKoiosNetwork', () => {
       const result = await network.getBlockTransactionIds(testData.blockId);
 
       // check returned value
-      expect(result).toEqual(testData.txHashes);
+      expect(result).toEqual(testData.txHashes.map((block) => block.tx_hash));
     });
   });
 
@@ -601,6 +602,30 @@ describe('CardanoKoiosNetwork', () => {
 
       // check returned value
       expect(result).toEqual(testData.expectedUtxo);
+    });
+  });
+
+  describe('getProtocolParameters', () => {
+    /**
+     * @target `CardanoKoiosNetwork.getProtocolParameters` should return required parameters
+     * @dependencies
+     * @scenario
+     * - mock `getEpochParams` of cardano koios client
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should be mocked slot
+     */
+    it('should return required parameters', async () => {
+      // mock client response
+      mockGetEpochParams();
+
+      // run test
+      const network = mockNetwork();
+      const result = await network.getProtocolParameters();
+
+      // check returned value
+      expect(result).toEqual(testData.expectedRequiredParams);
     });
   });
 });

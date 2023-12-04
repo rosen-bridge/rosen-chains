@@ -17,6 +17,8 @@ import { Fee } from '@rosen-bridge/minimum-fee';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
 import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 import JsonBI from '@rosen-bridge/json-bigint';
+import Serializer from '../lib/Serializer';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
 const spyOn = jest.spyOn;
 
@@ -37,6 +39,7 @@ describe('CardanoChain', () => {
       lock: 'addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs',
       cold: 'cold',
       permit: 'permit',
+      fraud: 'fraud',
     },
     rwtId: rwtId,
     confirmations: {
@@ -501,7 +504,8 @@ describe('CardanoChain', () => {
       );
 
       // call the function
-      const trackingTokenId = 'asset17q7r59zlc3dgw0venc80pdv566q6yguw03f0d9';
+      const trackingTokenId =
+        'a0028f350aaabe0545fdcb56b039bfb08e4bb4d8c4d7c3c7d481c235.484f534b59';
       const cardanoChain = generateChainObject(network);
       const result = await cardanoChain.getMempoolBoxMapping(
         trackingAddress,
@@ -538,7 +542,8 @@ describe('CardanoChain', () => {
       );
 
       // call the function
-      const trackingTokenId = 'asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2';
+      const trackingTokenId =
+        '48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b.5273744572676f546f6b656e7654657374';
       spyOn(network, 'getMempoolTransactions').mockResolvedValueOnce(
         transactions
       );
@@ -639,7 +644,8 @@ describe('CardanoChain', () => {
       );
 
       // call the function
-      const trackingTokenId = 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz';
+      const trackingTokenId =
+        'ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286.5273744552477654657374';
       const result = testInstance.callGetTransactionsBoxMapping(
         transactions,
         configs.addresses.lock,
@@ -1525,6 +1531,48 @@ describe('CardanoChain', () => {
 
       // check returned value
       expect(result).toEqual(false);
+    });
+  });
+
+  describe('rawTxToPaymentTransaction', () => {
+    const network = new TestCardanoNetwork();
+
+    /**
+     * @target CardanoChain.rawTxToPaymentTransaction should construct transaction successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - mock getUtxo
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction order
+     */
+    it('should construct transaction successfully', async () => {
+      // mock PaymentTransaction
+      const expectedTx = CardanoTransaction.fromJson(
+        TestData.transaction5PaymentTransaction
+      );
+      const rawTxJsonString = Transaction.from_bytes(
+        expectedTx.txBytes
+      ).to_json();
+      expectedTx.eventId = '';
+      expectedTx.txType = TransactionType.manual;
+
+      // mock getUtxo
+      const getUtxoSpy = spyOn(network, 'getUtxo');
+      expectedTx.inputUtxos.forEach((utxo) =>
+        getUtxoSpy.mockResolvedValueOnce(JsonBigInt.parse(utxo) as CardanoUtxo)
+      );
+
+      // call the function
+      const cardanoChain = generateChainObject(network);
+      const result = await cardanoChain.rawTxToPaymentTransaction(
+        rawTxJsonString
+      );
+
+      // check returned value
+      expect(result.toJson()).toEqual(expectedTx.toJson());
     });
   });
 });

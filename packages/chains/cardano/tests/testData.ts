@@ -9,7 +9,7 @@ export const testTokenMap = `
 {
   "idKeys" : {
     "ergo" : "tokenId",
-    "cardano" : "fingerprint"
+    "cardano" : "tokenId"
   },
   "tokens" : [
     {
@@ -23,7 +23,7 @@ export const testTokenMap = `
         }
       },
       "cardano" : {
-        "fingerprint" : "asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz",
+        "tokenId" : "ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286.5273744552477654657374",
         "policyId" : "ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286",
         "assetName" : "5273744552477654657374",
         "decimals" : 0,
@@ -44,7 +44,7 @@ export const testTokenMap = `
         }
       },
       "cardano" : {
-        "fingerprint" : "lovelace",
+        "tokenId" : "ada",
         "policyId" : "",
         "assetName" : "414441",
         "decimals" : 6,
@@ -65,7 +65,7 @@ export const testTokenMap = `
         }
       },
       "cardano" : {
-        "fingerprint" : "asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7",
+        "tokenId" : "cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be.43617264616e6f546f6b656e7654657374",
         "policyId" : "cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be",
         "assetName" : "43617264616e6f546f6b656e7654657374",
         "decimals" : 0,
@@ -86,7 +86,7 @@ export const testTokenMap = `
         }
       },
       "cardano" : {
-        "fingerprint" : "asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2",
+        "tokenId" : "48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b.5273744572676f546f6b656e7654657374",
         "policyId" : "48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b",
         "assetName" : "5273744572676f546f6b656e7654657374",
         "decimals" : 0,
@@ -196,25 +196,25 @@ export const transaction1BoxMapping = [
     inputId:
       '3101943d053d487d78578f230518bd7068ad166d1b1b63488ec822cdcff143a8.0',
     serializedOutput:
-      '{"address":"addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs","value":137010000,"assets":[{"fingerprint":"asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2","asset_name":"515273744572676f546f6b656e7654657374","policy_id":"48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b","quantity":5000},{"fingerprint":"asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7","asset_name":"5143617264616e6f546f6b656e7654657374","policy_id":"cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be","quantity":100},{"fingerprint":"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz","asset_name":"4b5273744552477654657374","policy_id":"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286","quantity":900}]}',
+      '{"address":"addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs","value":137010000,"assets":[{"asset_name":"5273744572676f546f6b656e7654657374","policy_id":"48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b","quantity":5000},{"asset_name":"43617264616e6f546f6b656e7654657374","policy_id":"cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be","quantity":100},{"asset_name":"5273744552477654657374","policy_id":"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286","quantity":900}]}',
   },
   {
     inputId:
       'a878d4560455eff78e9e81721743473b40d55898cb3162dd643d4c4821e05803.0',
     serializedOutput:
-      '{"address":"addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs","value":137010000,"assets":[{"fingerprint":"asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2","asset_name":"515273744572676f546f6b656e7654657374","policy_id":"48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b","quantity":5000},{"fingerprint":"asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7","asset_name":"5143617264616e6f546f6b656e7654657374","policy_id":"cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be","quantity":100},{"fingerprint":"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz","asset_name":"4b5273744552477654657374","policy_id":"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286","quantity":900}]}',
+      '{"address":"addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs","value":137010000,"assets":[{"asset_name":"5273744572676f546f6b656e7654657374","policy_id":"48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b","quantity":5000},{"asset_name":"43617264616e6f546f6b656e7654657374","policy_id":"cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be","quantity":100},{"asset_name":"5273744552477654657374","policy_id":"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286","quantity":900}]}',
   },
   {
     inputId:
       'b2e02269dba680b63f4ac4dfa9f5c967bc208af685709ab9cc2228839547ae52.0',
     serializedOutput:
-      '{"address":"addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs","value":137010000,"assets":[{"fingerprint":"asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2","asset_name":"515273744572676f546f6b656e7654657374","policy_id":"48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b","quantity":5000},{"fingerprint":"asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7","asset_name":"5143617264616e6f546f6b656e7654657374","policy_id":"cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be","quantity":100},{"fingerprint":"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz","asset_name":"4b5273744552477654657374","policy_id":"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286","quantity":900}]}',
+      '{"address":"addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs","value":137010000,"assets":[{"asset_name":"5273744572676f546f6b656e7654657374","policy_id":"48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b","quantity":5000},{"asset_name":"43617264616e6f546f6b656e7654657374","policy_id":"cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be","quantity":100},{"asset_name":"5273744552477654657374","policy_id":"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286","quantity":900}]}',
   },
   {
     inputId:
       'bd391046e9cdb40592eae98e2bb65abf75756ae21b4011044b883e7799c68a33.2',
     serializedOutput:
-      '{"address":"addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs","value":137010000,"assets":[{"fingerprint":"asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2","asset_name":"515273744572676f546f6b656e7654657374","policy_id":"48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b","quantity":5000},{"fingerprint":"asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7","asset_name":"5143617264616e6f546f6b656e7654657374","policy_id":"cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be","quantity":100},{"fingerprint":"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz","asset_name":"4b5273744552477654657374","policy_id":"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286","quantity":900}]}',
+      '{"address":"addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs","value":137010000,"assets":[{"asset_name":"5273744572676f546f6b656e7654657374","policy_id":"48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b","quantity":5000},{"asset_name":"43617264616e6f546f6b656e7654657374","policy_id":"cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be","quantity":100},{"asset_name":"5273744552477654657374","policy_id":"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286","quantity":900}]}',
   },
 ];
 
@@ -226,7 +226,7 @@ export const transaction1Order: PaymentOrder = [
       nativeToken: 2000000n,
       tokens: [
         {
-          id: 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz',
+          id: 'ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286.5273744552477654657374',
           value: 100n,
         },
       ],
@@ -242,10 +242,10 @@ export const transaction1PaymentTransaction = `
    "txId":"0066ad9bffa8579a6a7b6f5b6d8fdab20107eca2a2f8435235271173532acab1",
    "txType":"payment",
    "inputUtxos": [
-    "{\\"txId\\":\\"2d10e4c431dc9d6f35319720ba6fa9d1973fa4e4d9802fd1cae01540d1b1b9e3\\",\\"index\\":0,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000,\\"fingerprint\\":\\"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz\\"}]}",
-    "{\\"txId\\":\\"f5bbdeba6cc2ef8eac2fb24879d3a11df3b067a4fc5d1559ccf2ae21f0129631\\",\\"index\\":2,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000,\\"fingerprint\\":\\"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz\\"}]}",
-    "{\\"txId\\":\\"92d99216cefcf40ff63f223061cf111950bed5c21da459ab540f439a92b8e942\\",\\"index\\":0,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000,\\"fingerprint\\":\\"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz\\"}]}",
-    "{\\"txId\\":\\"ecb1361fba075163d41bd38bb532ffd0a6e0c1971d15c28c3f002c9282a420e4\\",\\"index\\":0,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000,\\"fingerprint\\":\\"asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz\\"}]}"
+    "{\\"txId\\":\\"2d10e4c431dc9d6f35319720ba6fa9d1973fa4e4d9802fd1cae01540d1b1b9e3\\",\\"index\\":0,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000}]}",
+    "{\\"txId\\":\\"f5bbdeba6cc2ef8eac2fb24879d3a11df3b067a4fc5d1559ccf2ae21f0129631\\",\\"index\\":2,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000}]}",
+    "{\\"txId\\":\\"92d99216cefcf40ff63f223061cf111950bed5c21da459ab540f439a92b8e942\\",\\"index\\":0,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000}]}",
+    "{\\"txId\\":\\"ecb1361fba075163d41bd38bb532ffd0a6e0c1971d15c28c3f002c9282a420e4\\",\\"index\\":0,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000}]}"
   ]
 }
 `;
@@ -257,14 +257,17 @@ export const transaction1Assets: AssetBalance = {
   nativeToken: 140010000n,
   tokens: [
     {
-      id: 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz',
+      id: 'ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286.5273744552477654657374',
       value: 1000n,
     },
     {
-      id: 'asset1v25eyenfzrv6me9hw4vczfprdctzy5ed3x99p2',
+      id: '48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b.5273744572676f546f6b656e7654657374',
       value: 5000n,
     },
-    { id: 'asset14d5uaspqyn87ecp8j4yawmguwrgun5086533z7', value: 100n },
+    {
+      id: 'cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be.43617264616e6f546f6b656e7654657374',
+      value: 100n,
+    },
   ],
 };
 
@@ -272,7 +275,7 @@ export const transaction1InputAssets: AssetBalance = {
   nativeToken: 40000n,
   tokens: [
     {
-      id: 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz',
+      id: 'ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286.5273744552477654657374',
       value: 4000n,
     },
   ],
@@ -306,7 +309,7 @@ export const transaction4Order: PaymentOrder = [
       nativeToken: 10000000n,
       tokens: [
         {
-          id: 'asset1jy5q5a0vpstutq5q6d8cgdmrd4qu5yefcdnjgz',
+          id: 'ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286.5273744552477654657374',
           value: 1000n,
         },
       ],
@@ -411,7 +414,6 @@ export const cardanoTx1: CardanoTx = {
           policy_id: 'a0028f350aaabe0545fdcb56b039bfb08e4bb4d8c4d7c3c7d481c235',
           asset_name: '484f534b59',
           quantity: 184272501n,
-          fingerprint: 'asset17q7r59zlc3dgw0venc80pdv566q6yguw03f0d9',
         },
       ],
     },
@@ -426,7 +428,6 @@ export const cardanoTx1: CardanoTx = {
           policy_id: 'a0028f350aaabe0545fdcb56b039bfb08e4bb4d8c4d7c3c7d481c235',
           asset_name: '484f534b59',
           quantity: 184272501n,
-          fingerprint: 'asset17q7r59zlc3dgw0venc80pdv566q6yguw03f0d9',
         },
       ],
     },
@@ -451,3 +452,23 @@ export const cardanoTx1: CardanoTx = {
     },
   },
 };
+
+export const transaction5PaymentTransaction = `
+{
+  "network": "cardano",
+  "eventId": "50d944ecfb8728b56ca42b3a3576e627677b9b5eccab5333977dfa25a0a27a28",
+  "txBytes": "84a4008882582001137a617c09a36ed22334e7ed8c9b94eb222eb72dc148850e1425d8518c60bd008258200b61ef396b9b22421768445f2f27352366e3736514a3a5977fb678dddbdb83e800825820121e53cbe92d16fb5927f430502bcd0be4f44982b68725e0030f0250ec010de10082582015e590b8310eda5fbe7ca741e3c2bd8f0b2961f1dc4c5251cd43d5b85cadc17f008258201b4ca08ad9b4441abec1509324b184305c0b0c0dda92091a806deacaee3585fa00825820756fcffd0cc9517e9b93603de0a802cd124ecf85e7953ecbd2efa2736335294b008258207d729590af3934b4d4894111303bbc215d6dc5bce3ea2feb6ed1e7e7a8a271d900825820ed299711c6fe5b903eb6f43a5bc7d9c4558c69075d24e9ad2c85e911570d838200018282583901efb0d0521319e8783b467628ed83b3553e7b4f2ddc8803afef13abfaf11e8da94d421ace684733c5229af416879944516aa553c54cf0129d821a0123a482a082581d616db0953f180e815d47f02b6b70ecdf5b16586e78dc064bb0d3083496821a018096e9a1581cfca58ef8ba9ef1961e132b611de2f8abcd2f34831e615a6f80c5bb48a34a546f6b656e2d6c6f656e1a0003fd754a77724552472d6c6f656e1b0000000228c1ae064a777252534e2d6c6f656e1a0115c44a021a00061a80031a068721c4a0f5f6",
+  "txId": "ebdaf0a3fe875a3f98d007ec646891bd6085ff5e447dd236890d524f55b53af5",
+  "txType": "payment",
+  "inputUtxos": [
+    "{\\"txId\\":\\"756fcffd0cc9517e9b93603de0a802cd124ecf85e7953ecbd2efa2736335294b\\",\\"index\\":0,\\"value\\":1180940,\\"assets\\":[{\\"policy_id\\":\\"fca58ef8ba9ef1961e132b611de2f8abcd2f34831e615a6f80c5bb48\\",\\"asset_name\\":\\"777252534e2d6c6f656e\\",\\"quantity\\":7952200}]}",
+    "{\\"txId\\":\\"1b4ca08ad9b4441abec1509324b184305c0b0c0dda92091a806deacaee3585fa\\",\\"index\\":0,\\"value\\":1180940,\\"assets\\":[{\\"policy_id\\":\\"fca58ef8ba9ef1961e132b611de2f8abcd2f34831e615a6f80c5bb48\\",\\"asset_name\\":\\"777252534e2d6c6f656e\\",\\"quantity\\":6224894}]}",
+    "{\\"txId\\":\\"15e590b8310eda5fbe7ca741e3c2bd8f0b2961f1dc4c5251cd43d5b85cadc17f\\",\\"index\\":0,\\"value\\":1198180,\\"assets\\":[{\\"policy_id\\":\\"fca58ef8ba9ef1961e132b611de2f8abcd2f34831e615a6f80c5bb48\\",\\"asset_name\\":\\"77724552472d6c6f656e\\",\\"quantity\\":4306918719}]}",
+    "{\\"txId\\":\\"121e53cbe92d16fb5927f430502bcd0be4f44982b68725e0030f0250ec010de1\\",\\"index\\":0,\\"value\\":13364722,\\"assets\\":[]}",
+    "{\\"txId\\":\\"0b61ef396b9b22421768445f2f27352366e3736514a3a5977fb678dddbdb83e8\\",\\"index\\":0,\\"value\\":1198180,\\"assets\\":[{\\"policy_id\\":\\"fca58ef8ba9ef1961e132b611de2f8abcd2f34831e615a6f80c5bb48\\",\\"asset_name\\":\\"77724552472d6c6f656e\\",\\"quantity\\":4966797511}]}",
+    "{\\"txId\\":\\"ed299711c6fe5b903eb6f43a5bc7d9c4558c69075d24e9ad2c85e911570d8382\\",\\"index\\":0,\\"value\\":1180940,\\"assets\\":[{\\"policy_id\\":\\"fca58ef8ba9ef1961e132b611de2f8abcd2f34831e615a6f80c5bb48\\",\\"asset_name\\":\\"777252534e2d6c6f656e\\",\\"quantity\\":4026628}]}",
+    "{\\"txId\\":\\"01137a617c09a36ed22334e7ed8c9b94eb222eb72dc148850e1425d8518c60bd\\",\\"index\\":0,\\"value\\":1180940,\\"assets\\":[{\\"policy_id\\":\\"fca58ef8ba9ef1961e132b611de2f8abcd2f34831e615a6f80c5bb48\\",\\"asset_name\\":\\"546f6b656e2d6c6f656e\\",\\"quantity\\":261493}]}",
+    "{\\"txId\\":\\"7d729590af3934b4d4894111303bbc215d6dc5bce3ea2feb6ed1e7e7a8a271d9\\",\\"index\\":0,\\"value\\":24232705,\\"assets\\":[]}"
+  ]
+}
+`;

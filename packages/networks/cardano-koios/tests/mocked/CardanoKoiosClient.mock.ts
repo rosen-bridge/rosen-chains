@@ -2,7 +2,7 @@ import cardanoKoiosClientFactory from '@rosen-clients/cardano-koios';
 import * as testData from '../testData';
 import {
   AddressInfoItemUtxoSetItem,
-  CredentialUtxos,
+  CredentialUtxosBody,
   TxInfoItem,
   TxUtxos,
 } from '@rosen-clients/cardano-koios';
@@ -45,11 +45,7 @@ export const mockAddressAssets = () => {
         balance: testData.addressBalance,
       },
     ],
-    postAddressAssets: async () => [
-      {
-        asset_list: testData.addressAssets,
-      },
-    ],
+    postAddressAssets: async () => testData.addressAssets,
   } as any);
 };
 
@@ -84,11 +80,7 @@ export const mockNoHistoryAddressAssets = () => {
  */
 export const mockPostBlockTxs = () => {
   jest.mocked(cardanoKoiosClientFactory).mockReturnValueOnce({
-    postBlockTxs: async () => [
-      {
-        tx_hashes: testData.txHashes,
-      },
-    ],
+    postBlockTxs: async () => testData.txHashes,
   } as any);
 };
 
@@ -143,7 +135,7 @@ export const mockPostAddressInfo = (utxoSet: AddressInfoItemUtxoSetItem[]) => {
  */
 export const mockUtxoValidation = (
   txUtxos: TxUtxos | undefined,
-  credentialUtxos: CredentialUtxos
+  credentialUtxos: CredentialUtxosBody
 ) => {
   jest.mocked(cardanoKoiosClientFactory).mockReturnValueOnce({
     postTxInfo: async () => (txUtxos ? [txUtxos] : []),
@@ -167,5 +159,14 @@ export const mockPostAddressInfoNoHistory = () => {
 export const mockPostTxUtxos = (utxos: TxUtxos) => {
   jest.mocked(cardanoKoiosClientFactory).mockReturnValueOnce({
     postTxInfo: async () => [utxos],
+  } as any);
+};
+
+/**
+ * mock `getEpochParams` of cardano koios client
+ */
+export const mockGetEpochParams = () => {
+  jest.mocked(cardanoKoiosClientFactory).mockReturnValueOnce({
+    getEpochParams: async () => [testData.epochParams],
   } as any);
 };
