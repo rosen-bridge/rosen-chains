@@ -15,7 +15,8 @@
     "prettify": "prettier --write . --ignore-path ./.gitignore",
     "release": "npm run build && npm publish --access public",
     "test": "NODE_OPTIONS=--experimental-specifier-resolution=node vitest",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "generate": "npx graphql-codegen"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",
@@ -34,6 +35,9 @@
   "dependencies": {
     "@apollo/client": "^3.8.7",
     "@emurgo/cardano-serialization-lib-nodejs": "^11.3.1",
+    "@graphql-codegen/cli": "^5.0.0",
+    "@graphql-codegen/typescript": "^4.0.1",
+    "@graphql-codegen/typescript-operations": "^4.0.1",
     "@rosen-bridge/abstract-logger": "^1.0.0",
     "@rosen-bridge/rosen-extractor": "^2.0.0",
     "@rosen-chains/abstract-chain": "^3.1.0",

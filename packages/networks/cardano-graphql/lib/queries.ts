@@ -143,7 +143,7 @@ query getUtxo($where: TransactionOutput_bool_exp) {
 }
 `);
 
-export const protocolParams = gql(`
+export const epochParams = gql(`
 query epochParams {
   cardano {
     currentEpoch {

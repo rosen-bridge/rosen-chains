@@ -35,7 +35,9 @@ import {
   GraphQLTxOutputUtxo,
   GraphQLTxMetadata,
   GraphQLUtxo,
+  GraphQLNullValueError,
 } from './types';
+import * as GraphQLTypes from './graphQLTypes';
 
 class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
   protected client: ApolloClient<NormalizedCacheObject>;
@@ -61,14 +63,16 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
    */
   getHeight = async (): Promise<number> => {
     return this.client
-      .query({
+      .query<GraphQLTypes.CurrentHeightQuery>({
         query: Queries.currentHeight,
       })
       .then((res) => {
         this.logger.debug(
           `requested 'currentHeight'. res: ${JsonBigInt.stringify(res)}`
         );
-        return res.data.cardano.tip.number;
+        const height = res.data.cardano.tip.number;
+        if (height) return height;
+        throw new GraphQLNullValueError(`Height is not number: [${height}]`);
       })
       .catch((e) => {
         const baseError = `Failed to fetch current height from GraphQL: `;
@@ -83,7 +87,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
    */
   getTxConfirmation = async (transactionId: string): Promise<number> => {
     return this.client
-      .query({
+      .query<GraphQLTypes.TxBlockInfoQuery>({
         query: Queries.txBlockInfo,
         variables: Variables.hashVariables(transactionId),
       })
@@ -95,8 +99,13 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
         );
         const currentHeight = res.data.cardano.tip.number;
         const txs = res.data.transactions;
-        if (txs.length === 0) return -1;
-        else return currentHeight - txs[0].block.number;
+        if (!txs.length) return -1;
+        else if (currentHeight && txs[0]?.block?.number)
+          return currentHeight - txs[0].block.number;
+        else
+          throw new GraphQLNullValueError(
+            `Heights are not number. Current height [${currentHeight}], Tx height:[${txs[0]?.block?.number}]`
+          );
       })
       .catch((e) => {
         const baseError = `Failed to get confirmation for tx [${transactionId}] from GraphQL: `;
@@ -114,7 +123,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
     const tokens: Array<TokenInfo> = [];
 
     return this.client
-      .query({
+      .query<GraphQLTypes.AddressAssetsQuery>({
         query: Queries.addressAssets,
         variables: Variables.addressVariables(address),
       })
@@ -125,25 +134,20 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
           )}`
         );
         const addresses = res.data.paymentAddresses;
-        if (
-          addresses.length === 0 ||
-          addresses[0].summary.assetBalances.length === 0
-        )
-          return {
-            nativeToken: 0n,
-            tokens: [],
-          };
+        if (!addresses || !addresses[0]?.summary?.assetBalances)
+          return { nativeToken, tokens };
 
         const assets = addresses[0].summary.assetBalances;
         // get ADA value
         const adaAmount = assets.find(
-          (balance: CardanoGraphQLAssetBalance) =>
-            balance.asset.policyId === 'ada'
+          (balance) => balance?.asset.policyId === 'ada'
         )?.quantity;
-        if (!adaAmount) throw new Error(`Found assets for address without ada`);
+        if (!adaAmount) return { nativeToken, tokens };
         nativeToken = BigInt(adaAmount);
         // get tokens value
-        assets.forEach((balance: CardanoGraphQLAssetBalance) => {
+        assets.forEach((balance) => {
+          if (!balance)
+            throw new GraphQLNullValueError(`Token balance is invalid`);
           if (balance.asset.policyId === 'ada') return;
           tokens.push({
             id: CardanoUtils.generateAssetId(
@@ -168,7 +172,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
    */
   getBlockTransactionIds = async (blockId: string): Promise<Array<string>> => {
     return this.client
-      .query({
+      .query<GraphQLTypes.BlockTxIdsQuery>({
         query: Queries.blockTxIds,
         variables: Variables.hashVariables(blockId),
       })
@@ -179,8 +183,13 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
           )}`
         );
         const blocks = res.data.blocks;
-        if (blocks.length === 0) throw new FailedError(`Block not found`);
-        return blocks[0].transactions.map((tx: { hash: string }) => tx.hash);
+        if (!blocks.length) throw new FailedError(`Block not found`);
+        if (!blocks[0]) throw new GraphQLNullValueError(`Invalid block data`);
+        return blocks[0].transactions.map((tx) => {
+          if (tx) return tx.hash;
+          else
+            throw new GraphQLNullValueError(`Block transaction id is invalid`);
+        });
       })
       .catch((e) => {
         const baseError = `Failed to get block [${blockId}] transaction ids from GraphQL: `;
@@ -195,7 +204,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
    */
   getBlockInfo = async (blockId: string): Promise<BlockInfo> => {
     return this.client
-      .query({
+      .query<GraphQLTypes.BlockInfoQuery>({
         query: Queries.blockInfo,
         variables: Variables.hashVariables(blockId),
       })
@@ -206,7 +215,9 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
           )}`
         );
         const blocks = res.data.blocks;
-        if (blocks.length === 0) throw new FailedError(`Block not found`);
+        if (!blocks.length) throw new FailedError(`Block not found`);
+        if (!blocks[0] || !blocks[0].previousBlock?.hash || !blocks[0].number)
+          throw new GraphQLNullValueError(`Invalid block data`);
         return {
           hash: blocks[0].hash,
           parentHash: blocks[0].previousBlock.hash,
@@ -230,7 +241,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
     blockId: string
   ): Promise<CardanoTx> => {
     return this.client
-      .query({
+      .query<GraphQLTypes.GetTransactionQuery>({
         query: Queries.getTransaction,
         variables: Variables.getTxVariables(transactionId, blockId),
       })
@@ -241,8 +252,10 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
           )}`
         );
         const txs = res.data.transactions;
-        if (txs.length === 0)
+        if (!txs.length)
           throw new FailedError(`Transaction with given block not found`);
+        if (!txs[0] || !txs[0].hash || !txs[0].fee)
+          throw new GraphQLNullValueError(`Invalid block data`);
         return {
           id: txs[0].hash,
           inputs: txs[0].inputs.map(this.txInputToCardanoUTxO),
@@ -262,7 +275,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
    * @param transaction the transaction
    */
   submitTransaction = async (transaction: Transaction): Promise<void> => {
-    await this.client.mutate({
+    await this.client.mutate<GraphQLTypes.SubmitTransactionMutation>({
       mutation: Queries.submitTxMutation,
       variables: Variables.submitTxVariables(transaction.to_hex()),
     });
@@ -291,7 +304,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
     limit: number
   ): Promise<Array<CardanoUtxo>> => {
     return this.client
-      .query({
+      .query<GraphQLTypes.AddressUtxosQuery>({
         query: Queries.addressUtxos,
         variables: Variables.addressUtxosVariables(address, offset, limit),
       })
@@ -317,7 +330,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
   isBoxUnspentAndValid = async (boxId: string): Promise<boolean> => {
     const [txId, index] = boxId.split('.');
     return this.client
-      .query({
+      .query<GraphQLTypes.GetUtxoQuery>({
         query: Queries.getUtxo,
         variables: Variables.getUtxoVariables(txId, Number(index)),
       })
@@ -328,7 +341,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
           )}`
         );
         const utxos = res.data.utxos;
-        if (utxos.length === 0) return false;
+        if (!utxos.length) return false;
         return true;
       })
       .catch((e) => {
@@ -343,7 +356,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
    */
   currentSlot = async (): Promise<number> => {
     return this.client
-      .query({
+      .query<GraphQLTypes.CurrentSlotQuery>({
         query: Queries.currentSlot,
       })
       .then((res) => {
@@ -366,7 +379,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
   getUtxo = async (boxId: string): Promise<CardanoUtxo> => {
     const [txId, index] = boxId.split('.');
     return this.client
-      .query({
+      .query<GraphQLTypes.GetUtxoQuery>({
         query: Queries.getUtxo,
         variables: Variables.getUtxoVariables(txId, Number(index)),
       })
@@ -377,7 +390,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
           )}`
         );
         const utxos = res.data.utxos;
-        if (utxos.length === 0) throw new FailedError(`Box not found`);
+        if (!utxos.length) throw new FailedError(`Box not found`);
         return this.utxoToCardanoUTxO(utxos[0]);
       })
       .catch((e) => {
@@ -392,14 +405,16 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
    */
   getProtocolParameters = async (): Promise<CardanoProtocolParameters> => {
     return this.client
-      .query({
-        query: Queries.protocolParams,
+      .query<GraphQLTypes.EpochParamsQuery>({
+        query: Queries.epochParams,
       })
       .then((res) => {
         this.logger.debug(
-          `requested 'protocolParams'. res: ${JsonBigInt.stringify(res)}`
+          `requested 'epochParams'. res: ${JsonBigInt.stringify(res)}`
         );
         const params = res.data.cardano.currentEpoch.protocolParams;
+        if (!params)
+          throw new GraphQLNullValueError(`Invalid epoch protocol params`);
         return {
           minFeeA: params.minFeeA,
           minFeeB: params.minFeeB,
@@ -423,11 +438,14 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
    */
   protected balanceToCardanoAssets = (
     balance: CardanoGraphQLAssetBalance
-  ): CardanoAsset => ({
-    policy_id: balance.asset.policyId,
-    asset_name: balance.asset.assetName,
-    quantity: BigInt(balance.quantity),
-  });
+  ): CardanoAsset => {
+    if (!balance) throw new GraphQLNullValueError(`Invalid token balance`);
+    return {
+      policy_id: balance.asset.policyId,
+      asset_name: balance.asset.assetName,
+      quantity: BigInt(balance.quantity),
+    };
+  };
 
   /**
    * converts GraphQL tx input schema to CardanoUtxo
@@ -435,6 +453,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
    * @returns
    */
   protected utxoToCardanoUTxO = (input: GraphQLUtxo): CardanoUtxo => {
+    if (!input) throw new GraphQLNullValueError(`Invalid utxo data`);
     return {
       txId: input.txHash,
       index: input.index,
@@ -465,6 +484,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
   protected txOutputToCardanoBoxCandidate = (
     output: GraphQLTxOutputUtxo
   ): CardanoBoxCandidate => {
+    if (!output) throw new GraphQLNullValueError(`Invalid output utxo data`);
     return {
       address: output.address,
       value: BigInt(output.value),
@@ -480,14 +500,15 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
   protected parseMetadata = (
     metadata: GraphQLTxMetadata
   ): CardanoMetadata | undefined => {
-    if (metadata.length === 0) return undefined;
-    return metadata.reduce(
-      (result: CardanoMetadata, labelObject) => ({
+    if (!metadata) return undefined;
+    return metadata.reduce((result: CardanoMetadata, labelObject) => {
+      if (!labelObject || !labelObject.key || !labelObject.value)
+        throw new GraphQLNullValueError(`Invalid metadata element`);
+      return {
         ...result,
         [labelObject.key]: labelObject.value,
-      }),
-      {}
-    );
+      };
+    }, {});
   };
 
   /**
