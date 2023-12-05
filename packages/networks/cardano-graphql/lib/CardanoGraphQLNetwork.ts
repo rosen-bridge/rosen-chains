@@ -500,7 +500,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
   protected parseMetadata = (
     metadata: GraphQLTxMetadata
   ): CardanoMetadata | undefined => {
-    if (!metadata) return undefined;
+    if (!metadata || !Object.keys(metadata).length) return undefined;
     return metadata.reduce((result: CardanoMetadata, labelObject) => {
       if (!labelObject || !labelObject.key || !labelObject.value)
         throw new GraphQLNullValueError(`Invalid metadata element`);
