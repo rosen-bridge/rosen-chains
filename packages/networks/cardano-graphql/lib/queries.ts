@@ -1,10 +1,19 @@
 import { gql } from '@apollo/client/core';
 
-export const networkTip = gql(`
-query networkTip {
+export const currentHeight = gql(`
+query currentHeight {
   cardano {
     tip {
       number
+    }
+  }
+}
+`);
+
+export const currentSlot = gql(`
+query currentSlot {
+  cardano {
+    tip {
       slotNo
     }
   }
@@ -134,7 +143,7 @@ query getUtxo($where: TransactionOutput_bool_exp) {
 }
 `);
 
-export const protocolParams = gql(`
+export const epochParams = gql(`
 query epochParams {
   cardano {
     currentEpoch {

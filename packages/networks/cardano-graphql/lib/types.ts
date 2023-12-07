@@ -1,34 +1,26 @@
-export interface CardanoGraphQLAssetBalance {
-  asset: {
-    assetName: string;
-    policyId: string;
-  };
-  quantity: string;
-}
+import { UnexpectedApiError } from '@rosen-chains/abstract-chain';
+import { GetTransactionQuery, GetUtxoQuery } from './graphQLTypes';
 
-export interface GraphQLTxInputUtxo {
-  sourceTxIndex: number;
-  sourceTxHash: string;
-  value: string;
-  tokens: Array<CardanoGraphQLAssetBalance>;
-}
+export type CardanoGraphQLAssetBalance = NonNullable<
+  GetTransactionQuery['transactions'][0]
+>['inputs'][0]['tokens'][0];
 
-export interface GraphQLTxOutputUtxo {
-  address: string;
-  value: string;
-  tokens: Array<CardanoGraphQLAssetBalance>;
-}
+export type GraphQLTxInputUtxo = NonNullable<
+  GetTransactionQuery['transactions'][0]
+>['inputs'][0];
 
-export interface GraphQLUtxo {
-  txHash: string;
-  index: number;
-  value: string;
-  tokens: Array<CardanoGraphQLAssetBalance>;
-}
+export type GraphQLTxOutputUtxo = NonNullable<
+  GetTransactionQuery['transactions'][0]
+>['outputs'][0];
 
-export interface GraphQLMetadataField {
-  key: string;
-  value: string | Record<string, any>;
-}
+export type GraphQLTxMetadata = NonNullable<
+  GetTransactionQuery['transactions'][0]
+>['metadata'];
 
-export type GraphQLTxMetadata = Array<GraphQLMetadataField>;
+export type GraphQLUtxo = GetUtxoQuery['utxos'][0];
+
+export class GraphQLNullValueError extends UnexpectedApiError {
+  constructor(msg: string) {
+    super('GraphQLNullValueError: ' + msg);
+  }
+}
