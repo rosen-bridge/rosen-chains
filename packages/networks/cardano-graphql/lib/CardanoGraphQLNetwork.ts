@@ -540,7 +540,7 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
   getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
     const assetUnit = tokenId.split('.').join('');
     return this.client
-      .query({
+      .query<GraphQLTypes.AssetDetailQuery>({
         query: Queries.assetDetail,
         variables: Variables.assetIdVariables(assetUnit),
       })
@@ -551,7 +551,8 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
           )}`
         );
         const assets = res.data.assets;
-        if (assets.length === 0) throw new FailedError(`Asset not found`);
+        if (!assets.length) throw new FailedError(`Asset not found`);
+        if (!assets[0]) throw new GraphQLNullValueError(`Invalid token data`);
         return {
           tokenId: tokenId,
           name: assets[0].name ?? UNKNOWN_TOKEN,
