@@ -538,6 +538,7 @@ class ErgoExplorerNetwork extends AbstractErgoNetwork {
 
   /**
    * gets token details (name, decimals)
+   * @param tokenId
    */
   getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
     try {

@@ -569,6 +569,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
 
   /**
    * gets token details (name, decimals)
+   * @param tokenId
    */
   getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
     let tokenDetail: AssetInfo;

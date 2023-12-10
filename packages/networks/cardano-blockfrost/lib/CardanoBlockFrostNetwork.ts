@@ -641,6 +641,7 @@ class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
 
   /**
    * gets token details (name, decimals)
+   * @param tokenId
    */
   getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
     const assetUnit = tokenId.split('.').join('');

@@ -270,6 +270,7 @@ abstract class AbstractChain {
 
   /**
    * gets token details (name, decimals)
+   * @param tokenId
    */
   getTokenDetail = (tokenId: string): Promise<TokenDetail> =>
     this.network.getTokenDetail(tokenId);

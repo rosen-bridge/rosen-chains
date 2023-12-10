@@ -488,7 +488,7 @@ describe('CardanoGraphQLNetwork', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should be mocked slot
+     * - it should be mocked token data
      */
     it('should return token detail successfully', async () => {
       // mock client response

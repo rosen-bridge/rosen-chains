@@ -69,6 +69,7 @@ abstract class AbstractChainNetwork<TxType> {
 
   /**
    * gets token details (name, decimals)
+   * @param tokenId
    */
   abstract getTokenDetail: (tokenId: string) => Promise<TokenDetail>;
 }
