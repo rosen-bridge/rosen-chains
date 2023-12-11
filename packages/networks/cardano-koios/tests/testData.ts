@@ -625,3 +625,33 @@ export const expectedRequiredParams = {
   maxTxSize: 16384,
   coinsPerUtxoSize: '4310',
 };
+
+export const assetId =
+  '04b95368393c821f180deee8229fbd941baaf9bd748ebcdbf7adbb14.7273455247';
+export const assetInfo = {
+  policy_id: '04b95368393c821f180deee8229fbd941baaf9bd748ebcdbf7adbb14',
+  asset_name: '7273455247',
+  asset_name_ascii: 'rsERG',
+  fingerprint: 'asset1a7ej28cdf078tndzcvswm5whk2jrpd0z98vlg4',
+  minting_tx_hash:
+    '67abf7316b303aeb3e643eaa560dc613e14e73f2e944da2295ef0245983887fa',
+  total_supply: '97739924500000000',
+  mint_cnt: 1,
+  burn_cnt: 0,
+  creation_time: 1701302400,
+  minting_tx_metadata: null,
+  token_registry_metadata: {
+    url: 'url',
+    logo: 'logo',
+    name: 'rsERG',
+    ticker: 'reERG',
+    decimals: 9,
+    description: 'description',
+  },
+  cip68_metadata: null,
+};
+export const expectedTokenDetail = {
+  tokenId: assetId,
+  name: 'rsERG',
+  decimals: 9,
+};

@@ -168,3 +168,12 @@ mutation SubmitTransaction($transaction: String!) {
   }
 }
 `);
+
+export const assetDetail = gql(`
+query assetDetail($where: Asset_bool_exp) {
+  assets(where: $where) {
+    decimals
+    name
+  }
+}
+`);

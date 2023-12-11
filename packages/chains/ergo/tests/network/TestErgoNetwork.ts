@@ -2,7 +2,11 @@ import { AbstractErgoNetwork } from '../../lib';
 import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import { ErgoBox, ErgoStateContext, Transaction } from 'ergo-lib-wasm-nodejs';
 import { testLockAddress } from '../ergoTestUtils';
-import { AssetBalance, BlockInfo } from '@rosen-chains/abstract-chain';
+import {
+  AssetBalance,
+  BlockInfo,
+  TokenDetail,
+} from '@rosen-chains/abstract-chain';
 
 class TestErgoNetwork extends AbstractErgoNetwork {
   extractor = new ErgoRosenExtractor(testLockAddress, {
@@ -69,6 +73,10 @@ class TestErgoNetwork extends AbstractErgoNetwork {
   };
 
   getBox = (boxId: string): Promise<ErgoBox> => {
+    throw Error('Not mocked');
+  };
+
+  getTokenDetail = (tokenId: string): Promise<TokenDetail> => {
     throw Error('Not mocked');
   };
 }

@@ -3,6 +3,7 @@ import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import cardanoKoiosClientFactory, {
   AddressAssets,
   AddressInfo,
+  AssetInfo,
 } from '@rosen-clients/cardano-koios';
 import { KoiosNullValueError } from './types';
 import {
@@ -19,7 +20,9 @@ import {
   BlockInfo,
   FailedError,
   NetworkError,
+  TokenDetail,
   TokenInfo,
+  UNKNOWN_TOKEN,
   UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
 import {
@@ -561,6 +564,40 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
       maxValueSize: epochParams.max_val_size,
       maxTxSize: epochParams.max_tx_size,
       coinsPerUtxoSize: epochParams.coins_per_utxo_size,
+    };
+  };
+
+  /**
+   * gets token details (name, decimals)
+   * @param tokenId
+   */
+  getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
+    let tokenDetail: AssetInfo;
+    try {
+      tokenDetail = await this.client.postAssetInfo({
+        _asset_list: [tokenId.split('.')],
+      });
+      this.logger.debug(
+        `requested 'postAssetInfo' for asset [${tokenId}]. res: ${JsonBigInt.stringify(
+          tokenDetail
+        )}`
+      );
+    } catch (e: any) {
+      const baseError = `Failed to get asset [${tokenId}] info from Koios: `;
+      if (e.response) {
+        throw new FailedError(baseError + e.response.data.reason);
+      } else if (e.request) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
+
+    if (tokenDetail.length === 0) throw new FailedError(`Token not found`);
+    return {
+      tokenId: tokenId,
+      name: tokenDetail[0].token_registry_metadata?.name ?? UNKNOWN_TOKEN,
+      decimals: tokenDetail[0].token_registry_metadata?.decimals ?? 0,
     };
   };
 }

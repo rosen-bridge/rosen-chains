@@ -101,6 +101,12 @@ enum TransactionType {
   manual = 'manual',
 }
 
+interface TokenDetail {
+  tokenId: string;
+  name: string;
+  decimals: number;
+}
+
 export {
   ConfirmationConfigs,
   ChainConfigs,
@@ -117,4 +123,5 @@ export {
   ConfirmationStatus,
   TransactionType,
   SigningStatus,
+  TokenDetail,
 };

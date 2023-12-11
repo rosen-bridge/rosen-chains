@@ -16,10 +16,12 @@ import {
   mockGetApiV1BoxesUnspentByaddressP1,
   mockGetApiV1BoxesUnspentBytokenidP1,
   mockGetApiV1Networkstate,
+  mockGetApiV1TokensP1,
   mockGetApiV1TransactionsP1,
   mockPostApiV0TransactionsSend,
 } from './mocked/ErgoExplorerClient.mock';
 import {
+  expectedTokenDetail,
   testAddress,
   testAddressBalance,
   testAddressBalanceWithNoTokens,
@@ -37,6 +39,7 @@ import {
   testTransactionBytes,
   testTransactionWithNullSpendingProof,
   testTransactionWithNullSpendingProofBytes,
+  tokenId,
 } from './testData';
 import * as ergoLib from 'ergo-lib-wasm-nodejs';
 import JsonBigInt from '@rosen-bridge/json-bigint';
@@ -639,6 +642,27 @@ describe('ErgoExplorerNetwork', () => {
       expect(Buffer.from(box.sigma_serialize_bytes()).toString('hex')).toEqual(
         expectedBoxesBytes
       );
+    });
+  });
+
+  describe('getTokenDetail', () => {
+    /**
+     * @target `ErgoExplorerNetwork.getTokenDetail` should return token detail successfully
+     * @dependencies
+     * @scenario
+     * - mock `getApiV1TokensP1` of ergo explorer client
+     * @expected
+     * - returned expected token info
+     */
+    it('should return token detail successfully', async () => {
+      mockGetApiV1TokensP1();
+
+      // run test
+      const network = getNetwork();
+      const result = await network.getTokenDetail(tokenId);
+
+      // check returned value
+      expect(result).toEqual(expectedTokenDetail);
     });
   });
 });

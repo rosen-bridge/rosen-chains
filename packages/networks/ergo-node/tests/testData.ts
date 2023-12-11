@@ -639,3 +639,20 @@ export const testLastBlockHeaders = [
       '113fb4b2de7a64e978aa20af4015b171a7a77e316aefed2ab09178d6157b9041',
   },
 ];
+
+export const tokenId =
+  '53cd2b0267fc6fb5fc7bb2c67d1e1a002641abee9e7c3471bc6583d0e29f46ef';
+export const tokenApiResponse = {
+  id: '53cd2b0267fc6fb5fc7bb2c67d1e1a002641abee9e7c3471bc6583d0e29f46ef',
+  boxId: 'c01a86713d318abe6921843a6bdd1ac06bbe86d70163b4572dfa40155aedc482',
+  emissionAmount: 9223372036854776000,
+  name: 'SPF_ERG_SigUSD_LP_YF',
+  description:
+    'The representation of your share in the SPF/ERG_SigUSD_LP (pool id: 4136eba32fe50118ce0c556b83f85c0460da975489a3a5f3d0450fef0ab40dd5) yield farming pool on the Spectrum Finance platform.',
+  decimals: 3,
+};
+export const expectedTokenDetail = {
+  tokenId: tokenId,
+  name: 'SPF_ERG_SigUSD_LP_YF',
+  decimals: 3,
+};

@@ -10,6 +10,7 @@ import {
   testMempoolTransactions,
   testPartialTransactions,
   testTransaction,
+  tokenApiResponse,
 } from '../testData';
 
 /**
@@ -142,4 +143,12 @@ export const mockApiToThrow = (
 ) =>
   vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
     [apiName]: vi.fn().mockRejectedValueOnce(objectToThrow),
+  } as any);
+
+/**
+ * mock `getTokenById` of ergo node client
+ */
+export const mockGetTokenById = () =>
+  vi.mocked(ergoNodeClientFactory).mockReturnValueOnce({
+    getTokenById: async () => tokenApiResponse,
   } as any);

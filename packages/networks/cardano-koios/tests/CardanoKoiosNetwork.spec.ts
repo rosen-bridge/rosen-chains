@@ -8,6 +8,7 @@ import {
   mockNoHistoryAddressAssets,
   mockPostAddressInfo,
   mockPostAddressInfoNoHistory,
+  mockPostAssetInfo,
   mockPostBlockInfo,
   mockPostBlockTxs,
   mockPostSubmittx,
@@ -626,6 +627,30 @@ describe('CardanoKoiosNetwork', () => {
 
       // check returned value
       expect(result).toEqual(testData.expectedRequiredParams);
+    });
+  });
+
+  describe('getTokenDetail', () => {
+    /**
+     * @target `CardanoKoiosNetwork.getTokenDetail` should return token detail successfully
+     * @dependencies
+     * @scenario
+     * - mock `postAssetInfo` of cardano koios client
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should be mocked token data
+     */
+    it('should return token detail successfully', async () => {
+      // mock client response
+      mockPostAssetInfo();
+
+      // run test
+      const network = mockNetwork();
+      const result = await network.getTokenDetail(testData.assetId);
+
+      // check returned value
+      expect(result).toEqual(testData.expectedTokenDetail);
     });
   });
 });

@@ -53,3 +53,11 @@ export const getUtxoVariables = (txId: string, index: number) => ({
 export const submitTxVariables = (txHex: string) => ({
   transaction: txHex,
 });
+
+export const assetIdVariables = (assetId: string) => ({
+  where: {
+    assetId: {
+      _eq: assetId,
+    },
+  },
+});

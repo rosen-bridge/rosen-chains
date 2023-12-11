@@ -148,3 +148,11 @@ export const mockEpochsLatestParameters = (client: BlockFrostAPI) => {
     testData.epochParams
   );
 };
+
+/**
+ * mocks `epochsLatestParameters` function of the client to return value
+ * @param client
+ */
+export const mockAssetsById = (client: BlockFrostAPI) => {
+  vi.spyOn(client, 'assetsById').mockResolvedValue(testData.assetByIdResult);
+};

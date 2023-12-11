@@ -2368,3 +2368,16 @@ export type SubmitTransactionMutation = {
   __typename?: 'Mutation';
   submitTransaction: { __typename?: 'TransactionSubmitResponse'; hash: string };
 };
+
+export type AssetDetailQueryVariables = Exact<{
+  where?: InputMaybe<Asset_Bool_Exp>;
+}>;
+
+export type AssetDetailQuery = {
+  __typename?: 'Query';
+  assets: Array<{
+    __typename?: 'Asset';
+    decimals?: number | null;
+    name?: string | null;
+  } | null>;
+};

@@ -10,6 +10,7 @@ import {
   EventTrigger,
   PaymentOrder,
   SigningStatus,
+  TokenDetail,
   TransactionAssetBalance,
   TransactionType,
 } from './types';
@@ -266,6 +267,13 @@ abstract class AbstractChain {
    * @assetId
    */
   getChainConfigs = (): ChainConfigs => this.configs;
+
+  /**
+   * gets token details (name, decimals)
+   * @param tokenId
+   */
+  getTokenDetail = (tokenId: string): Promise<TokenDetail> =>
+    this.network.getTokenDetail(tokenId);
 }
 
 export default AbstractChain;

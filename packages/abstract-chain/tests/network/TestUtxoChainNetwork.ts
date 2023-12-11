@@ -18,6 +18,7 @@ class TestUtxoChainNetwork extends AbstractUtxoChainNetwork<string, string> {
   getMempoolTransactions = this.notImplemented;
 
   isBoxUnspentAndValid = this.notImplemented;
+  getTokenDetail = this.notImplemented;
 
   getAddressBoxes = (
     address: string,

@@ -16,7 +16,9 @@ import {
   BlockInfo,
   FailedError,
   NetworkError,
+  TokenDetail,
   TokenInfo,
+  UNKNOWN_TOKEN,
   UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
 import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
@@ -530,6 +532,38 @@ class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
     } else {
       return new UnexpectedApiError(baseError + e.message);
     }
+  };
+
+  /**
+   * gets token details (name, decimals)
+   * @param tokenId
+   */
+  getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
+    const assetUnit = tokenId.split('.').join('');
+    return this.client
+      .query<GraphQLTypes.AssetDetailQuery>({
+        query: Queries.assetDetail,
+        variables: Variables.assetIdVariables(assetUnit),
+      })
+      .then((res) => {
+        this.logger.debug(
+          `requested 'assetDetail' for token [${assetUnit}]. res: ${JsonBigInt.stringify(
+            res
+          )}`
+        );
+        const assets = res.data.assets;
+        if (!assets.length) throw new FailedError(`Asset not found`);
+        if (!assets[0]) throw new GraphQLNullValueError(`Invalid token data`);
+        return {
+          tokenId: tokenId,
+          name: assets[0].name ?? UNKNOWN_TOKEN,
+          decimals: assets[0].decimals ?? 0,
+        };
+      })
+      .catch((e) => {
+        const baseError = `Failed to fetch token [${assetUnit}] info from GraphQL: `;
+        throw this.handleClientError(e, baseError);
+      });
   };
 }
 

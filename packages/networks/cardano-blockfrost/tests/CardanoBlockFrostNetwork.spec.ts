@@ -5,6 +5,7 @@ import {
   mockAddressesUtxos,
   mockAddressesUtxosAll,
   mockAddressesUtxosNotFound,
+  mockAssetsById,
   mockBlockLatest,
   mockBlocks,
   mockBlocksTxsAll,
@@ -600,6 +601,30 @@ describe('CardanoBlockFrostNetwork', () => {
 
       // check returned value
       expect(result).toEqual(testData.expectedRequiredParams);
+    });
+  });
+
+  describe('getTokenDetail', () => {
+    /**
+     * @target `CardanoBlockFrostNetwork.getTokenDetail` should return token detail successfully
+     * @dependencies
+     * @scenario
+     * - mock `BlockFrostAPI.assetsById`
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should be mocked token data
+     */
+    it('should return token detail successfully', async () => {
+      // mock client response
+      const network = mockNetwork();
+      mockAssetsById(network.getClient());
+
+      // run test
+      const result = await network.getTokenDetail(testData.assetId);
+
+      // check returned value
+      expect(result).toEqual(testData.expectedTokenDetail);
     });
   });
 });
