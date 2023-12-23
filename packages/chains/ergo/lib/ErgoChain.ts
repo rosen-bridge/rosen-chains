@@ -132,8 +132,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     const forbiddenBoxIds = unsignedTransactions.flatMap((paymentTx) => {
       const tx = Serializer.deserialize(paymentTx.txBytes).unsigned_tx();
       const ids: string[] = [];
-      for (let i = 0; i < tx.inputs().len(); i++)
-        ids.push(tx.inputs().get(i).box_id().to_str());
+      const inputs = tx.inputs();
+      for (let i = 0; i < inputs.len(); i++)
+        ids.push(inputs.get(i).box_id().to_str());
       return ids;
     });
 
@@ -338,8 +339,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       tokens: [],
     };
     // extract output boxes assets
-    for (let i = 0; i < tx.output_candidates().len(); i++) {
-      const output = tx.output_candidates().get(i);
+    const outputCandidates = tx.output_candidates();
+    for (let i = 0; i < outputCandidates.len(); i++) {
+      const output = outputCandidates.get(i);
       outputAssets.nativeToken += BigInt(output.value().as_i64().to_str());
       for (let j = 0; j < output.tokens().len(); j++) {
         const targetToken = outputAssets.tokens.find(
@@ -372,15 +374,17 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     const tx = Serializer.deserialize(transaction.txBytes).unsigned_tx();
 
     const order: PaymentOrder = [];
-    for (let i = 0; i < tx.output_candidates().len(); i++) {
-      const output = tx.output_candidates().get(i);
+    const outputCandidates = tx.output_candidates();
+    const outputCandidatesLength = outputCandidates.len();
+    for (let i = 0; i < outputCandidatesLength; i++) {
+      const output = outputCandidates.get(i);
       const assets = ErgoUtils.getBoxAssets(output);
       const r4Value = output.register_value(4)?.to_coll_coll_byte()[0];
 
       // skip change box and fee box
       if (
         output.ergo_tree().to_base16_bytes() === ErgoChain.feeBoxErgoTree ||
-        (tx.output_candidates().len() - i === 2 &&
+        (outputCandidatesLength - i === 2 &&
           output.ergo_tree().to_base16_bytes() ===
             wasm.Address.from_base58(this.configs.addresses.lock)
               .to_ergo_tree()
@@ -454,8 +458,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       );
       const blockHeight = (await this.network.getBlockInfo(event.sourceBlockId))
         .height;
-      for (let i = 0; i < tx.outputs().len(); i++) {
-        const box = tx.outputs().get(i);
+      const outputs = tx.outputs();
+      for (let i = 0; i < outputs.len(); i++) {
+        const box = outputs.get(i);
         if (blockHeight - box.creation_height() > NUMBER_OF_BLOCKS_PER_YEAR) {
           this.logger.info(
             `Event [${eventId}] is not valid, box [${box
@@ -591,8 +596,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         : Serializer.deserialize(transaction.txBytes).unsigned_tx();
     // check if any input is spent or invalid
     let valid = true;
-    for (let i = 0; i < tx.inputs().len(); i++) {
-      const box = tx.inputs().get(i);
+    const inputs = tx.inputs();
+    for (let i = 0; i < inputs.len(); i++) {
+      const box = inputs.get(i);
       valid =
         valid &&
         (await this.network.isBoxUnspentAndValid(box.box_id().to_str()));
@@ -859,11 +865,13 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       // deserialize transaction
 
       // iterate over tx inputs
-      for (let i = 0; i < tx.inputs().len(); i++) {
+      const inputs = tx.inputs();
+      const outputs = tx.outputs();
+      for (let i = 0; i < inputs.len(); i++) {
         let trackedBox: wasm.ErgoBox | undefined;
         // iterate over tx outputs
-        for (let j = 0; j < tx.outputs().len(); j++) {
-          const output = tx.outputs().get(j);
+        for (let j = 0; j < outputs.len(); j++) {
+          const output = outputs.get(j);
           // check if box satisfy conditions
           if (output.ergo_tree().to_base16_bytes() !== ergoTree) continue;
           if (tokenId) {
@@ -880,7 +888,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         }
 
         // add input box with serialized tracked box to trackMap
-        const input = tx.inputs().get(i);
+        const input = inputs.get(i);
         trackMap.set(input.box_id().to_str(), trackedBox);
       }
     });
@@ -995,8 +1003,10 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     );
 
     const order: PaymentOrder = [];
-    for (let i = 0; i < tx.outputs().len(); i++) {
-      const output = tx.outputs().get(i);
+    const outputs = tx.outputs();
+    const outputsLength = outputs.len();
+    for (let i = 0; i < outputsLength; i++) {
+      const output = outputs.get(i);
       const boxErgoTree = output.ergo_tree().to_base16_bytes();
       const lockErgoTree = wasm.Address.from_base58(this.configs.addresses.lock)
         .to_ergo_tree()
@@ -1005,7 +1015,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       // skip change box and fee box
       if (
         boxErgoTree === ErgoChain.feeBoxErgoTree ||
-        (tx.outputs().len() - i === 2 && boxErgoTree === lockErgoTree)
+        (outputsLength - i === 2 && boxErgoTree === lockErgoTree)
       )
         continue;
 
