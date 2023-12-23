@@ -343,18 +343,19 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     for (let i = 0; i < outputCandidates.len(); i++) {
       const output = outputCandidates.get(i);
       outputAssets.nativeToken += BigInt(output.value().as_i64().to_str());
-      for (let j = 0; j < output.tokens().len(); j++) {
+      const outputTokens = output.tokens();
+      for (let j = 0; j < outputTokens.len(); j++) {
         const targetToken = outputAssets.tokens.find(
-          (item) => item.id === output.tokens().get(j).id().to_str()
+          (item) => item.id === outputTokens.get(j).id().to_str()
         );
         if (targetToken)
           targetToken.value += BigInt(
-            output.tokens().get(j).amount().as_i64().to_str()
+            outputTokens.get(j).amount().as_i64().to_str()
           );
         else
           outputAssets.tokens.push({
-            id: output.tokens().get(j).id().to_str(),
-            value: BigInt(output.tokens().get(j).amount().as_i64().to_str()),
+            id: outputTokens.get(j).id().to_str(),
+            value: BigInt(outputTokens.get(j).amount().as_i64().to_str()),
           });
       }
     }
@@ -876,8 +877,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
           if (output.ergo_tree().to_base16_bytes() !== ergoTree) continue;
           if (tokenId) {
             const tokenIds: Array<string> = [];
-            for (let k = 0; k < output.tokens().len(); k++)
-              tokenIds.push(output.tokens().get(k).id().to_str());
+            const outputTokens = output.tokens();
+            for (let k = 0; k < outputTokens.len(); k++)
+              tokenIds.push(outputTokens.get(k).id().to_str());
 
             if (!tokenIds.includes(tokenId)) continue;
           }
