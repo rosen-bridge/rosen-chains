@@ -591,10 +591,15 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     signingStatus: SigningStatus = SigningStatus.Signed
   ): Promise<boolean> => {
     // deserialize transaction
-    const tx =
-      signingStatus === SigningStatus.Signed
-        ? Serializer.signedDeserialize(transaction.txBytes)
-        : Serializer.deserialize(transaction.txBytes).unsigned_tx();
+    let tx: wasm.Transaction | wasm.UnsignedTransaction;
+    try {
+      tx =
+        signingStatus === SigningStatus.Signed
+          ? Serializer.signedDeserialize(transaction.txBytes)
+          : Serializer.deserialize(transaction.txBytes).unsigned_tx();
+    } catch (e) {
+      tx = Serializer.deserialize(transaction.txBytes).unsigned_tx();
+    }
     // check if any input is spent or invalid
     let valid = true;
     const inputs = tx.inputs();
