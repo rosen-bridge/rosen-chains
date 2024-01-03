@@ -42,6 +42,7 @@ abstract class AbstractUtxoChain<BoxType> extends AbstractChain {
     const uncoveredTokens = requiredAssets.tokens.filter(
       (info) => info.value > 0n
     );
+    const selectedBoxes: Array<string> = [];
 
     const isRequirementRemaining = () => {
       return uncoveredTokens.length > 0 || uncoveredNativeToken > 0n;
@@ -86,7 +87,11 @@ abstract class AbstractUtxoChain<BoxType> extends AbstractChain {
         }
 
         // if tracked to no box or forbidden box, skip it
-        if (skipBox || forbiddenBoxIds.includes(boxInfo.id)) {
+        if (
+          skipBox ||
+          forbiddenBoxIds.includes(boxInfo.id) ||
+          selectedBoxes.includes(boxInfo.id)
+        ) {
           this.logger.debug(`box [${boxInfo.id}] is skipped`);
           continue;
         }
@@ -113,6 +118,7 @@ abstract class AbstractUtxoChain<BoxType> extends AbstractChain {
               ? boxInfo.assets.nativeToken
               : uncoveredNativeToken;
           result.push(trackedBox!);
+          selectedBoxes.push(boxInfo.id);
           this.logger.debug(`box [${boxInfo.id}] is selected`);
         } else this.logger.debug(`box [${boxInfo.id}] is ignored`);
 
