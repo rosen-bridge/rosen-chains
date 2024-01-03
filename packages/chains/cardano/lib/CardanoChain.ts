@@ -247,6 +247,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     const txId = Buffer.from(
       CardanoWasm.hash_transaction(txBody).to_bytes()
     ).toString('hex');
+    if (!CardanoUtils.isTxIdValid(txId)) throw Error(`Invalid txId: [${txId}]`);
 
     const cardanoTx = new CardanoTransaction(
       txId,
@@ -350,8 +351,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
       tokens: [],
     };
     // extract input box assets
-    for (let i = 0; i < cardanoTx.inputUtxos.length; i++) {
-      const input = JSONBigInt.parse(cardanoTx.inputUtxos[i]) as CardanoUtxo;
+    const inputUtxos = Array.from(new Set(cardanoTx.inputUtxos));
+    for (let i = 0; i < inputUtxos.length; i++) {
+      const input = JSONBigInt.parse(inputUtxos[i]) as CardanoUtxo;
       const boxAssets = this.getBoxInfo(input).assets;
       inputAssets = ChainUtils.sumAssetBalance(inputAssets, boxAssets);
     }
@@ -449,6 +451,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     transaction: PaymentTransaction,
     _signingStatus: SigningStatus = SigningStatus.Signed
   ): Promise<boolean> => {
+    // check if txId is valid
+    if (!CardanoUtils.isTxIdValid(transaction.txId)) return false;
+
     const tx = Serializer.deserialize(transaction.txBytes);
     const txBody = tx.body();
 
@@ -466,7 +471,13 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
       )
         return false;
     }
-    return true;
+
+    // check if input and output assets match
+    const txAssets = await this.getTransactionAssets(transaction);
+    return ChainUtils.isEqualAssetBalance(
+      txAssets.inputAssets,
+      txAssets.outputAssets
+    );
   };
 
   /**

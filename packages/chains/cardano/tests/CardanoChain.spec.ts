@@ -445,6 +445,30 @@ describe('CardanoChain', () => {
       expect(result.inputAssets).toEqual(TestData.transaction1InputAssets);
       expect(result.outputAssets).toEqual(TestData.transaction1Assets);
     });
+
+    /**
+     * @target CardanoChain.getTransactionAssets should skip duplicate inputs
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction assets (both input and output assets)
+     */
+    it('should skip duplicate inputs', async () => {
+      // mock PaymentTransaction
+      const paymentTx = CardanoTransaction.fromJson(
+        TestData.transaction6PaymentTransaction
+      );
+
+      // call the function
+      const cardanoChain = generateChainObject(network);
+
+      // check returned value
+      const result = await cardanoChain.getTransactionAssets(paymentTx);
+      expect(result.inputAssets).toEqual(TestData.transaction6InputAssets);
+    });
   });
 
   describe('getMempoolBoxMapping', () => {
@@ -780,7 +804,7 @@ describe('CardanoChain', () => {
     it('should return true when all tx inputs are valid and ttl is less than current slot', async () => {
       // mock PaymentTransaction
       const payment1 = CardanoTransaction.fromJson(
-        TestData.transaction1PaymentTransaction
+        TestData.transaction5PaymentTransaction
       );
 
       // mock a network object to return as valid for all inputs of a mocked transaction
@@ -866,6 +890,72 @@ describe('CardanoChain', () => {
       // mock get current slot of cardano network
       const currentSlotSpy = spyOn(network, 'currentSlot');
       currentSlotSpy.mockResolvedValue(100);
+
+      // call the function
+      const cardanoChain = generateChainObject(network);
+      const result = await cardanoChain.isTxValid(payment1);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target CardanoChain.isTxValid should return false when
+     * input and output assets do not match
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - mock a network object to return as valid for all inputs of a mocked
+     *   transaction
+     * - mock currentSlot of cardano network
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when input and output assets do not match', async () => {
+      // mock PaymentTransaction
+      const payment1 = CardanoTransaction.fromJson(
+        TestData.transaction6PaymentTransaction
+      );
+
+      // mock a network object to return as valid for all inputs of a mocked transaction
+      const isBoxUnspentAndValidSpy = spyOn(network, 'isBoxUnspentAndValid');
+      const txInputs = Transaction.from_bytes(payment1.txBytes).body().inputs();
+      for (let i = 0; i < txInputs.len(); i++) {
+        when(isBoxUnspentAndValidSpy)
+          .calledWith(CardanoUtils.getBoxId(txInputs.get(i)))
+          .mockResolvedValueOnce(true);
+      }
+
+      // mock get current slot of cardano network
+      const currentSlotSpy = spyOn(network, 'currentSlot');
+      currentSlotSpy.mockResolvedValue(100);
+
+      // call the function
+      const cardanoChain = generateChainObject(network);
+      const result = await cardanoChain.isTxValid(payment1);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target CardanoChain.isTxValid should return false when
+     * txId is invalid
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when txId is invalid', async () => {
+      // mock PaymentTransaction
+      const payment1 = CardanoTransaction.fromJson(
+        TestData.transaction7PaymentTransaction
+      );
 
       // call the function
       const cardanoChain = generateChainObject(network);

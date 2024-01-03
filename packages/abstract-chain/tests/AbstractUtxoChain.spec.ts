@@ -648,5 +648,81 @@ describe('AbstractUtxoChain', () => {
       expect(result.covered).toEqual(false);
       expect(result.boxes).toEqual([]);
     });
+
+    /**
+     * @target AbstractUtxoChain.getCoveringBoxes should return all boxes as
+     * NOT covered when two boxes are tracked to same box
+     * @dependencies
+     * @scenario
+     * - mock a network object to return 2 boxes
+     * - mock a Map to track first box to a new box
+     * - mock chain 'getBoxInfo' function to return mocked boxes assets
+     * - mock an AssetBalance object with assets more than box assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return serialized tracked boxes
+     */
+    it('should return all boxes as NOT covered when two boxes are tracked to same box', async () => {
+      // Mock a network object to return 2 boxes
+      const network = new TestUtxoChainNetwork();
+      spyOn(network, 'getAddressBoxes')
+        .mockResolvedValue([])
+        .mockResolvedValueOnce(['serialized-box-1', 'serialized-box-2']);
+
+      // Mock a Map to track first box to a new box
+      const trackMap = new Map<string, string>();
+      trackMap.set('box1', 'serialized-tracked-box-1');
+      trackMap.set('box2', 'serialized-tracked-box-1');
+
+      // Mock chain 'getBoxInfo' function to return mocked boxes assets
+      const chain = generateChainObject(network);
+      const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
+      when(getBoxInfoSpy)
+        .calledWith('serialized-box-1')
+        .mockReturnValueOnce({
+          id: 'box1',
+          assets: {
+            nativeToken: 100000n,
+            tokens: [{ id: 'token1', value: 200n }],
+          },
+        });
+      when(getBoxInfoSpy)
+        .calledWith('serialized-box-2')
+        .mockReturnValueOnce({
+          id: 'box2',
+          assets: {
+            nativeToken: 100000n,
+            tokens: [{ id: 'token1', value: 200n }],
+          },
+        });
+      when(getBoxInfoSpy)
+        .calledWith('serialized-tracked-box-1')
+        .mockReturnValue({
+          id: 'trackedBox1',
+          assets: {
+            nativeToken: 80000n,
+            tokens: [{ id: 'token1', value: 150n }],
+          },
+        });
+
+      // Mock an AssetBalance object with assets less than box assets
+      const requiredAssets: AssetBalance = {
+        nativeToken: 150000n,
+        tokens: [{ id: 'token1', value: 250n }],
+      };
+
+      // Run test
+      const result = await chain.getCoveringBoxes(
+        '',
+        requiredAssets,
+        [],
+        trackMap
+      );
+
+      // Check returned value
+      expect(result.covered).toEqual(false);
+      expect(result.boxes).toEqual(['serialized-tracked-box-1']);
+    });
   });
 });

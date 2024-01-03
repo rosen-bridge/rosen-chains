@@ -161,6 +161,13 @@ class CardanoUtils {
       changeAmount
     );
   };
+
+  /**
+   * verifies that txId doesn't start with zero
+   * @param txId
+   * @returns
+   */
+  static isTxIdValid = (txId: string): boolean => txId[0] !== '0';
 }
 
 export default CardanoUtils;
