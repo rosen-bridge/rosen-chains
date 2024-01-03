@@ -350,8 +350,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
       tokens: [],
     };
     // extract input box assets
-    for (let i = 0; i < cardanoTx.inputUtxos.length; i++) {
-      const input = JSONBigInt.parse(cardanoTx.inputUtxos[i]) as CardanoUtxo;
+    const inputUtxos = Array.from(new Set(cardanoTx.inputUtxos));
+    for (let i = 0; i < inputUtxos.length; i++) {
+      const input = JSONBigInt.parse(inputUtxos[i]) as CardanoUtxo;
       const boxAssets = this.getBoxInfo(input).assets;
       inputAssets = ChainUtils.sumAssetBalance(inputAssets, boxAssets);
     }
@@ -466,7 +467,13 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
       )
         return false;
     }
-    return true;
+
+    // check if input and output assets match
+    const txAssets = await this.getTransactionAssets(transaction);
+    return ChainUtils.isEqualAssetBalance(
+      txAssets.inputAssets,
+      txAssets.outputAssets
+    );
   };
 
   /**

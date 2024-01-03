@@ -242,10 +242,10 @@ export const transaction1PaymentTransaction = `
    "txId":"0066ad9bffa8579a6a7b6f5b6d8fdab20107eca2a2f8435235271173532acab1",
    "txType":"payment",
    "inputUtxos": [
-    "{\\"txId\\":\\"2d10e4c431dc9d6f35319720ba6fa9d1973fa4e4d9802fd1cae01540d1b1b9e3\\",\\"index\\":0,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000}]}",
-    "{\\"txId\\":\\"f5bbdeba6cc2ef8eac2fb24879d3a11df3b067a4fc5d1559ccf2ae21f0129631\\",\\"index\\":2,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000}]}",
-    "{\\"txId\\":\\"92d99216cefcf40ff63f223061cf111950bed5c21da459ab540f439a92b8e942\\",\\"index\\":0,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000}]}",
-    "{\\"txId\\":\\"ecb1361fba075163d41bd38bb532ffd0a6e0c1971d15c28c3f002c9282a420e4\\",\\"index\\":0,\\"value\\":10000,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000}]}"
+    "{\\"txId\\":\\"2d10e4c431dc9d6f35319720ba6fa9d1973fa4e4d9802fd1cae01540d1b1b9e3\\",\\"index\\":0,\\"value\\":110002500,\\"assets\\":[{\\"policy_id\\":\\"ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286\\",\\"asset_name\\":\\"5273744552477654657374\\",\\"quantity\\":1000}]}",
+    "{\\"txId\\":\\"f5bbdeba6cc2ef8eac2fb24879d3a11df3b067a4fc5d1559ccf2ae21f0129631\\",\\"index\\":2,\\"value\\":10002500,\\"assets\\":[{\\"policy_id\\":\\"48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b\\",\\"asset_name\\":\\"5273744572676f546f6b656e7654657374\\",\\"quantity\\":5000}]}",
+    "{\\"txId\\":\\"92d99216cefcf40ff63f223061cf111950bed5c21da459ab540f439a92b8e942\\",\\"index\\":0,\\"value\\":10002500,\\"assets\\":[]}",
+    "{\\"txId\\":\\"ecb1361fba075163d41bd38bb532ffd0a6e0c1971d15c28c3f002c9282a420e4\\",\\"index\\":0,\\"value\\":10002500,\\"assets\\":[{\\"policy_id\\":\\"cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be\\",\\"asset_name\\":\\"43617264616e6f546f6b656e7654657374\\",\\"quantity\\":100}]}"
   ]
 }
 `;
@@ -272,11 +272,19 @@ export const transaction1Assets: AssetBalance = {
 };
 
 export const transaction1InputAssets: AssetBalance = {
-  nativeToken: 40000n,
+  nativeToken: 140010000n,
   tokens: [
     {
       id: 'ef6aa6200e21634e58ce6796b4b61d1d7d059d2ebe93c2996eeaf286.5273744552477654657374',
-      value: 4000n,
+      value: 1000n,
+    },
+    {
+      id: '48d4a14b8407af8407702df3afda4cc8a945ce55235e9808c62c5f9b.5273744572676f546f6b656e7654657374',
+      value: 5000n,
+    },
+    {
+      id: 'cfd784ccfe5fe8ce7d09f4ddb65624378cc8022bf3ec240cf41ea6be.43617264616e6f546f6b656e7654657374',
+      value: 100n,
     },
   ],
 };
@@ -472,3 +480,31 @@ export const transaction5PaymentTransaction = `
   ]
 }
 `;
+
+export const transaction6PaymentTransaction = `
+{
+  "network": "cardano",
+  "eventId": "ececb5bf27e372aee4b6c65432935e2eb0285312507cb772cc41351c53785f0a",
+  "txBytes": "84a40081825820b56b1dea42bc97a1186cf84f9311730a87d99355a54234679e40acec00111c3c0101828258390188acfdee735ac7f2ef2f887eb55ac5d1e9fb6550ca32d1c8c3fa9d0175f1d4c7297a02b4aab7505c3f16020e65952e4ef517c95da2e60be2821a002dc6c0a1581c04b95368393c821f180deee8229fbd941baaf9bd748ebcdbf7adbb14a145727352534e1a0096ad7182581d61ec0b8a9fb34c0d9c0bb4ebf434a9a9caf63e5aeb5924eed4b17bbe57821b00000001e8f50f7ea1581c04b95368393c821f180deee8229fbd941baaf9bd748ebcdbf7adbb14a24572734552471b000002444f78871045727352534e1a00020b63021a00061a80031a06b8cbada100818258205565c1c7a962d88e5e37754ae015fb96db11cca92719f6086fa7d8e514a9e65e5840fa9af840860e619eddfe80709d61e88c0289f9c5456047321264a146b6acfcbc12a013b4b88f2e175aa73ab1c53c38da3f43e67d7242ed07c17f6515e7bde608f5f6",
+  "txId": "d6c74b0d597e68a4264dfc2e2c4e2429354c0fba2ca7d075ef9f8b53c01fad8a",
+  "txType": "payment",
+  "inputUtxos": [
+    "{\\"txId\\":\\"b56b1dea42bc97a1186cf84f9311730a87d99355a54234679e40acec00111c3c\\",\\"index\\":1,\\"value\\":4103370847,\\"assets\\":[{\\"policy_id\\":\\"04b95368393c821f180deee8229fbd941baaf9bd748ebcdbf7adbb14\\",\\"asset_name\\":\\"7273455247\\",\\"quantity\\":1246207165320},{\\"policy_id\\":\\"04b95368393c821f180deee8229fbd941baaf9bd748ebcdbf7adbb14\\",\\"asset_name\\":\\"727352534e\\",\\"quantity\\":5004394}]}",
+    "{\\"txId\\":\\"b56b1dea42bc97a1186cf84f9311730a87d99355a54234679e40acec00111c3c\\",\\"index\\":1,\\"value\\":4103370847,\\"assets\\":[{\\"policy_id\\":\\"04b95368393c821f180deee8229fbd941baaf9bd748ebcdbf7adbb14\\",\\"asset_name\\":\\"7273455247\\",\\"quantity\\":1246207165320},{\\"policy_id\\":\\"04b95368393c821f180deee8229fbd941baaf9bd748ebcdbf7adbb14\\",\\"asset_name\\":\\"727352534e\\",\\"quantity\\":5004394}]}"
+  ]
+}
+`;
+
+export const transaction6InputAssets: AssetBalance = {
+  nativeToken: 4103370847n,
+  tokens: [
+    {
+      id: '04b95368393c821f180deee8229fbd941baaf9bd748ebcdbf7adbb14.7273455247',
+      value: 1246207165320n,
+    },
+    {
+      id: '04b95368393c821f180deee8229fbd941baaf9bd748ebcdbf7adbb14.727352534e',
+      value: 5004394n,
+    },
+  ],
+};
