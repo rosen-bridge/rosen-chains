@@ -804,7 +804,7 @@ describe('CardanoChain', () => {
     it('should return true when all tx inputs are valid and ttl is less than current slot', async () => {
       // mock PaymentTransaction
       const payment1 = CardanoTransaction.fromJson(
-        TestData.transaction1PaymentTransaction
+        TestData.transaction5PaymentTransaction
       );
 
       // mock a network object to return as valid for all inputs of a mocked transaction
@@ -931,6 +931,31 @@ describe('CardanoChain', () => {
       // mock get current slot of cardano network
       const currentSlotSpy = spyOn(network, 'currentSlot');
       currentSlotSpy.mockResolvedValue(100);
+
+      // call the function
+      const cardanoChain = generateChainObject(network);
+      const result = await cardanoChain.isTxValid(payment1);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target CardanoChain.isTxValid should return false when
+     * txId is invalid
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when txId is invalid', async () => {
+      // mock PaymentTransaction
+      const payment1 = CardanoTransaction.fromJson(
+        TestData.transaction7PaymentTransaction
+      );
 
       // call the function
       const cardanoChain = generateChainObject(network);

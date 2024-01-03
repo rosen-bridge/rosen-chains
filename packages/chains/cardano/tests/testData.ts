@@ -508,3 +508,14 @@ export const transaction6InputAssets: AssetBalance = {
     },
   ],
 };
+
+export const transaction7PaymentTransaction = `
+{
+  "network": "cardano",
+  "eventId": "",
+  "txBytes": "",
+  "txId": "06c74b0d597e68a4264dfc2e2c4e2429354c0fba2ca7d075ef9f8b53c01fad8a",
+  "txType": "payment",
+  "inputUtxos": []
+}
+`;
