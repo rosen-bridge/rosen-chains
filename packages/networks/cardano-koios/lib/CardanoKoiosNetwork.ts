@@ -164,7 +164,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
       }
     }
     tokens = addressAssets.map((asset) => {
-      if (!asset.policy_id || !asset.asset_name || !asset.quantity)
+      if (!asset.policy_id || asset.asset_name == null || !asset.quantity)
         throw new KoiosNullValueError('Asset info is null');
       return {
         id: CardanoUtils.generateAssetId(asset.policy_id, asset.asset_name),
@@ -498,7 +498,7 @@ class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   private parseAssetList = (
     asset: TxInfoItemOutputsItemAssetListItem
   ): CardanoAsset => {
-    if (!(asset.policy_id && asset.asset_name && asset.quantity))
+    if (!(asset.policy_id && asset.asset_name != null && asset.quantity))
       throw new KoiosNullValueError('UTxO asset info items are null');
 
     return {
