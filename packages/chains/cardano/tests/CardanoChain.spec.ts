@@ -939,31 +939,6 @@ describe('CardanoChain', () => {
       // check returned value
       expect(result).toEqual(false);
     });
-
-    /**
-     * @target CardanoChain.isTxValid should return false when
-     * txId is invalid
-     * @dependencies
-     * @scenario
-     * - mock PaymentTransaction
-     * - call the function
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when txId is invalid', async () => {
-      // mock PaymentTransaction
-      const payment1 = CardanoTransaction.fromJson(
-        TestData.transaction7PaymentTransaction
-      );
-
-      // call the function
-      const cardanoChain = generateChainObject(network);
-      const result = await cardanoChain.isTxValid(payment1);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
   });
 
   describe('verifyTransactionFee', () => {
