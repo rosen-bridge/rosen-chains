@@ -247,7 +247,6 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     const txId = Buffer.from(
       CardanoWasm.hash_transaction(txBody).to_bytes()
     ).toString('hex');
-    if (!CardanoUtils.isTxIdValid(txId)) throw Error(`Invalid txId: [${txId}]`);
 
     const cardanoTx = new CardanoTransaction(
       txId,
@@ -451,9 +450,6 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     transaction: PaymentTransaction,
     _signingStatus: SigningStatus = SigningStatus.Signed
   ): Promise<boolean> => {
-    // check if txId is valid
-    if (!CardanoUtils.isTxIdValid(transaction.txId)) return false;
-
     const tx = Serializer.deserialize(transaction.txBytes);
     const txBody = tx.body();
 
