@@ -15,10 +15,10 @@ export interface BitcoinTransactionJsonModel
 export interface BitcoinInput {
   txId: string;
   index: number;
+  scriptPubKey: string;
 }
 
 export interface BitcoinUtxo extends BitcoinInput {
-  scriptPubKey: string;
   value: bigint;
 }
 
