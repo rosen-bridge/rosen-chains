@@ -212,6 +212,8 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     address: string,
     tokenId?: string
   ): Promise<Map<string, BitcoinUtxo | undefined>> => {
+    // chaining transaction won't be done in BitcoinChain
+    // due to heavy size of transaction in mempool
     return new Map<string, BitcoinUtxo | undefined>();
   };
 
