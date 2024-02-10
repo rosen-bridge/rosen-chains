@@ -1,9 +1,9 @@
 import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
 import { Psbt } from 'bitcoinjs-lib';
-import { BitcoinUtxo } from '../types';
+import { BitcoinTx, BitcoinUtxo } from '../types';
 
 abstract class AbstractBitcoinNetwork extends AbstractUtxoChainNetwork<
-  Psbt,
+  BitcoinTx,
   BitcoinUtxo
 > {
   // TODO: uncomment this line (local:ergo/rosen-bridge/utils#169)
