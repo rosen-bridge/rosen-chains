@@ -7,13 +7,13 @@ abstract class AbstractBitcoinNetwork extends AbstractUtxoChainNetwork<
   BitcoinUtxo
 > {
   // TODO: uncomment this line (local:ergo/rosen-bridge/utils#169)
-  // declare extractor: BitcoinRosenExtractor;
+  // abstract extractor: BitcoinRosenExtractor;
 
   /**
    * submits a transaction
    * @param transaction the transaction
    */
-  declare submitTransaction: (transaction: Psbt) => Promise<void>;
+  abstract submitTransaction: (transaction: Psbt) => Promise<void>;
 
   /**
    * gets a utxo from the network
