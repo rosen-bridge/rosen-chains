@@ -16,7 +16,7 @@ abstract class AbstractBitcoinNetwork extends AbstractUtxoChainNetwork<
   declare submitTransaction: (transaction: Psbt) => Promise<void>;
 
   /**
-   * gets an utxo from the network
+   * gets a utxo from the network
    * @param boxId the id of Utxo (txId + . + index)
    * @returns the utxo in BitcoinUtxo format
    */
