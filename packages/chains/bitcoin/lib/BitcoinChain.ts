@@ -123,7 +123,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    */
   isTxValid = (
     transaction: PaymentTransaction,
-    _signingStatus: SigningStatus = SigningStatus.Signed
+    signingStatus: SigningStatus = SigningStatus.Signed
   ): Promise<boolean> => {
     throw Error(`not implemented`);
   };
