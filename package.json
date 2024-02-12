@@ -9,13 +9,13 @@
     ]
   },
   "scripts": {
-    "lint": "npm run lint --workspaces",
-    "test": "npm run test --workspaces",
-    "coverage": "npm run coverage --workspaces",
     "build": "npm run build --workspaces",
-    "type-check": "npm run type-check --workspaces",
+    "coverage": "npm run coverage --workspaces",
+    "lint": "npm run lint --workspaces",
+    "prepare": "husky install",
     "release": "npm run release --workspaces",
-    "prepare": "husky install"
+    "test": "npm run test --workspaces",
+    "type-check": "npm run type-check --workspaces"
   },
   "devDependencies": {
     "husky": "^8.0.1",
