@@ -227,7 +227,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       if (order.extra !== undefined)
         boxBuilder.set_register_value(
           4,
-          wasm.Constant.from_coll_coll_byte([Buffer.from(order.extra, 'hex')])
+          wasm.Constant.from_byte_array(Buffer.from(order.extra, 'hex'))
         );
 
       // build and add box
@@ -380,7 +380,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     for (let i = 0; i < outputCandidatesLength; i++) {
       const output = outputCandidates.get(i);
       const assets = ErgoUtils.getBoxAssets(output);
-      const r4Value = output.register_value(4)?.to_coll_coll_byte()[0];
+      const r4Value = output.register_value(4)?.to_byte_array();
 
       // skip change box and fee box
       if (
@@ -804,7 +804,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     );
 
     // extract wid
-    const wid = box.register_value(4)?.to_coll_coll_byte()[0];
+    const wid = box.register_value(4)?.to_byte_array();
     if (wid === undefined) {
       const boxId = box.box_id().to_str();
       throw new Error(`failed to read WID from register R4 of box [${boxId}]`);
@@ -1027,7 +1027,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         continue;
 
       const assets = ErgoUtils.getBoxAssets(output);
-      const r4Value = output.register_value(4)?.to_coll_coll_byte()[0];
+      const r4Value = output.register_value(4)?.to_byte_array();
 
       const payment: SinglePayment = {
         address: wasm.Address.recreate_from_ergo_tree(

@@ -18,6 +18,7 @@ import * as wasm from 'ergo-lib-wasm-nodejs';
 import ErgoTransaction from '../lib/ErgoTransaction';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
 import { Fee } from '@rosen-bridge/minimum-fee';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
 const spyOn = jest.spyOn;
 
@@ -2453,11 +2454,11 @@ describe('ErgoChain', () => {
       // mock serialized transaction
       const serializedTx = Buffer.from(
         ergoTestUtils
-          .toTransaction(transactionTestData.transaction0)
+          .toTransaction(transactionTestData.transaction6)
           .sigma_serialize_bytes()
       ).toString('hex');
 
-      const expectedOrder = transactionTestData.transaction0Order;
+      const expectedOrder = transactionTestData.transaction6Order;
       const config: ErgoConfigs = {
         fee: 1100000n,
         confirmations: {
@@ -2467,7 +2468,7 @@ describe('ErgoChain', () => {
           manual: manualTxConfirmation,
         },
         addresses: {
-          lock: 'nB3L2PD3LBtiNhDYK7XhZ8nVt6uekBXN7RcPUKgdKLXFcrJiSPxmQsUKuUkTRQ1hbvDrxEQAKYurGFbaGD1RPxU7XqQimD78j23HHMQKL1boUGsnNhCxaVNAYMcFbQNo355Af8cWkhAN6',
+          lock: '9hcBZ7khJGepr2ZXz4ZktxAa1bTmnRSmjTNb9vhsi2EwGprGE6Q',
           cold: 'cold_addr',
           permit: 'permit_addr',
           fraud: 'fraud',
