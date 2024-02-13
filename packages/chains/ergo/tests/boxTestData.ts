@@ -209,11 +209,8 @@ export const validEvent: EventTrigger = {
   sourceChainHeight: 1000,
   sourceBlockId:
     '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ea',
-  WIDs: [
-    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6e',
-    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b90',
-    'ebc091d854e83a8fdc0e51936923171fc74895715591be81b8d286888d877e70',
-  ],
+  WIDsHash: '300a544b041a6f48c411c463d4c33c6fb650471d5ebd0332459b8855eeba14cd',
+  WIDsCount: 3,
 };
 
 export const validEventWithHighFee: EventTrigger = {
@@ -232,11 +229,8 @@ export const validEventWithHighFee: EventTrigger = {
   sourceChainHeight: 1000,
   sourceBlockId:
     '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ea',
-  WIDs: [
-    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6e',
-    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b90',
-    'ebc091d854e83a8fdc0e51936923171fc74895715591be81b8d286888d877e70',
-  ],
+  WIDsHash: '300a544b041a6f48c411c463d4c33c6fb650471d5ebd0332459b8855eeba14cd',
+  WIDsCount: 3,
 };
 
 export const invalidEvent: EventTrigger = {
@@ -255,9 +249,6 @@ export const invalidEvent: EventTrigger = {
   sourceChainHeight: 1000,
   sourceBlockId:
     '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ea',
-  WIDs: [
-    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6e',
-    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b90',
-    'ebc091d854e83a8fdc0e51936923171fc74895715591be81b8d286888d877e70',
-  ],
+  WIDsHash: '300a544b041a6f48c411c463d4c33c6fb650471d5ebd0332459b8855eeba14cd',
+  WIDsCount: 3,
 };
