@@ -71,7 +71,8 @@ interface EventTrigger {
   sourceTxId: string;
   sourceChainHeight: number;
   sourceBlockId: string;
-  WIDs: Array<string>;
+  WIDsHash: string;
+  WIDsCount: number;
 }
 
 enum SigningStatus {

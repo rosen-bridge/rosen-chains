@@ -360,10 +360,8 @@ export const validEvent: EventTrigger = {
   sourceChainHeight: 1000,
   sourceBlockId:
     '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ed',
-  WIDs: [
-    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6c',
-    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b9c',
-  ],
+  WIDsHash: 'bb2b2272816e1e9993fc535c0cf57c668f5cd39c67cfcd55b4422b1aa87cd0c3',
+  WIDsCount: 2,
 };
 
 export const invalidEvent: EventTrigger = {
@@ -382,10 +380,8 @@ export const invalidEvent: EventTrigger = {
   sourceChainHeight: 1000,
   sourceBlockId:
     '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ed',
-  WIDs: [
-    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6c',
-    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b9c',
-  ],
+  WIDsHash: 'bb2b2272816e1e9993fc535c0cf57c668f5cd39c67cfcd55b4422b1aa87cd0c3',
+  WIDsCount: 2,
 };
 
 export const validEventWithHighFee: EventTrigger = {
@@ -404,10 +400,8 @@ export const validEventWithHighFee: EventTrigger = {
   sourceChainHeight: 1000,
   sourceBlockId:
     '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ed',
-  WIDs: [
-    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6c',
-    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b9c',
-  ],
+  WIDsHash: 'bb2b2272816e1e9993fc535c0cf57c668f5cd39c67cfcd55b4422b1aa87cd0c3',
+  WIDsCount: 2,
 };
 
 export const cardanoTx1: CardanoTx = {
