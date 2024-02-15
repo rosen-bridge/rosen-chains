@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/ergo-explorer-network",
-  "version": "3.2.5",
+  "version": "4.0.0",
   "description": "ergo explorer network package for rosen ergo chain",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",

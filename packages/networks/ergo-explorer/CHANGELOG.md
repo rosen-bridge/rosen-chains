@@ -1,8 +1,8 @@
 # @rosen-chains/ergo-explorer-network
 
-## 3.2.5
+## 4.0.0
 
-### Patch Changes
+### Major Changes
 
 - Updated dependencies
 - Updated dependencies

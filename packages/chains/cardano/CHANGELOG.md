@@ -1,8 +1,8 @@
 # @rosen-chains/cardano
 
-## 3.2.4
+## 4.0.0
 
-### Patch Changes
+### Major Changes
 
 - Updated dependencies
   - @rosen-chains/abstract-chain@4.0.0

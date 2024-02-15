@@ -1,8 +1,8 @@
 # @rosen-chains/cardano-graphql-network
 
-## 0.2.4
+## 2.0.0
 
-### Patch Changes
+### Major Changes
 
 - Updated dependencies
   - @rosen-chains/abstract-chain@4.0.0
