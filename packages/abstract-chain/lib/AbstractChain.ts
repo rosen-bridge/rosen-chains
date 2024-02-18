@@ -1,4 +1,4 @@
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/logger-interface';
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import ChainUtils from './ChainUtils';
 import { ValueError } from './errors';

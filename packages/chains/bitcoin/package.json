@@ -33,7 +33,7 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
-    "@rosen-bridge/logger-interface": "^0.2.0",
+    "@rosen-bridge/abstract-logger": "^1.0.0",
     "@rosen-bridge/minimum-fee": "^0.1.13",
     "@rosen-bridge/rosen-extractor": "^3.4.0",
     "bitcoinjs-lib": "^6.1.5"
