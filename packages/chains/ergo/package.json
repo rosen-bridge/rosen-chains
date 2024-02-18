@@ -23,7 +23,6 @@
     "@rosen-bridge/json-bigint": "^0.1.0",
     "@rosen-bridge/minimum-fee": "^0.1.13",
     "@rosen-bridge/rosen-extractor": "^3.4.0",
-    "@rosen-chains/abstract-chain": "^4.0.0",
     "blakejs": "^1.2.1",
     "ergo-lib-wasm-nodejs": "^0.24.1"
   },
@@ -41,6 +40,9 @@
     "prettier": "^2.7.1",
     "ts-jest": "^29.0.3",
     "typescript": "^4.9.5"
+  },
+  "peerDependencies": {
+    "@rosen-chains/abstract-chain": "^4.0.0"
   },
   "directories": {
     "lib": "lib",
