@@ -1,4 +1,4 @@
-import { AbstractLogger } from '@rosen-bridge/logger-interface';
+import { AbstractLogger } from '@rosen-bridge/abstract-logger';
 import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import cardanoKoiosClientFactory, {
   AddressAssets,

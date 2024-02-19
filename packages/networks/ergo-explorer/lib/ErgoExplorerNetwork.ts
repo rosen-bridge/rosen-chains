@@ -1,4 +1,4 @@
-import { AbstractLogger } from '@rosen-bridge/logger-interface';
+import { AbstractLogger } from '@rosen-bridge/abstract-logger';
 import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import { RosenTokens } from '@rosen-bridge/tokens';
 import {
