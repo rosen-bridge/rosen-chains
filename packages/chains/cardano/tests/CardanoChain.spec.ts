@@ -1509,11 +1509,11 @@ describe('CardanoChain', () => {
     });
   });
 
-  describe('verifyExtraCondition', () => {
+  describe('verifyTransactionExtraConditions', () => {
     const network = new TestCardanoNetwork();
 
     /**
-     * @target: CardanoChain.verifyExtraCondition should return true when all
+     * @target: CardanoChain.verifyTransactionExtraConditions should return true when all
      * extra conditions are met
      * @dependencies
      * @scenario
@@ -1531,14 +1531,14 @@ describe('CardanoChain', () => {
 
       // call the function
       const cardanoChain = generateChainObject(network);
-      const result = cardanoChain.verifyExtraCondition(paymentTx);
+      const result = cardanoChain.verifyTransactionExtraConditions(paymentTx);
 
       // check returned value
       expect(result).toEqual(true);
     });
 
     /**
-     * @target: CardanoChain.verifyExtraCondition should return false
+     * @target: CardanoChain.verifyTransactionExtraConditions should return false
      * when transaction has metadata
      * @dependencies
      * @scenario
@@ -1556,14 +1556,14 @@ describe('CardanoChain', () => {
 
       // call the function
       const cardanoChain = generateChainObject(network);
-      const result = cardanoChain.verifyExtraCondition(paymentTx);
+      const result = cardanoChain.verifyTransactionExtraConditions(paymentTx);
 
       // check returned value
       expect(result).toEqual(false);
     });
 
     /**
-     * @target: CardanoChain.verifyExtraCondition should return false
+     * @target: CardanoChain.verifyTransactionExtraConditions should return false
      * when change box address is wrong
      * @dependencies
      * @scenario
@@ -1592,7 +1592,7 @@ describe('CardanoChain', () => {
       );
 
       // call the function
-      const result = cardanoChain.verifyExtraCondition(paymentTx);
+      const result = cardanoChain.verifyTransactionExtraConditions(paymentTx);
 
       // check returned value
       expect(result).toEqual(false);
