@@ -673,25 +673,6 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
   };
 
   /**
-   * extracts confirmation status for a transaction
-   * @param transactionId the transaction id
-   * @param transactionType type of the transaction
-   * @returns the transaction confirmation status
-   */
-  getTxConfirmationStatus = async (
-    transactionId: string,
-    transactionType: TransactionType
-  ): Promise<ConfirmationStatus> => {
-    const requiredConfirmation =
-      this.getTxRequiredConfirmation(transactionType);
-    const confirmation = await this.network.getTxConfirmation(transactionId);
-    if (confirmation >= requiredConfirmation)
-      return ConfirmationStatus.ConfirmedEnough;
-    else if (confirmation === -1) return ConfirmationStatus.NotFound;
-    else return ConfirmationStatus.NotConfirmedEnough;
-  };
-
-  /**
    * submits a transaction to the blockchain
    * @param transaction the transaction
    */
@@ -735,14 +716,6 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
    */
   getMinimumNativeToken = (): bigint => {
     return this.configs.minBoxValue;
-  };
-
-  /**
-   * gets the RWT token id
-   * @returns RWT token id
-   */
-  getRWTToken = (): string => {
-    return this.configs.rwtId;
   };
 
   /**
