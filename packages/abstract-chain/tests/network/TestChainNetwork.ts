@@ -9,7 +9,6 @@ class TestUtxoChainNetwork extends AbstractChainNetwork<string> {
   };
 
   getHeight = this.notImplemented;
-  getTxConfirmation = this.notImplemented;
   getAddressAssets = this.notImplemented;
   getTransaction = this.notImplemented;
   getBlockTransactionIds = this.notImplemented;
@@ -17,6 +16,10 @@ class TestUtxoChainNetwork extends AbstractChainNetwork<string> {
   submitTransaction = this.notImplemented;
   getMempoolTransactions = this.notImplemented;
   getTokenDetail = this.notImplemented;
+
+  getTxConfirmation = (transactionId: string): Promise<number> => {
+    throw Error('Not mocked');
+  };
 }
 
 export default TestUtxoChainNetwork;
