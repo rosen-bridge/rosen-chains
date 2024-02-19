@@ -601,7 +601,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
    * @param transaction to verify
    * @returns true if all conditions are met
    */
-  verifyExtraCondition = (transaction: PaymentTransaction): boolean => {
+  verifyTransactionExtraConditions = (
+    transaction: PaymentTransaction
+  ): boolean => {
     const tx = Serializer.deserialize(transaction.txBytes);
 
     // check metadata
