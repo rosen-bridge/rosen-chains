@@ -9,6 +9,7 @@ class TestUtxoChain extends AbstractUtxoChain<string> {
   getTransactionAssets = this.notImplemented;
   extractTransactionOrder = this.notImplemented;
   verifyTransactionFee = this.notImplemented;
+  verifyTransactionExtraConditions = this.notImplemented;
   verifyEvent = this.notImplemented;
   isTxValid = this.notImplemented;
   signTransaction = this.notImplemented;

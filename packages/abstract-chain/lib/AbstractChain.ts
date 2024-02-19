@@ -94,11 +94,9 @@ abstract class AbstractChain {
    * @param transaction the PaymentTransaction
    * @returns true if the transaction is verified
    */
-  verifyTransactionExtraConditions = (
+  abstract verifyTransactionExtraConditions: (
     transaction: PaymentTransaction
-  ): boolean => {
-    return true;
-  };
+  ) => boolean;
 
   /**
    * verifies an event data with its corresponding lock transaction

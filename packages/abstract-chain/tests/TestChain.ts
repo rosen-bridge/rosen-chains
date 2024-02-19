@@ -13,6 +13,7 @@ class TestChain extends AbstractChain {
   generateTransaction = this.notImplemented;
   extractTransactionOrder = this.notImplemented;
   verifyTransactionFee = this.notImplemented;
+  verifyTransactionExtraConditions = this.notImplemented;
   verifyEvent = this.notImplemented;
   isTxValid = this.notImplemented;
   signTransaction = this.notImplemented;
