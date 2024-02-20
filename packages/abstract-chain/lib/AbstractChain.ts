@@ -94,11 +94,9 @@ abstract class AbstractChain {
    * @param transaction the PaymentTransaction
    * @returns true if the transaction is verified
    */
-  verifyTransactionExtraConditions = (
+  abstract verifyTransactionExtraConditions: (
     transaction: PaymentTransaction
-  ): boolean => {
-    return true;
-  };
+  ) => boolean;
 
   /**
    * verifies an event data with its corresponding lock transaction
@@ -160,10 +158,18 @@ abstract class AbstractChain {
    * @param transactionType type of the transaction
    * @returns the transaction confirmation status
    */
-  abstract getTxConfirmationStatus: (
+  getTxConfirmationStatus = async (
     transactionId: string,
     transactionType: TransactionType
-  ) => Promise<ConfirmationStatus>;
+  ): Promise<ConfirmationStatus> => {
+    const requiredConfirmation =
+      this.getTxRequiredConfirmation(transactionType);
+    const confirmation = await this.network.getTxConfirmation(transactionId);
+    if (confirmation >= requiredConfirmation)
+      return ConfirmationStatus.ConfirmedEnough;
+    else if (confirmation === -1) return ConfirmationStatus.NotFound;
+    else return ConfirmationStatus.NotConfirmedEnough;
+  };
 
   /**
    * gets the amount of each asset in the address
@@ -243,7 +249,9 @@ abstract class AbstractChain {
    * gets the RWT token id
    * @returns RWT token id
    */
-  abstract getRWTToken: () => string;
+  getRWTToken = (): string => {
+    return this.configs.rwtId;
+  };
 
   /**
    * converts json representation of the payment transaction to PaymentTransaction

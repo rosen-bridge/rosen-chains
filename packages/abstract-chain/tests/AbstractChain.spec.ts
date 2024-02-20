@@ -3,6 +3,7 @@ import TestChainNetwork from './network/TestChainNetwork';
 import {
   AssetBalance,
   ChainConfigs,
+  ConfirmationStatus,
   PaymentTransaction,
   TransactionType,
 } from '../lib';
@@ -11,12 +12,13 @@ import { when } from 'jest-when';
 const spyOn = jest.spyOn;
 
 describe('AbstractChain', () => {
+  const paymentTxConfirmation = 6;
   const generateChainObject = (network: TestChainNetwork) => {
     const config: ChainConfigs = {
       fee: 100n,
       confirmations: {
         observation: 5,
-        payment: 6,
+        payment: paymentTxConfirmation,
         cold: 7,
         manual: 8,
       },
@@ -126,6 +128,90 @@ describe('AbstractChain', () => {
 
       // Check returned value
       expect(result).toEqual(false);
+    });
+  });
+
+  describe('getTxConfirmationStatus', () => {
+    const txId = 'tx-id';
+    const txType = TransactionType.payment;
+    const requiredConfirmation = paymentTxConfirmation;
+    const network = new TestChainNetwork();
+
+    /**
+     * @target ErgoChain.getTxConfirmationStatus should return
+     * ConfirmedEnough when tx confirmation is more than required number
+     * @dependencies
+     * @scenario
+     * - mock a network object to return enough confirmation for mocked txId
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return `ConfirmedEnough` enum
+     */
+    it('should return ConfirmedEnough when tx confirmation is more than required number', async () => {
+      // mock a network object to return enough confirmation for mocked txId
+      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+      when(getTxConfirmationSpy)
+        .calledWith(txId)
+        .mockResolvedValueOnce(requiredConfirmation + 1);
+
+      // run test
+      const chain = generateChainObject(network);
+      const result = await chain.getTxConfirmationStatus(txId, txType);
+
+      // check returned value
+      expect(result).toEqual(ConfirmationStatus.ConfirmedEnough);
+    });
+
+    /**
+     * @target ErgoChain.getTxConfirmationStatus should return
+     * NotConfirmedEnough when payment tx confirmation is less than required number
+     * @dependencies
+     * @scenario
+     * - mock a network object to return insufficient confirmation for mocked
+     *   txId
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return `NotConfirmedEnough` enum
+     */
+    it('should return NotConfirmedEnough when tx confirmation is less than required number', async () => {
+      // mock a network object to return insufficient confirmation for mocked
+      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+      when(getTxConfirmationSpy)
+        .calledWith(txId)
+        .mockResolvedValueOnce(requiredConfirmation - 1);
+
+      // run test
+      const chain = generateChainObject(network);
+      const result = await chain.getTxConfirmationStatus(txId, txType);
+
+      // check returned value
+      expect(result).toEqual(ConfirmationStatus.NotConfirmedEnough);
+    });
+
+    /**
+     * @target ErgoChain.getTxConfirmationStatus should return
+     * NotFound when tx confirmation is -1
+     * @dependencies
+     * @scenario
+     * - mock a network object to return -1 confirmation for mocked txId
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return `NotFound` enum
+     */
+    it('should return NotFound when tx confirmation is -1', async () => {
+      // mock a network object to return enough confirmation for mocked txId
+      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
+      when(getTxConfirmationSpy).calledWith(txId).mockResolvedValueOnce(-1);
+
+      // run test
+      const chain = generateChainObject(network);
+      const result = await chain.getTxConfirmationStatus(txId, txType);
+
+      // check returned value
+      expect(result).toEqual(ConfirmationStatus.NotFound);
     });
   });
 

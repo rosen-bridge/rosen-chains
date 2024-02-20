@@ -9,16 +9,15 @@ class TestUtxoChain extends AbstractUtxoChain<string> {
   getTransactionAssets = this.notImplemented;
   extractTransactionOrder = this.notImplemented;
   verifyTransactionFee = this.notImplemented;
+  verifyTransactionExtraConditions = this.notImplemented;
   verifyEvent = this.notImplemented;
   isTxValid = this.notImplemented;
   signTransaction = this.notImplemented;
-  getTxConfirmationStatus = this.notImplemented;
   getLockAddressAssets = this.notImplemented;
   submitTransaction = this.notImplemented;
   isTxInMempool = this.notImplemented;
   getMempoolBoxMapping = this.notImplemented;
   getMinimumNativeToken = this.notImplemented;
-  getRWTToken = this.notImplemented;
   PaymentTransactionFromJson = this.notImplemented;
   rawTxToPaymentTransaction = this.notImplemented;
 

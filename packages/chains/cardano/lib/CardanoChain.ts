@@ -601,7 +601,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
    * @param transaction to verify
    * @returns true if all conditions are met
    */
-  verifyExtraCondition = (transaction: PaymentTransaction): boolean => {
+  verifyTransactionExtraConditions = (
+    transaction: PaymentTransaction
+  ): boolean => {
     const tx = Serializer.deserialize(transaction.txBytes);
 
     // check metadata
@@ -624,38 +626,11 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
   };
 
   /**
-   * extracts confirmation status for a transaction
-   * @param transactionId the transaction id
-   * @param transactionType type of the transaction
-   * @returns the transaction confirmation status
-   */
-  getTxConfirmationStatus = async (
-    transactionId: string,
-    transactionType: TransactionType
-  ): Promise<ConfirmationStatus> => {
-    const requiredConfirmation =
-      this.getTxRequiredConfirmation(transactionType);
-    const confirmation = await this.network.getTxConfirmation(transactionId);
-    if (confirmation >= requiredConfirmation)
-      return ConfirmationStatus.ConfirmedEnough;
-    else if (confirmation === -1) return ConfirmationStatus.NotFound;
-    else return ConfirmationStatus.NotConfirmedEnough;
-  };
-
-  /**
    * gets the minimum amount of native token for assetTransfer
    * @returns the minimum amount
    */
   getMinimumNativeToken = () => {
     return this.configs.minBoxValue;
-  };
-
-  /**
-   * gets the RWT token id
-   * @returns RWT token id
-   */
-  getRWTToken = (): string => {
-    return this.configs.rwtId;
   };
 
   /**
