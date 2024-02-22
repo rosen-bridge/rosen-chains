@@ -5,6 +5,7 @@ import {
 
 export interface BitcoinConfigs extends ChainConfigs {
   minBoxValue: bigint;
+  aggregatedPublicKey: string;
 }
 
 export interface BitcoinTransactionJsonModel
