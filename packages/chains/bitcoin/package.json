@@ -37,7 +37,8 @@
     "@rosen-bridge/json-bigint": "^0.1.0",
     "@rosen-bridge/minimum-fee": "^0.1.13",
     "@rosen-bridge/rosen-extractor": "^3.4.0",
-    "bitcoinjs-lib": "^6.1.5"
+    "bitcoinjs-lib": "^6.1.5",
+    "blakejs": "^1.2.1"
   },
   "peerDependencies": {
     "@rosen-chains/abstract-chain": "^4.0.0"

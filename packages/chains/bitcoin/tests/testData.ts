@@ -1,4 +1,4 @@
-import { PaymentOrder } from '@rosen-chains/abstract-chain';
+import { EventTrigger, PaymentOrder } from '@rosen-chains/abstract-chain';
 
 export const transaction0PaymentTransaction = `{
   "network": "bitcoin",
@@ -75,4 +75,86 @@ export const lockUtxo = {
   index: 1,
   scriptPubKey: '0014b20272a6591937ba7d687dc889f3637ed40efa6a',
   value: 3000000000n,
+};
+
+export const validEvent: EventTrigger = {
+  height: 300,
+  fromChain: 'bitcoin',
+  toChain: 'ergo',
+  fromAddress: 'fromAddress',
+  toAddress: 'toAddress',
+  amount: '1000000',
+  bridgeFee: '1000',
+  networkFee: '5000',
+  sourceChainTokenId: 'sourceTokenId',
+  targetChainTokenId: 'targetTokenId',
+  sourceTxId:
+    '6e3dbf41a8e3dbf41a8cd0fe059a54cef8bb140322503d0555a9851f056825bc',
+  sourceChainHeight: 1000,
+  sourceBlockId:
+    '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ed',
+  WIDsHash: 'bb2b2272816e1e9993fc535c0cf57c668f5cd39c67cfcd55b4422b1aa87cd0c3',
+  WIDsCount: 2,
+};
+
+export const invalidEvent: EventTrigger = {
+  height: 300,
+  fromChain: 'bitcoin',
+  toChain: 'ergo',
+  fromAddress: 'fromAddress',
+  toAddress: 'toAddress',
+  amount: '5500',
+  bridgeFee: '1000',
+  networkFee: '5000',
+  sourceChainTokenId: 'sourceTokenId',
+  targetChainTokenId: 'targetTokenId',
+  sourceTxId:
+    '6e3dbf41a8e3dbf41a8cd0fe059a54cef8bb140322503d0555a9851f056825bc',
+  sourceChainHeight: 1000,
+  sourceBlockId:
+    '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ed',
+  WIDsHash: 'bb2b2272816e1e9993fc535c0cf57c668f5cd39c67cfcd55b4422b1aa87cd0c3',
+  WIDsCount: 2,
+};
+
+export const validEventWithHighFee: EventTrigger = {
+  height: 300,
+  fromChain: 'bitcoin',
+  toChain: 'ergo',
+  fromAddress: 'fromAddress',
+  toAddress: 'toAddress',
+  amount: '1000000',
+  bridgeFee: '1000',
+  networkFee: '900000',
+  sourceChainTokenId: 'sourceTokenId',
+  targetChainTokenId: 'targetTokenId',
+  sourceTxId:
+    '6e3dbf41a8e3dbf41a8cd0fe059a54cef8bb140322503d0555a9851f056825bc',
+  sourceChainHeight: 1000,
+  sourceBlockId:
+    '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ed',
+  WIDsHash: 'bb2b2272816e1e9993fc535c0cf57c668f5cd39c67cfcd55b4422b1aa87cd0c3',
+  WIDsCount: 2,
+};
+
+export const bitcoinTx1 = {
+  id: '6a1b9e7a755afb5d82ecaa5f432d51bd23e452ee1031fc99066e92788a075a84',
+  inputs: [
+    {
+      txId: 'eff4900465d1603d12c1dc8f231a07ce2196c04196aa26bb80147bb152137aaf',
+      index: 0,
+      scriptPubKey: '0014bf1916dc33dbdd65f60d8b1f65eb35e8120835fc',
+    },
+  ],
+  outputs: [
+    {
+      scriptPubKey:
+        '6a4c3300000000007554fc820000000000962f582103f999da8e6e42660e4464d17d29e63bc006734a6710a24eb489b466323d3a9339',
+      value: 0n,
+    },
+    {
+      scriptPubKey: '0014b20272a6591937ba7d687dc889f3637ed40efa6a',
+      value: 3000000000n,
+    },
+  ],
 };

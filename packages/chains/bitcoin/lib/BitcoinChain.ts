@@ -4,12 +4,16 @@ import {
   AbstractUtxoChain,
   BoxInfo,
   EventTrigger,
+  FailedError,
+  NetworkError,
+  NotFoundError,
   PaymentOrder,
   PaymentTransaction,
   SigningStatus,
   SinglePayment,
   TransactionAssetBalance,
   TransactionType,
+  UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
 import AbstractBitcoinNetwork from './network/AbstractBitcoinNetwork';
 import BitcoinTransaction from './BitcoinTransaction';
@@ -18,6 +22,8 @@ import Serializer from './Serializer';
 import { Psbt, Transaction, address, payments, script } from 'bitcoinjs-lib';
 import JsonBigInt from '@rosen-bridge/json-bigint';
 import { getPsbtTxInputBoxId } from './bitcoinUtils';
+import { BITCOIN_CHAIN } from './constants';
+import { blake2b } from 'blakejs';
 
 class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
   declare network: AbstractBitcoinNetwork;
@@ -177,8 +183,107 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * @param feeConfig minimum fee and rsn ratio config for the event
    * @returns true if the event is verified
    */
-  verifyEvent = (event: EventTrigger, feeConfig: Fee): Promise<boolean> => {
-    throw Error(`not implemented`);
+  verifyEvent = async (
+    event: EventTrigger,
+    feeConfig: Fee
+  ): Promise<boolean> => {
+    const eventId = Buffer.from(
+      blake2b(event.sourceTxId, undefined, 32)
+    ).toString('hex');
+    const baseError = `Event [${eventId}] is not valid, `;
+
+    try {
+      const blockTxs = await this.network.getBlockTransactionIds(
+        event.sourceBlockId
+      );
+      if (!blockTxs.includes(event.sourceTxId)) {
+        this.logger.info(
+          baseError +
+            `block [${event.sourceBlockId}] does not contain tx [${event.sourceTxId}]`
+        );
+        return false;
+      }
+      const tx = await this.network.getTransaction(
+        event.sourceTxId,
+        event.sourceBlockId
+      );
+      const blockHeight = (await this.network.getBlockInfo(event.sourceBlockId))
+        .height;
+      const data = this.network.extractor.get(JsonBigInt.stringify(tx));
+      if (!data) {
+        this.logger.info(
+          baseError + `failed to extract rosen data from lock transaction`
+        );
+        return false;
+      }
+      if (
+        event.fromChain === BITCOIN_CHAIN &&
+        event.toChain === data.toChain &&
+        event.networkFee === data.networkFee &&
+        event.bridgeFee === data.bridgeFee &&
+        event.amount === data.amount &&
+        event.sourceChainTokenId === data.sourceChainTokenId &&
+        event.targetChainTokenId === data.targetChainTokenId &&
+        event.toAddress === data.toAddress &&
+        event.fromAddress === data.fromAddress &&
+        event.sourceChainHeight === blockHeight
+      ) {
+        try {
+          // check if amount is more than fees
+          const eventAmount = BigInt(event.amount);
+          const clampedBridgeFee =
+            BigInt(event.bridgeFee) > feeConfig.bridgeFee
+              ? BigInt(event.bridgeFee)
+              : feeConfig.bridgeFee;
+          const calculatedRatioDivisorFee =
+            (eventAmount * feeConfig.feeRatio) / this.feeRatioDivisor;
+          const bridgeFee =
+            clampedBridgeFee > calculatedRatioDivisorFee
+              ? clampedBridgeFee
+              : calculatedRatioDivisorFee;
+          const networkFee =
+            BigInt(event.networkFee) > feeConfig.networkFee
+              ? BigInt(event.networkFee)
+              : feeConfig.networkFee;
+          if (eventAmount < bridgeFee + networkFee) {
+            this.logger.info(
+              baseError +
+                `event amount [${eventAmount}] is less than sum of bridgeFee [${bridgeFee}] and networkFee [${networkFee}]`
+            );
+            return false;
+          }
+        } catch (e) {
+          throw new UnexpectedApiError(
+            `Failed in comparing event amount to fees: ${e}`
+          );
+        }
+        this.logger.info(`Event [${eventId}] has been successfully validated`);
+        return true;
+      } else {
+        this.logger.info(
+          baseError +
+            `event data does not match with lock tx [${event.sourceTxId}]`
+        );
+        return false;
+      }
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        this.logger.info(
+          baseError +
+            `lock tx [${event.sourceTxId}] is not available in network`
+        );
+        return false;
+      } else if (
+        e instanceof FailedError ||
+        e instanceof NetworkError ||
+        e instanceof UnexpectedApiError
+      ) {
+        throw Error(`Skipping event [${eventId}] validation: ${e}`);
+      } else {
+        this.logger.warn(`Event [${eventId}] validation failed: ${e}`);
+        return false;
+      }
+    }
   };
 
   /**
