@@ -41,6 +41,7 @@ describe('BitcoinChain', () => {
       manual: manualTxConfirmation,
     },
     aggregatedPublicKey: testData.lockAddressPublicKey,
+    txFeeSlippage: 10,
   };
   const mockedSignFn = () => Promise.resolve('');
   const generateChainObject = (
@@ -275,6 +276,60 @@ describe('BitcoinChain', () => {
       expect(() => {
         bitcoinChain.extractTransactionOrder(paymentTx);
       }).toThrow(Error);
+    });
+  });
+
+  describe('verifyTransactionFee', () => {
+    const network = new TestBitcoinNetwork();
+
+    /**
+     * @target BitcoinChain.verifyTransactionFee should return true when fee
+     * difference is less than allowed slippage
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - mock getFeeRatio
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return true
+     */
+    it('should return true when fee difference is less than allowed slippage', async () => {
+      const paymentTx = BitcoinTransaction.fromJson(
+        testData.transaction2PaymentTransaction
+      );
+      const getFeeRatioSpy = vi.spyOn(network, 'getFeeRatio');
+      getFeeRatioSpy.mockResolvedValue(1);
+
+      const bitcoinChain = generateChainObject(network);
+      const result = await bitcoinChain.verifyTransactionFee(paymentTx);
+
+      expect(result).toEqual(true);
+    });
+
+    /**
+     * @target BitcoinChain.verifyTransactionFee should return false when fee
+     * difference is more than allowed slippage
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - mock getFeeRatio
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when fee difference is more than allowed slippage', async () => {
+      const paymentTx = BitcoinTransaction.fromJson(
+        testData.transaction2PaymentTransaction
+      );
+      const getFeeRatioSpy = vi.spyOn(network, 'getFeeRatio');
+      getFeeRatioSpy.mockResolvedValue(1.2);
+
+      const bitcoinChain = generateChainObject(network);
+      const result = await bitcoinChain.verifyTransactionFee(paymentTx);
+
+      expect(result).toEqual(false);
     });
   });
 

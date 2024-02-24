@@ -260,7 +260,39 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
   verifyTransactionFee = async (
     transaction: PaymentTransaction
   ): Promise<boolean> => {
-    throw Error(`not implemented`);
+    const tx = Serializer.deserialize(transaction.txBytes);
+    const bitcoinTx = transaction as BitcoinTransaction;
+
+    let inBtc = 0n;
+    const inputUtxos = Array.from(new Set(bitcoinTx.inputUtxos));
+    for (let i = 0; i < inputUtxos.length; i++) {
+      const input = JsonBigInt.parse(inputUtxos[i]) as BitcoinUtxo;
+      inBtc += input.value;
+    }
+
+    let outBtc = 0n;
+    for (let i = 0; i < tx.txOutputs.length; i++) {
+      const output = tx.txOutputs[i];
+      outBtc += BigInt(output.value);
+    }
+
+    const fee = inBtc - outBtc;
+    const estimatedFee = estimateTxFee(
+      tx.txInputs.length,
+      tx.txOutputs.length,
+      await this.network.getFeeRatio()
+    );
+
+    const feeDifferencePercent = Math.abs(
+      (Number(fee - estimatedFee) * 100) / Number(fee)
+    );
+    if (feeDifferencePercent > this.configs.txFeeSlippage) {
+      this.logger.warn(
+        `Fee difference is high. Slippage is higher than allowed value [${feeDifferencePercent} > ${this.configs.txFeeSlippage}]. fee: ${fee}, estimated fee: ${estimatedFee}`
+      );
+      return false;
+    }
+    return true;
   };
 
   /**

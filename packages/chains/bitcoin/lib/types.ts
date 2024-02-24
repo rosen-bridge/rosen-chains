@@ -5,6 +5,7 @@ import {
 
 export interface BitcoinConfigs extends ChainConfigs {
   aggregatedPublicKey: string;
+  txFeeSlippage: number;
 }
 
 export interface BitcoinTransactionJsonModel
