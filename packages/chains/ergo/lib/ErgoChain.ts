@@ -412,7 +412,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
    * @param transaction the payment transaction
    * @returns true if the transaction verified
    */
-  verifyTransactionFee = (transaction: PaymentTransaction): boolean => {
+  verifyTransactionFee = async (
+    transaction: PaymentTransaction
+  ): Promise<boolean> => {
     const tx = Serializer.deserialize(transaction.txBytes).unsigned_tx();
     const outputBoxes = tx.output_candidates();
     for (let i = 0; i < outputBoxes.len(); i++) {

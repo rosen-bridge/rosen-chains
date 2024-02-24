@@ -955,7 +955,7 @@ describe('CardanoChain', () => {
      * @expected
      * - it should return true
      */
-    it('should return true when fee is less than config fee', () => {
+    it('should return true when fee is less than config fee', async () => {
       // mock PaymentTransaction
       const paymentTx = CardanoTransaction.fromJson(
         TestData.transaction1PaymentTransaction
@@ -963,7 +963,7 @@ describe('CardanoChain', () => {
 
       // call the function
       const cardanoChain = generateChainObject(network);
-      const result = cardanoChain.verifyTransactionFee(paymentTx);
+      const result = await cardanoChain.verifyTransactionFee(paymentTx);
 
       // check returned value
       expect(result).toEqual(true);
@@ -980,7 +980,7 @@ describe('CardanoChain', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when fee is more than config fee', () => {
+    it('should return false when fee is more than config fee', async () => {
       // mock PaymentTransaction
       const paymentTx = CardanoTransaction.fromJson(
         TestData.transaction2PaymentTransaction
@@ -988,7 +988,7 @@ describe('CardanoChain', () => {
 
       // call the function
       const cardanoChain = generateChainObject(network);
-      const result = cardanoChain.verifyTransactionFee(paymentTx);
+      const result = await cardanoChain.verifyTransactionFee(paymentTx);
 
       // check returned value
       expect(result).toEqual(false);

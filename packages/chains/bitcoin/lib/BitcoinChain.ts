@@ -78,7 +78,9 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * @param transaction the PaymentTransaction
    * @returns true if the transaction fee is verified
    */
-  verifyTransactionFee = (transaction: PaymentTransaction): boolean => {
+  verifyTransactionFee = async (
+    transaction: PaymentTransaction
+  ): Promise<boolean> => {
     throw Error(`not implemented`);
   };
 
