@@ -48,7 +48,13 @@ describe('BitcoinChain', () => {
     network: TestBitcoinNetwork,
     signFn: (txHash: Uint8Array) => Promise<string> = mockedSignFn
   ) => {
-    return new BitcoinChain(network, configs, feeRationDivisor, signFn);
+    return new BitcoinChain(
+      network,
+      configs,
+      feeRationDivisor,
+      signFn,
+      console
+    );
   };
 
   describe('generateTransaction', () => {
@@ -666,6 +672,75 @@ describe('BitcoinChain', () => {
     });
 
     /**
+     * @target BitcoinChain.verifyEvent should return false when event
+     * data is not extracted
+     * @dependencies
+     * @scenario
+     * - mock an event
+     * - mock a network object with mocked 'getBlockTransactionIds' and
+     *   'getTransaction' functions
+     * - mock getBlockInfo to return event block height
+     * - mock network extractor to return event data (expect for a key which
+     *   should be wrong)
+     * - run test
+     * - check returned value
+     * - check if functions got called
+     * @expected
+     * - it should return false
+     * - `getBlockTransactionIds` and `getBlockInfo` should have been called with event blockId
+     * - `getTransaction` should have been called with event lock txId
+     */
+    it('should return false when event data is not extracted', async () => {
+      //  mock an event
+      const event = testData.validEvent;
+
+      // mock a network object with mocked 'getBlockTransactionIds' and
+      //   'getTransaction' functions
+      const network = new TestBitcoinNetwork();
+      const getBlockTransactionIdsSpy = vi.spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      getBlockTransactionIdsSpy.mockResolvedValueOnce([
+        testUtils.generateRandomId(),
+        event.sourceTxId,
+        testUtils.generateRandomId(),
+      ]);
+
+      // mock 'getTransaction' (the tx itself doesn't matter)
+      const tx = testData.bitcoinTx1;
+      const getTransactionSpy = vi.spyOn(network, 'getTransaction');
+      getTransactionSpy.mockResolvedValueOnce(tx);
+
+      // mock getBlockInfo to return event block height
+      const getBlockInfoSpy = vi.spyOn(network, 'getBlockInfo');
+      getBlockInfoSpy.mockResolvedValueOnce({
+        height: event.sourceChainHeight,
+      } as any);
+
+      // mock network extractor to return event data
+      const extractorSpy = vi.spyOn(network.extractor, 'get');
+      extractorSpy.mockReturnValueOnce(undefined);
+
+      // run test
+      const bitcoinChain = generateChainObject(network);
+      const result = await bitcoinChain.verifyEvent(event, feeConfig);
+
+      // check returned value
+      expect(result).toEqual(false);
+
+      // check if functions got called
+      expect(getBlockTransactionIdsSpy).toHaveBeenCalledWith(
+        event.sourceBlockId
+      );
+      expect(getTransactionSpy).toHaveBeenCalledWith(
+        event.sourceTxId,
+        event.sourceBlockId
+      );
+      expect(getBlockInfoSpy).toHaveBeenCalledWith(event.sourceBlockId);
+    });
+
+    /**
      * @target BitcoinChain.verifyEvent should return false when event amount
      * is less than sum of event fees
      * @dependencies
@@ -673,6 +748,7 @@ describe('BitcoinChain', () => {
      * - mock an event
      * - mock a network object with mocked 'getBlockTransactionIds' and
      *   'getTransaction' functions
+     * - mock getBlockInfo to return event block height
      * - mock network extractor to return event data
      * - run test
      * - check returned value
@@ -704,6 +780,12 @@ describe('BitcoinChain', () => {
       const getTransactionSpy = vi.spyOn(network, 'getTransaction');
       getTransactionSpy.mockResolvedValueOnce(tx);
 
+      // mock getBlockInfo to return event block height
+      const getBlockInfoSpy = vi.spyOn(network, 'getBlockInfo');
+      getBlockInfoSpy.mockResolvedValueOnce({
+        height: event.sourceChainHeight,
+      } as any);
+
       // mock network extractor to return event data
       const extractorSpy = vi.spyOn(network.extractor, 'get');
       extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
@@ -723,6 +805,7 @@ describe('BitcoinChain', () => {
         event.sourceTxId,
         event.sourceBlockId
       );
+      expect(getBlockInfoSpy).toHaveBeenCalledWith(event.sourceBlockId);
     });
 
     /**
@@ -734,6 +817,7 @@ describe('BitcoinChain', () => {
      * - mock an event
      * - mock a network object with mocked 'getBlockTransactionIds' and
      *   'getTransaction' functions
+     * - mock getBlockInfo to return event block height
      * - mock network extractor to return event data
      * - run test
      * - check returned value
@@ -773,6 +857,12 @@ describe('BitcoinChain', () => {
       const getTransactionSpy = vi.spyOn(network, 'getTransaction');
       getTransactionSpy.mockResolvedValueOnce(tx);
 
+      // mock getBlockInfo to return event block height
+      const getBlockInfoSpy = vi.spyOn(network, 'getBlockInfo');
+      getBlockInfoSpy.mockResolvedValueOnce({
+        height: event.sourceChainHeight,
+      } as any);
+
       // mock network extractor to return event data
       const extractorSpy = vi.spyOn(network.extractor, 'get');
       extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
@@ -792,6 +882,7 @@ describe('BitcoinChain', () => {
         event.sourceTxId,
         event.sourceBlockId
       );
+      expect(getBlockInfoSpy).toHaveBeenCalledWith(event.sourceBlockId);
     });
 
     /**
@@ -803,6 +894,7 @@ describe('BitcoinChain', () => {
      * - mock an event
      * - mock a network object with mocked 'getBlockTransactionIds' and
      *   'getTransaction' functions
+     * - mock getBlockInfo to return event block height
      * - mock network extractor to return event data
      * - run test
      * - check returned value
@@ -842,6 +934,12 @@ describe('BitcoinChain', () => {
       const getTransactionSpy = vi.spyOn(network, 'getTransaction');
       getTransactionSpy.mockResolvedValueOnce(tx);
 
+      // mock getBlockInfo to return event block height
+      const getBlockInfoSpy = vi.spyOn(network, 'getBlockInfo');
+      getBlockInfoSpy.mockResolvedValueOnce({
+        height: event.sourceChainHeight,
+      } as any);
+
       // mock network extractor to return event data
       const extractorSpy = vi.spyOn(network.extractor, 'get');
       extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
@@ -861,6 +959,7 @@ describe('BitcoinChain', () => {
         event.sourceTxId,
         event.sourceBlockId
       );
+      expect(getBlockInfoSpy).toHaveBeenCalledWith(event.sourceBlockId);
     });
   });
 
