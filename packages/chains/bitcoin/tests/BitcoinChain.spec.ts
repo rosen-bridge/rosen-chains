@@ -8,6 +8,7 @@ import {
   BitcoinChain,
   BitcoinConfigs,
   BitcoinTransaction,
+  BitcoinUtxo,
   SEGWIT_INPUT_WEIGHT_UNIT,
 } from '../lib';
 import TestBitcoinNetwork from './network/TestBitcoinNetwork';
@@ -16,6 +17,8 @@ import * as testUtils from './testUtils';
 import JsonBigInt from '@rosen-bridge/json-bigint';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
+import { Psbt } from 'bitcoinjs-lib';
+import { TestBitcoinChain } from './TestBitcoinChain';
 
 describe('BitcoinChain', () => {
   const observationTxConfirmation = 5;
@@ -48,13 +51,7 @@ describe('BitcoinChain', () => {
     network: TestBitcoinNetwork,
     signFn: (txHash: Uint8Array) => Promise<string> = mockedSignFn
   ) => {
-    return new BitcoinChain(
-      network,
-      configs,
-      feeRationDivisor,
-      signFn,
-      console
-    );
+    return new BitcoinChain(network, configs, feeRationDivisor, signFn);
   };
 
   describe('generateTransaction', () => {
@@ -1180,6 +1177,93 @@ describe('BitcoinChain', () => {
       expect(result.assets.nativeToken.toString()).toEqual(
         rawBox.value.toString()
       );
+    });
+  });
+
+  describe('getTransactionsBoxMapping', () => {
+    const network = new TestBitcoinNetwork();
+    const testInstance = new TestBitcoinChain(
+      network,
+      configs,
+      feeRationDivisor,
+      null as any
+    );
+
+    /**
+     * @target BitcoinChain.getTransactionsBoxMapping should construct mapping
+     * successfully
+     * @dependencies
+     * @scenario
+     * - mock serialized transactions
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return a map equal to constructed map
+     */
+    it('should construct mapping successfully', () => {
+      // mock serialized transactions
+      const transactions = [testData.transaction2PaymentTransaction].map(
+        (txJson) =>
+          Psbt.fromBuffer(
+            Buffer.from(BitcoinTransaction.fromJson(txJson).txBytes)
+          )
+      );
+
+      // call the function
+      const result = testInstance.callGetTransactionsBoxMapping(
+        transactions,
+        configs.addresses.lock
+      );
+
+      // check returned value
+      const trackMap = new Map<string, BitcoinUtxo | undefined>();
+      const boxMapping = testData.transaction2BoxMapping;
+      boxMapping.forEach((mapping) => {
+        const candidate = JsonBigInt.parse(
+          mapping.serializedOutput
+        ) as BitcoinUtxo;
+        trackMap.set(mapping.inputId, {
+          txId: candidate.txId,
+          index: Number(candidate.index),
+          value: candidate.value,
+        });
+      });
+      expect(result).toEqual(trackMap);
+    });
+
+    /**
+     * @target BitcoinChain.getTransactionsBoxMapping should map inputs to
+     * undefined when no valid output box found
+     * @dependencies
+     * @scenario
+     * - mock serialized transactions
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return a map of each box to undefined
+     */
+    it('should map inputs to undefined when no valid output box found', () => {
+      // mock serialized transactions
+      const transactions = [testData.transaction2PaymentTransaction].map(
+        (txJson) =>
+          Psbt.fromBuffer(
+            Buffer.from(BitcoinTransaction.fromJson(txJson).txBytes)
+          )
+      );
+
+      // call the function
+      const result = testInstance.callGetTransactionsBoxMapping(
+        transactions,
+        'another address'
+      );
+
+      // check returned value
+      const trackMap = new Map<string, BitcoinUtxo | undefined>();
+      const boxMapping = testData.transaction2BoxMapping;
+      boxMapping.forEach((mapping) => {
+        trackMap.set(mapping.inputId, undefined);
+      });
+      expect(result).toEqual(trackMap);
     });
   });
 });

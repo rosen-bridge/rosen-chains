@@ -647,7 +647,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
       const txId = Transaction.fromBuffer(tx.data.getTransaction()).getId();
       // iterate over tx inputs
       tx.txInputs.forEach((input) => {
-        let trackedBox: BitcoinUtxo | undefined;
+        let trackedBox: BitcoinUtxo | undefined = undefined;
         // iterate over tx outputs
         let index = 0;
         for (index = 0; index < tx.txOutputs.length; index++) {
@@ -663,6 +663,10 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
           };
           break;
         }
+
+        // add input box to trackMap
+        const boxId = getPsbtTxInputBoxId(input);
+        trackMap.set(boxId, trackedBox);
       });
     });
 
