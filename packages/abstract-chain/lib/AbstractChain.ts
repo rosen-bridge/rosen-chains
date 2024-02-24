@@ -72,7 +72,9 @@ abstract class AbstractChain {
    * @param transaction the PaymentTransaction
    * @returns true if the transaction fee is verified
    */
-  abstract verifyTransactionFee: (transaction: PaymentTransaction) => boolean;
+  abstract verifyTransactionFee: (
+    transaction: PaymentTransaction
+  ) => Promise<boolean>;
 
   /**
    * verifies no token burned in a PaymentTransaction
