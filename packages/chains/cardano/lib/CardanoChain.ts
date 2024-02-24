@@ -580,7 +580,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
    * @param transaction the payment transaction
    * @returns true if the transaction verified
    */
-  verifyTransactionFee = (transaction: PaymentTransaction): boolean => {
+  verifyTransactionFee = async (
+    transaction: PaymentTransaction
+  ): Promise<boolean> => {
     const tx = Serializer.deserialize(transaction.txBytes);
     if (
       tx.body().fee().compare(CardanoUtils.bigIntToBigNum(this.configs.fee)) > 0
