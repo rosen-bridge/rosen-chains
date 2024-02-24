@@ -3,9 +3,12 @@ import { Fee } from '@rosen-bridge/minimum-fee';
 import {
   AbstractUtxoChain,
   BoxInfo,
+  ChainUtils,
   EventTrigger,
   FailedError,
   NetworkError,
+  NotEnoughAssetsError,
+  NotEnoughValidBoxesError,
   NotFoundError,
   PaymentOrder,
   PaymentTransaction,
@@ -21,8 +24,8 @@ import { BitcoinConfigs, BitcoinUtxo } from './types';
 import Serializer from './Serializer';
 import { Psbt, Transaction, address, payments, script } from 'bitcoinjs-lib';
 import JsonBigInt from '@rosen-bridge/json-bigint';
-import { getPsbtTxInputBoxId } from './bitcoinUtils';
-import { BITCOIN_CHAIN } from './constants';
+import { estimateTxFee, getPsbtTxInputBoxId } from './bitcoinUtils';
+import { BITCOIN_CHAIN, SEGWIT_INPUT_WEIGHT_UNIT } from './constants';
 import { blake2b } from 'blakejs';
 
 class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
@@ -60,7 +63,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * @param serializedSignedTransactions the serialized string of ongoing signed transactions (used for chaining transaction)
    * @returns the generated PaymentTransaction
    */
-  generateTransaction = (
+  generateTransaction = async (
     eventId: string,
     txType: TransactionType,
     order: PaymentOrder,
@@ -68,7 +71,124 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     serializedSignedTransactions: string[],
     ...extra: Array<any>
   ): Promise<BitcoinTransaction> => {
-    throw Error(`not implemented`);
+    this.logger.debug(
+      `Generating Bitcoin transaction for Order: ${JsonBigInt.stringify(order)}`
+    );
+    // calculate required assets
+    const requiredAssets = order
+      .map((order) => order.assets)
+      .reduce(ChainUtils.sumAssetBalance, {
+        nativeToken: await this.minimumMeaningfulSatoshi(),
+        tokens: [],
+      });
+    this.logger.debug(
+      `Required assets: ${JsonBigInt.stringify(requiredAssets)}`
+    );
+
+    if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
+      const neededBtc = requiredAssets.nativeToken.toString();
+      throw new NotEnoughAssetsError(
+        `Locked assets cannot cover required assets. BTC: ${neededBtc}`
+      );
+    }
+
+    const forbiddenBoxIds = unsignedTransactions.flatMap((paymentTx) => {
+      const inputs = Serializer.deserialize(paymentTx.txBytes).txInputs;
+      const ids: string[] = [];
+      for (let i = 0; i < inputs.length; i++)
+        ids.push(getPsbtTxInputBoxId(inputs[i]));
+
+      return ids;
+    });
+    const trackMap = this.getTransactionsBoxMapping(
+      serializedSignedTransactions.map((serializedTx) =>
+        Psbt.fromHex(serializedTx)
+      ),
+      this.configs.addresses.lock
+    );
+
+    // TODO: improve box fetching
+    const coveredBoxes = await this.getCoveringBoxes(
+      this.configs.addresses.lock,
+      requiredAssets,
+      forbiddenBoxIds,
+      trackMap
+    );
+    if (!coveredBoxes.covered) {
+      const neededBtc = requiredAssets.nativeToken.toString();
+      throw new NotEnoughValidBoxesError(
+        `Available boxes didn't cover required assets. BTC: ${neededBtc}`
+      );
+    }
+
+    // add inputs
+    const psbt = new Psbt();
+    coveredBoxes.boxes.forEach((box) => {
+      psbt.addInput({
+        hash: box.txId,
+        index: box.index,
+        witnessUtxo: {
+          script: Buffer.from(this.lockScript, 'hex'),
+          value: Number(box.value),
+        },
+      });
+    });
+    // calculate input boxes assets
+    let remainingBtc = coveredBoxes.boxes.reduce((a, b) => a + b.value, 0n);
+    this.logger.debug(`Input BTC: ${remainingBtc}`);
+
+    // add outputs
+    order.forEach((order) => {
+      if (order.extra) {
+        throw Error('Bitcoin does not support extra data in payment order');
+      }
+      if (order.assets.tokens.length) {
+        throw Error('Bitcoin does not support tokens in payment order');
+      }
+      if (order.address.slice(0, 4) !== 'bc1q') {
+        throw Error('Bitcoin does not support payment to non-segwit addresses');
+      }
+
+      // reduce order value from remaining assets
+      remainingBtc -= order.assets.nativeToken;
+
+      // create order output
+      psbt.addOutput({
+        script: address.toOutputScript(order.address),
+        value: Number(order.assets.nativeToken),
+      });
+    });
+
+    // create change output
+    this.logger.debug(`Remaining BTC: ${remainingBtc}`);
+    const estimatedFee = estimateTxFee(
+      psbt.txInputs.length,
+      psbt.txOutputs.length + 1,
+      await this.network.getFeeRatio()
+    );
+    this.logger.debug(`Estimated Fee: ${estimatedFee}`);
+    remainingBtc -= estimatedFee;
+    psbt.addOutput({
+      script: Buffer.from(this.lockScript, 'hex'),
+      value: Number(remainingBtc),
+    });
+
+    // create the transaction
+    const txId = Transaction.fromBuffer(psbt.data.getTransaction()).getId();
+    const txBytes = Serializer.serialize(psbt);
+
+    const bitcoinTx = new BitcoinTransaction(
+      txId,
+      eventId,
+      txBytes,
+      txType,
+      coveredBoxes.boxes.map((box) => JsonBigInt.stringify(box))
+    );
+
+    this.logger.info(
+      `Bitcoin transaction [${txId}] as type [${txType}] generated for event [${eventId}]`
+    );
+    return bitcoinTx;
   };
 
   /**
@@ -402,7 +522,10 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * gets the minimum amount of native token for transferring asset
    * @returns the minimum amount
    */
-  getMinimumNativeToken = (): bigint => this.configs.minBoxValue;
+  getMinimumNativeToken = (): bigint => {
+    // there is no token in bitcoin
+    return 0n;
+  };
 
   /**
    * converts json representation of the payment transaction to PaymentTransaction
@@ -473,6 +596,45 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
   };
 
   /**
+   * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
+   * @param txs list of transactions
+   * @param address the address
+   * @param tokenId the token id
+   * @returns a Map from input box id to output box
+   */
+  protected getTransactionsBoxMapping = (
+    txs: Psbt[],
+    address: string
+  ): Map<string, BitcoinUtxo | undefined> => {
+    const trackMap = new Map<string, BitcoinUtxo | undefined>();
+
+    txs.forEach((tx) => {
+      const txId = Transaction.fromBuffer(tx.data.getTransaction()).getId();
+      // iterate over tx inputs
+      tx.txInputs.forEach((input) => {
+        let trackedBox: BitcoinUtxo | undefined;
+        // iterate over tx outputs
+        let index = 0;
+        for (index = 0; index < tx.txOutputs.length; index++) {
+          const output = tx.txOutputs[index];
+          // check if box satisfy conditions
+          if (output.address !== address) continue;
+
+          // mark the tracked box
+          trackedBox = {
+            txId: txId,
+            index: index,
+            value: BigInt(output.value),
+          };
+          break;
+        }
+      });
+    });
+
+    return trackMap;
+  };
+
+  /**
    * returns box id
    * @param box
    */
@@ -501,6 +663,16 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
       });
     }
     return psbt;
+  };
+
+  /**
+   * gets the minimum amount of satoshi for a utxo that can cover
+   * additional fee for adding it to a tx
+   * @returns the minimum amount
+   */
+  minimumMeaningfulSatoshi = async (): Promise<bigint> => {
+    const currentFeeRatio = await this.network.getFeeRatio();
+    return BigInt(Math.ceil((currentFeeRatio * SEGWIT_INPUT_WEIGHT_UNIT) / 4));
   };
 }
 

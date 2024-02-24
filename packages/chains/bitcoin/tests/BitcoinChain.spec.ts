@@ -1,6 +1,15 @@
 import { vi } from 'vitest';
-import { TransactionType } from '@rosen-chains/abstract-chain';
-import { BitcoinChain, BitcoinConfigs, BitcoinTransaction } from '../lib';
+import {
+  NotEnoughAssetsError,
+  NotEnoughValidBoxesError,
+  TransactionType,
+} from '@rosen-chains/abstract-chain';
+import {
+  BitcoinChain,
+  BitcoinConfigs,
+  BitcoinTransaction,
+  SEGWIT_INPUT_WEIGHT_UNIT,
+} from '../lib';
 import TestBitcoinNetwork from './network/TestBitcoinNetwork';
 import * as testData from './testData';
 import * as testUtils from './testUtils';
@@ -18,7 +27,6 @@ describe('BitcoinChain', () => {
   const feeRationDivisor = 1n;
   const configs: BitcoinConfigs = {
     fee: 1000000n,
-    minBoxValue: 0n,
     addresses: {
       lock: testData.lockAddress,
       cold: 'cold',
@@ -41,6 +49,152 @@ describe('BitcoinChain', () => {
   ) => {
     return new BitcoinChain(network, configs, feeRationDivisor, signFn);
   };
+
+  describe('generateTransaction', () => {
+    const network = new TestBitcoinNetwork();
+
+    /**
+     * @target BitcoinChain.generateTransaction should generate payment
+     * transaction successfully
+     * @dependencies
+     * @scenario
+     * - mock transaction order, getFeeRatio
+     * - mock getCoveringBoxes, hasLockAddressEnoughAssets
+     * - call the function
+     * - check returned value
+     * @expected
+     * - PaymentTransaction txType, eventId, network and inputUtxos should be as
+     *   expected
+     * - extracted order of generated transaction should be the same as input
+     *   order
+     * - getCoveringBoxes should have been called with correct arguments
+     */
+    it('should generate payment transaction successfully', async () => {
+      // mock transaction order
+      const order = testData.transaction2Order;
+      const payment1 = BitcoinTransaction.fromJson(
+        testData.transaction2PaymentTransaction
+      );
+      const getFeeRatioSpy = vi.spyOn(network, 'getFeeRatio');
+      getFeeRatioSpy.mockResolvedValue(1);
+
+      // mock getCoveringBoxes, hasLockAddressEnoughAssets
+      const bitcoinChain = generateChainObject(network);
+      const getCovBoxesSpy = vi.spyOn(bitcoinChain, 'getCoveringBoxes');
+      getCovBoxesSpy.mockResolvedValue({
+        covered: true,
+        boxes: testData.lockAddressUtxos,
+      });
+      const hasLockAddressEnoughAssetsSpy = vi.spyOn(
+        bitcoinChain,
+        'hasLockAddressEnoughAssets'
+      );
+      hasLockAddressEnoughAssetsSpy.mockResolvedValue(true);
+
+      // call the function
+      const result = await bitcoinChain.generateTransaction(
+        payment1.eventId,
+        payment1.txType,
+        order,
+        [BitcoinTransaction.fromJson(testData.transaction1PaymentTransaction)],
+        []
+      );
+      const bitcoinTx = result as BitcoinTransaction;
+
+      // check returned value
+      expect(bitcoinTx.txType).toEqual(payment1.txType);
+      expect(bitcoinTx.eventId).toEqual(payment1.eventId);
+      expect(bitcoinTx.network).toEqual(payment1.network);
+      expect(bitcoinTx.inputUtxos).toEqual(
+        testData.lockAddressUtxos.map((utxo) => JsonBigInt.stringify(utxo))
+      );
+
+      // extracted order of generated transaction should be the same as input order
+      const extractedOrder = bitcoinChain.extractTransactionOrder(bitcoinTx);
+      expect(extractedOrder).toEqual(order);
+
+      // getCoveringBoxes should have been called with correct arguments
+      const expectedRequiredAssets = structuredClone(
+        testData.transaction2Order[0].assets
+      );
+      expectedRequiredAssets.nativeToken += BigInt(
+        Math.ceil(SEGWIT_INPUT_WEIGHT_UNIT / 4)
+      );
+      expect(getCovBoxesSpy).toHaveBeenCalledWith(
+        configs.addresses.lock,
+        expectedRequiredAssets,
+        testData.transaction1InputIds,
+        new Map()
+      );
+    });
+
+    /**
+     * @target BitcoinChain.generateTransaction should throw error
+     * when lock address does not have enough assets
+     * @dependencies
+     * @scenario
+     * - mock hasLockAddressEnoughAssets
+     * - call the function and expect error
+     * @expected
+     * - generateTransaction should throw NotEnoughAssetsError
+     */
+    it('should throw error when lock address does not have enough assets', async () => {
+      // mock hasLockAddressEnoughAssets
+      const bitcoinChain = generateChainObject(network);
+      const hasLockAddressEnoughAssetsSpy = vi.spyOn(
+        bitcoinChain,
+        'hasLockAddressEnoughAssets'
+      );
+      hasLockAddressEnoughAssetsSpy.mockResolvedValue(false);
+
+      // call the function and expect error
+      await expect(async () => {
+        await bitcoinChain.generateTransaction(
+          'event1',
+          TransactionType.payment,
+          testData.transaction2Order,
+          [],
+          []
+        );
+      }).rejects.toThrow(NotEnoughAssetsError);
+    });
+
+    /**
+     * @target BitcoinChain.generateTransaction should throw error
+     * when bank boxes can not cover order assets
+     * @dependencies
+     * @scenario
+     * - mock getCoveringBoxes, hasLockAddressEnoughAssets
+     * - call the function and expect error
+     * @expected
+     * - generateTransaction should throw NotEnoughAssetsError
+     */
+    it('should throw error when bank boxes can not cover order assets', async () => {
+      // mock getCoveringBoxes, hasLockAddressEnoughAssets
+      const bitcoinChain = generateChainObject(network);
+      const getCovBoxesSpy = vi.spyOn(bitcoinChain, 'getCoveringBoxes');
+      getCovBoxesSpy.mockResolvedValue({
+        covered: false,
+        boxes: testData.lockAddressUtxos,
+      });
+      const hasLockAddressEnoughAssetsSpy = vi.spyOn(
+        bitcoinChain,
+        'hasLockAddressEnoughAssets'
+      );
+      hasLockAddressEnoughAssetsSpy.mockResolvedValue(true);
+
+      // call the function and expect error
+      await expect(async () => {
+        await bitcoinChain.generateTransaction(
+          'event1',
+          TransactionType.payment,
+          testData.transaction2Order,
+          [],
+          []
+        );
+      }).rejects.toThrow(NotEnoughValidBoxesError);
+    });
+  });
 
   describe('getTransactionAssets', () => {
     const network = new TestBitcoinNetwork();

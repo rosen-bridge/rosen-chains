@@ -25,6 +25,9 @@ export const transaction1PaymentTransaction = `{
     "{\\"txId\\":\\"64339615884272ad65eed14960042a1ef86172cc8c7899aff91e163063a32d97\\",\\"index\\":1,\\"value\\":1000000000}"
   ]
 }`;
+export const transaction1InputIds = [
+  '64339615884272ad65eed14960042a1ef86172cc8c7899aff91e163063a32d97.1',
+];
 
 export const transaction2PaymentTransaction = `{
   "network": "bitcoin",
@@ -158,3 +161,18 @@ export const bitcoinTx1 = {
     },
   ],
 };
+
+export const lockAddressUtxos = [
+  {
+    txId: '224fcacfd096705575244cc01bf5f39650c6f90cb3480e3989e88b2ca1283a19',
+    index: 1,
+    scriptPubKey: '0014b20272a6591937ba7d687dc889f3637ed40efa6a',
+    value: 1000000000n,
+  },
+  {
+    txId: '4b5cd97c2286d8ba647693a40942687c36bc904c2df22749105ee3762623e6d2',
+    index: 1,
+    scriptPubKey: '0014b20272a6591937ba7d687dc889f3637ed40efa6a',
+    value: 2000000000n,
+  },
+];

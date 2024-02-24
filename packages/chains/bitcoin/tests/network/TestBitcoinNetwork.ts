@@ -65,7 +65,7 @@ class TestBitcoinNetwork extends AbstractBitcoinNetwork {
     throw Error('Not mocked');
   };
 
-  getFeeRatio = (): Promise<bigint> => {
+  getFeeRatio = (): Promise<number> => {
     throw Error('Not mocked');
   };
 

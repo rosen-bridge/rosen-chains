@@ -26,7 +26,7 @@ abstract class AbstractBitcoinNetwork extends AbstractUtxoChainNetwork<
    * gets current fee ratio of the network
    * @returns
    */
-  abstract getFeeRatio: () => Promise<bigint>;
+  abstract getFeeRatio: () => Promise<number>;
 
   /**
    * gets id of transactions in mempool
