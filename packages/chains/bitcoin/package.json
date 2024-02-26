@@ -41,6 +41,6 @@
     "blakejs": "^1.2.1"
   },
   "peerDependencies": {
-    "@rosen-chains/abstract-chain": "^4.0.0"
+    "@rosen-chains/abstract-chain": "^5.0.0"
   }
 }
