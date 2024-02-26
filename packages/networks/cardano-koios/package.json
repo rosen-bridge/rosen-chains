@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/cardano-koios-network",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "description": "cardano koios network package for rosen cardano chain",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
@@ -43,8 +43,8 @@
     "typescript": "^5.0.4"
   },
   "peerDependencies": {
-    "@rosen-chains/abstract-chain": "^4.0.0",
-    "@rosen-chains/cardano": "^4.0.0"
+    "@rosen-chains/abstract-chain": "^5.0.0",
+    "@rosen-chains/cardano": "^5.0.0"
   },
   "directories": {
     "lib": "lib",
