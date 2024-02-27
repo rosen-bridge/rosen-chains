@@ -588,7 +588,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
       inputBoxes.push(await this.network.getUtxo(boxId));
     }
 
-    const cardanoTx = new BitcoinTransaction(
+    const bitcoinTx = new BitcoinTransaction(
       txId,
       '',
       txBytes,
@@ -597,7 +597,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     );
 
     this.logger.info(`Parsed Bitcoin transaction [${txId}] successfully`);
-    return cardanoTx;
+    return bitcoinTx;
   };
 
   /**
