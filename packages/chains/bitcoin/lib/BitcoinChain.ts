@@ -108,7 +108,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     );
 
     // TODO: improve box fetching (use bitcoin-box-selection package)
-    //  local:ergo/rosen-bridge/utils#176
+    //  local:ergo/rosen-bridge/rosen-chains#90
     const coveredBoxes = await this.getCoveringBoxes(
       this.configs.addresses.lock,
       requiredAssets,
