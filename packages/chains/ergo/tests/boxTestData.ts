@@ -35,11 +35,11 @@ export const ergoBox1 = `{
 }`;
 
 export const ergoBox2 = `{
-  "boxId": "9ec54d613c9c4bea2824ba2d5126639e3c440dfbaa85af29c81288d6289fc47c",
-  "transactionId": "dd2f188a9177181fca5e864eb2f4e69febb91fa9bba409ecd8b075de895086fd",
+  "boxId": "ceea5d56155052be1be4f061b7daaef59c620466e1c9bb6cc5aeb5482fa1a4ed",
+  "transactionId": "047ed283de8cc9f470a4050a79a8989a44212a1eaa8dfe95a413ca8a98238190",
   "blockId": "29ea82943b3304c4fdbc020345f31f79842496809e51ca22af9e0c9863fd486b",
   "value": 300000,
-  "index": 2,
+  "index": 0,
   "globalIndex": 28468851,
   "creationHeight": 987236,
   "settlementHeight": 987241,
@@ -65,9 +65,9 @@ export const ergoBox2 = `{
   ],
   "additionalRegisters": {
     "R4": {
-      "serializedValue": "1a012097a2dabcd974d69a07c3a03e20d05a36d13b986ffca5670302997484dd87e247",
-      "sigmaType": "Coll[Coll[SByte]]",
-      "renderedValue": "[97a2dabcd974d69a07c3a03e20d05a36d13b986ffca5670302997484dd87e247]"
+      "serializedValue": "0e2097a2dabcd974d69a07c3a03e20d05a36d13b986ffca5670302997484dd87e247",
+      "sigmaType": "Coll[SByte]",
+      "renderedValue": "97a2dabcd974d69a07c3a03e20d05a36d13b986ffca5670302997484dd87e247"
     }
   },
   "spentTransactionId": "978793eabc97e6021bad9c68cc793c4f51bb829ddb08bee5f9127a9ed71a2701",
@@ -209,11 +209,8 @@ export const validEvent: EventTrigger = {
   sourceChainHeight: 1000,
   sourceBlockId:
     '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ea',
-  WIDs: [
-    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6e',
-    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b90',
-    'ebc091d854e83a8fdc0e51936923171fc74895715591be81b8d286888d877e70',
-  ],
+  WIDsHash: '300a544b041a6f48c411c463d4c33c6fb650471d5ebd0332459b8855eeba14cd',
+  WIDsCount: 3,
 };
 
 export const validEventWithHighFee: EventTrigger = {
@@ -232,11 +229,8 @@ export const validEventWithHighFee: EventTrigger = {
   sourceChainHeight: 1000,
   sourceBlockId:
     '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ea',
-  WIDs: [
-    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6e',
-    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b90',
-    'ebc091d854e83a8fdc0e51936923171fc74895715591be81b8d286888d877e70',
-  ],
+  WIDsHash: '300a544b041a6f48c411c463d4c33c6fb650471d5ebd0332459b8855eeba14cd',
+  WIDsCount: 3,
 };
 
 export const invalidEvent: EventTrigger = {
@@ -255,9 +249,6 @@ export const invalidEvent: EventTrigger = {
   sourceChainHeight: 1000,
   sourceBlockId:
     '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ea',
-  WIDs: [
-    '6d9cfa68dbadb03b8c254db3b5b34da274d3ed039120143dbcf99cce0eaccc6e',
-    '9ec0d80a7c624bf5c0c5ef620f4b3d71e2b46a624a77d7a5571fab913b6d7b90',
-    'ebc091d854e83a8fdc0e51936923171fc74895715591be81b8d286888d877e70',
-  ],
+  WIDsHash: '300a544b041a6f48c411c463d4c33c6fb650471d5ebd0332459b8855eeba14cd',
+  WIDsCount: 3,
 };

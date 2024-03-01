@@ -955,7 +955,7 @@ describe('CardanoChain', () => {
      * @expected
      * - it should return true
      */
-    it('should return true when fee is less than config fee', () => {
+    it('should return true when fee is less than config fee', async () => {
       // mock PaymentTransaction
       const paymentTx = CardanoTransaction.fromJson(
         TestData.transaction1PaymentTransaction
@@ -963,7 +963,7 @@ describe('CardanoChain', () => {
 
       // call the function
       const cardanoChain = generateChainObject(network);
-      const result = cardanoChain.verifyTransactionFee(paymentTx);
+      const result = await cardanoChain.verifyTransactionFee(paymentTx);
 
       // check returned value
       expect(result).toEqual(true);
@@ -980,7 +980,7 @@ describe('CardanoChain', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when fee is more than config fee', () => {
+    it('should return false when fee is more than config fee', async () => {
       // mock PaymentTransaction
       const paymentTx = CardanoTransaction.fromJson(
         TestData.transaction2PaymentTransaction
@@ -988,107 +988,10 @@ describe('CardanoChain', () => {
 
       // call the function
       const cardanoChain = generateChainObject(network);
-      const result = cardanoChain.verifyTransactionFee(paymentTx);
+      const result = await cardanoChain.verifyTransactionFee(paymentTx);
 
       // check returned value
       expect(result).toEqual(false);
-    });
-  });
-
-  describe('getTxConfirmationStatus', () => {
-    const txType = TransactionType.payment;
-    const requiredConfirmation = paymentTxConfirmation;
-
-    /**
-     * @target CardanoChain.getTxConfirmationStatus should return
-     * ConfirmedEnough when tx confirmation is more than required number
-     * @dependencies
-     * @scenario
-     * - generate a random txId
-     * - mock a network object to return enough confirmation for mocked txId
-     * - call the function
-     * - check returned value
-     * @expected
-     * - it should return `ConfirmedEnough` enum
-     */
-    it('should return ConfirmedEnough when tx confirmation is more than required number', async () => {
-      // generate a random txId
-      const txId = TestUtils.generateRandomId();
-
-      // mock a network object to return enough confirmation for mocked txId
-      const network = new TestCardanoNetwork();
-      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-      when(getTxConfirmationSpy)
-        .calledWith(txId)
-        .mockResolvedValueOnce(requiredConfirmation + 1);
-
-      // call the function
-      const cardanoChain = generateChainObject(network);
-      const result = await cardanoChain.getTxConfirmationStatus(txId, txType);
-
-      // check returned value
-      expect(result).toEqual(ConfirmationStatus.ConfirmedEnough);
-    });
-
-    /**
-     * @target CardanoChain.getTxConfirmationStatus should return
-     * NotConfirmedEnough when payment tx confirmation is less than required number
-     * @dependencies
-     * @scenario
-     * - generate a random txId
-     * - mock a network object to return insufficient confirmation for mocked
-     *   txId
-     * - call the function
-     * - check returned value
-     * @expected
-     * - it should return `NotConfirmedEnough` enum
-     */
-    it('should return NotConfirmedEnough when tx confirmation is less than required number', async () => {
-      // generate a random txId
-      const txId = TestUtils.generateRandomId();
-
-      // mock a network object to return insufficient confirmation for mocked txId
-      const network = new TestCardanoNetwork();
-      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-      when(getTxConfirmationSpy)
-        .calledWith(txId)
-        .mockResolvedValueOnce(requiredConfirmation - 1);
-
-      // call the function
-      const cardanoChain = generateChainObject(network);
-      const result = await cardanoChain.getTxConfirmationStatus(txId, txType);
-
-      // check returned value
-      expect(result).toEqual(ConfirmationStatus.NotConfirmedEnough);
-    });
-
-    /**
-     * @target CardanoChain.getTxConfirmationStatus should return
-     * NotFound when tx confirmation is -1
-     * @dependencies
-     * @scenario
-     * - generate a random txId
-     * - mock a network object to return -1 confirmation for mocked txId
-     * - call the function
-     * - check returned value
-     * @expected
-     * - it should return `NotFound` enum
-     */
-    it('should return NotFound when tx confirmation is -1', async () => {
-      // generate a random txId
-      const txId = TestUtils.generateRandomId();
-
-      // mock a network object to return -1 confirmation for mocked txId
-      const network = new TestCardanoNetwork();
-      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-      when(getTxConfirmationSpy).calledWith(txId).mockResolvedValueOnce(-1);
-
-      // call the function
-      const cardanoChain = generateChainObject(network);
-      const result = await cardanoChain.getTxConfirmationStatus(txId, txType);
-
-      // check returned value
-      expect(result).toEqual(ConfirmationStatus.NotFound);
     });
   });
 
@@ -1509,11 +1412,11 @@ describe('CardanoChain', () => {
     });
   });
 
-  describe('verifyExtraCondition', () => {
+  describe('verifyTransactionExtraConditions', () => {
     const network = new TestCardanoNetwork();
 
     /**
-     * @target: CardanoChain.verifyExtraCondition should return true when all
+     * @target: CardanoChain.verifyTransactionExtraConditions should return true when all
      * extra conditions are met
      * @dependencies
      * @scenario
@@ -1531,14 +1434,14 @@ describe('CardanoChain', () => {
 
       // call the function
       const cardanoChain = generateChainObject(network);
-      const result = cardanoChain.verifyExtraCondition(paymentTx);
+      const result = cardanoChain.verifyTransactionExtraConditions(paymentTx);
 
       // check returned value
       expect(result).toEqual(true);
     });
 
     /**
-     * @target: CardanoChain.verifyExtraCondition should return false
+     * @target: CardanoChain.verifyTransactionExtraConditions should return false
      * when transaction has metadata
      * @dependencies
      * @scenario
@@ -1556,14 +1459,14 @@ describe('CardanoChain', () => {
 
       // call the function
       const cardanoChain = generateChainObject(network);
-      const result = cardanoChain.verifyExtraCondition(paymentTx);
+      const result = cardanoChain.verifyTransactionExtraConditions(paymentTx);
 
       // check returned value
       expect(result).toEqual(false);
     });
 
     /**
-     * @target: CardanoChain.verifyExtraCondition should return false
+     * @target: CardanoChain.verifyTransactionExtraConditions should return false
      * when change box address is wrong
      * @dependencies
      * @scenario
@@ -1592,7 +1495,7 @@ describe('CardanoChain', () => {
       );
 
       // call the function
-      const result = cardanoChain.verifyExtraCondition(paymentTx);
+      const result = cardanoChain.verifyTransactionExtraConditions(paymentTx);
 
       // check returned value
       expect(result).toEqual(false);

@@ -1,4 +1,4 @@
-import { AbstractLogger } from '@rosen-bridge/logger-interface';
+import { AbstractLogger } from '@rosen-bridge/abstract-logger';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import {
   AbstractUtxoChain,
@@ -227,7 +227,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       if (order.extra !== undefined)
         boxBuilder.set_register_value(
           4,
-          wasm.Constant.from_coll_coll_byte([Buffer.from(order.extra, 'hex')])
+          wasm.Constant.from_byte_array(Buffer.from(order.extra, 'hex'))
         );
 
       // build and add box
@@ -380,7 +380,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     for (let i = 0; i < outputCandidatesLength; i++) {
       const output = outputCandidates.get(i);
       const assets = ErgoUtils.getBoxAssets(output);
-      const r4Value = output.register_value(4)?.to_coll_coll_byte()[0];
+      const r4Value = output.register_value(4)?.to_byte_array();
 
       // skip change box and fee box
       if (
@@ -412,7 +412,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
    * @param transaction the payment transaction
    * @returns true if the transaction verified
    */
-  verifyTransactionFee = (transaction: PaymentTransaction): boolean => {
+  verifyTransactionFee = async (
+    transaction: PaymentTransaction
+  ): Promise<boolean> => {
     const tx = Serializer.deserialize(transaction.txBytes).unsigned_tx();
     const outputBoxes = tx.output_candidates();
     for (let i = 0; i < outputBoxes.len(); i++) {
@@ -673,25 +675,6 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
   };
 
   /**
-   * extracts confirmation status for a transaction
-   * @param transactionId the transaction id
-   * @param transactionType type of the transaction
-   * @returns the transaction confirmation status
-   */
-  getTxConfirmationStatus = async (
-    transactionId: string,
-    transactionType: TransactionType
-  ): Promise<ConfirmationStatus> => {
-    const requiredConfirmation =
-      this.getTxRequiredConfirmation(transactionType);
-    const confirmation = await this.network.getTxConfirmation(transactionId);
-    if (confirmation >= requiredConfirmation)
-      return ConfirmationStatus.ConfirmedEnough;
-    else if (confirmation === -1) return ConfirmationStatus.NotFound;
-    else return ConfirmationStatus.NotConfirmedEnough;
-  };
-
-  /**
    * submits a transaction to the blockchain
    * @param transaction the transaction
    */
@@ -735,14 +718,6 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
    */
   getMinimumNativeToken = (): bigint => {
     return this.configs.minBoxValue;
-  };
-
-  /**
-   * gets the RWT token id
-   * @returns RWT token id
-   */
-  getRWTToken = (): string => {
-    return this.configs.rwtId;
   };
 
   /**
@@ -804,7 +779,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     );
 
     // extract wid
-    const wid = box.register_value(4)?.to_coll_coll_byte()[0];
+    const wid = box.register_value(4)?.to_byte_array();
     if (wid === undefined) {
       const boxId = box.box_id().to_str();
       throw new Error(`failed to read WID from register R4 of box [${boxId}]`);
@@ -1027,7 +1002,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         continue;
 
       const assets = ErgoUtils.getBoxAssets(output);
-      const r4Value = output.register_value(4)?.to_coll_coll_byte()[0];
+      const r4Value = output.register_value(4)?.to_byte_array();
 
       const payment: SinglePayment = {
         address: wasm.Address.recreate_from_ergo_tree(

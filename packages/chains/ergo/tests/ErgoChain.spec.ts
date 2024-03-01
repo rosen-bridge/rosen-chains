@@ -18,6 +18,7 @@ import * as wasm from 'ergo-lib-wasm-nodejs';
 import ErgoTransaction from '../lib/ErgoTransaction';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
 import { Fee } from '@rosen-bridge/minimum-fee';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
 const spyOn = jest.spyOn;
 
@@ -1657,103 +1658,6 @@ describe('ErgoChain', () => {
     });
   });
 
-  describe('getTxConfirmationStatus', () => {
-    const txType = TransactionType.payment;
-    const requiredConfirmation = paymentTxConfirmation;
-
-    /**
-     * @target ErgoChain.getTxConfirmationStatus should return
-     * ConfirmedEnough when tx confirmation is more than required number
-     * @dependencies
-     * @scenario
-     * - generate a random txId
-     * - mock a network object to return enough confirmation for mocked txId
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return `ConfirmedEnough` enum
-     */
-    it('should return ConfirmedEnough when tx confirmation is more than required number', async () => {
-      // generate a random txId
-      const txId = ergoTestUtils.generateRandomId();
-
-      // mock a network object to return enough confirmation for mocked txId
-      const network = new TestErgoNetwork();
-      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-      when(getTxConfirmationSpy)
-        .calledWith(txId)
-        .mockResolvedValueOnce(requiredConfirmation + 1);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.getTxConfirmationStatus(txId, txType);
-
-      // check returned value
-      expect(result).toEqual(ConfirmationStatus.ConfirmedEnough);
-    });
-
-    /**
-     * @target ErgoChain.getTxConfirmationStatus should return
-     * NotConfirmedEnough when payment tx confirmation is less than required number
-     * @dependencies
-     * @scenario
-     * - generate a random txId
-     * - mock a network object to return insufficient confirmation for mocked
-     *   txId
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return `NotConfirmedEnough` enum
-     */
-    it('should return NotConfirmedEnough when tx confirmation is less than required number', async () => {
-      // generate a random txId
-      const txId = ergoTestUtils.generateRandomId();
-
-      // mock a network object to return insufficient confirmation for mocked
-      const network = new TestErgoNetwork();
-      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-      when(getTxConfirmationSpy)
-        .calledWith(txId)
-        .mockResolvedValueOnce(requiredConfirmation - 1);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.getTxConfirmationStatus(txId, txType);
-
-      // check returned value
-      expect(result).toEqual(ConfirmationStatus.NotConfirmedEnough);
-    });
-
-    /**
-     * @target ErgoChain.getTxConfirmationStatus should return
-     * NotFound when tx confirmation is -1
-     * @dependencies
-     * @scenario
-     * - generate a random txId
-     * - mock a network object to return -1 confirmation for mocked txId
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return `NotFound` enum
-     */
-    it('should return NotFound when tx confirmation is -1', async () => {
-      // generate a random txId
-      const txId = ergoTestUtils.generateRandomId();
-
-      // mock a network object to return enough confirmation for mocked txId
-      const network = new TestErgoNetwork();
-      const getTxConfirmationSpy = spyOn(network, 'getTxConfirmation');
-      when(getTxConfirmationSpy).calledWith(txId).mockResolvedValueOnce(-1);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.getTxConfirmationStatus(txId, txType);
-
-      // check returned value
-      expect(result).toEqual(ConfirmationStatus.NotFound);
-    });
-  });
-
   describe('isTxInMempool', () => {
     /**
      * @target ErgoChain.isTxInMempool should true when tx is in mempool
@@ -2453,11 +2357,11 @@ describe('ErgoChain', () => {
       // mock serialized transaction
       const serializedTx = Buffer.from(
         ergoTestUtils
-          .toTransaction(transactionTestData.transaction0)
+          .toTransaction(transactionTestData.transaction6)
           .sigma_serialize_bytes()
       ).toString('hex');
 
-      const expectedOrder = transactionTestData.transaction0Order;
+      const expectedOrder = transactionTestData.transaction6Order;
       const config: ErgoConfigs = {
         fee: 1100000n,
         confirmations: {
@@ -2467,7 +2371,7 @@ describe('ErgoChain', () => {
           manual: manualTxConfirmation,
         },
         addresses: {
-          lock: 'nB3L2PD3LBtiNhDYK7XhZ8nVt6uekBXN7RcPUKgdKLXFcrJiSPxmQsUKuUkTRQ1hbvDrxEQAKYurGFbaGD1RPxU7XqQimD78j23HHMQKL1boUGsnNhCxaVNAYMcFbQNo355Af8cWkhAN6',
+          lock: '9hcBZ7khJGepr2ZXz4ZktxAa1bTmnRSmjTNb9vhsi2EwGprGE6Q',
           cold: 'cold_addr',
           permit: 'permit_addr',
           fraud: 'fraud',
