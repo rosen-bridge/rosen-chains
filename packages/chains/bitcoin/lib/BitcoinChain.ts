@@ -710,7 +710,11 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    */
   minimumMeaningfulSatoshi = async (): Promise<bigint> => {
     const currentFeeRatio = await this.network.getFeeRatio();
-    return BigInt(Math.ceil((currentFeeRatio * SEGWIT_INPUT_WEIGHT_UNIT) / 4));
+    return BigInt(
+      Math.ceil(
+        (currentFeeRatio * SEGWIT_INPUT_WEIGHT_UNIT) / 4 // estimate fee per weight and convert to virtual size
+      )
+    );
   };
 }
 

@@ -28,6 +28,9 @@ export const estimateTxFee = (
   const inputsWeight = inputSize * SEGWIT_INPUT_WEIGHT_UNIT;
   const outputWeight = outputSize * SEGWIT_OUTPUT_WEIGHT_UNIT;
   return BigInt(
-    Math.ceil(((txBaseWeight + inputsWeight + outputWeight) / 4) * feeRatio)
+    Math.ceil(
+      ((txBaseWeight + inputsWeight + outputWeight) / 4) * // estimate tx weight and convert to virtual size
+        feeRatio
+    )
   );
 };
