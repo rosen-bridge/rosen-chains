@@ -64,7 +64,7 @@ describe('BitcoinChain', () => {
      * @scenario
      * - mock transaction order, getFeeRatio
      * - mock getCoveringBoxes, hasLockAddressEnoughAssets
-     * - call the function
+     * - run test
      * - check returned value
      * @expected
      * - PaymentTransaction txType, eventId, network and inputUtxos should be as
@@ -95,7 +95,7 @@ describe('BitcoinChain', () => {
       );
       hasLockAddressEnoughAssetsSpy.mockResolvedValue(true);
 
-      // call the function
+      // run test
       const result = await bitcoinChain.generateTransaction(
         payment1.eventId,
         payment1.txType,
@@ -138,7 +138,7 @@ describe('BitcoinChain', () => {
      * @dependencies
      * @scenario
      * - mock hasLockAddressEnoughAssets
-     * - call the function and expect error
+     * - run test and expect error
      * @expected
      * - generateTransaction should throw NotEnoughAssetsError
      */
@@ -151,7 +151,7 @@ describe('BitcoinChain', () => {
       );
       hasLockAddressEnoughAssetsSpy.mockResolvedValue(false);
 
-      // call the function and expect error
+      // run test and expect error
       await expect(async () => {
         await bitcoinChain.generateTransaction(
           'event1',
@@ -169,9 +169,9 @@ describe('BitcoinChain', () => {
      * @dependencies
      * @scenario
      * - mock getCoveringBoxes, hasLockAddressEnoughAssets
-     * - call the function and expect error
+     * - run test and expect error
      * @expected
-     * - generateTransaction should throw NotEnoughAssetsError
+     * - generateTransaction should throw NotEnoughValidBoxesError
      */
     it('should throw error when bank boxes can not cover order assets', async () => {
       // mock getCoveringBoxes, hasLockAddressEnoughAssets
@@ -187,7 +187,7 @@ describe('BitcoinChain', () => {
       );
       hasLockAddressEnoughAssetsSpy.mockResolvedValue(true);
 
-      // call the function and expect error
+      // run test and expect error
       await expect(async () => {
         await bitcoinChain.generateTransaction(
           'event1',
@@ -292,7 +292,7 @@ describe('BitcoinChain', () => {
      * @scenario
      * - mock PaymentTransaction
      * - mock getFeeRatio
-     * - call the function
+     * - run test
      * - check returned value
      * @expected
      * - it should return true
@@ -317,7 +317,7 @@ describe('BitcoinChain', () => {
      * @scenario
      * - mock PaymentTransaction
      * - mock getFeeRatio
-     * - call the function
+     * - run test
      * - check returned value
      * @expected
      * - it should return false
@@ -424,6 +424,7 @@ describe('BitcoinChain', () => {
      * - it should return true
      * - `getBlockTransactionIds` and `getBlockInfo` should have been called with event blockId
      * - `getTransaction` should have been called with event lock txId
+     * - `getBlockInfoSpy` should have been called with event blockId
      */
     it('should return true when event is valid', async () => {
       //  mock an event
@@ -535,6 +536,7 @@ describe('BitcoinChain', () => {
      * - it should return false
      * - `getBlockTransactionIds` and `getBlockInfo` should have been called with event blockId
      * - `getTransaction` should have been called with event lock txId
+     * - `getBlockInfoSpy` should have been called with event blockId
      */
     it.each([
       'fromChain',
@@ -617,6 +619,7 @@ describe('BitcoinChain', () => {
      * - it should return false
      * - `getBlockTransactionIds` and `getBlockInfo` should have been called with event blockId
      * - `getTransaction` should have been called with event lock txId
+     * - `getBlockInfoSpy` should have been called with event blockId
      */
     it('should return false when event sourceChainHeight is wrong', async () => {
       //  mock an event
@@ -686,6 +689,7 @@ describe('BitcoinChain', () => {
      * - it should return false
      * - `getBlockTransactionIds` and `getBlockInfo` should have been called with event blockId
      * - `getTransaction` should have been called with event lock txId
+     * - `getBlockInfoSpy` should have been called with event blockId
      */
     it('should return false when event data is not extracted', async () => {
       //  mock an event
@@ -754,6 +758,7 @@ describe('BitcoinChain', () => {
      * - it should return false
      * - `getBlockTransactionIds` should have been called with event blockId
      * - `getTransaction` should have been called with event lock txId
+     * - `getBlockInfoSpy` should have been called with event blockId
      */
     it('should return false when event amount is less than sum of event fees', async () => {
       // mock an event
@@ -823,6 +828,7 @@ describe('BitcoinChain', () => {
      * - it should return false
      * - `getBlockTransactionIds` should have been called with event blockId
      * - `getTransaction` should have been called with event lock txId
+     * - `getBlockInfoSpy` should have been called with event blockId
      */
     it('should return false when event amount is less than sum of event fees while bridgeFee is less than minimum-fee', async () => {
       // mock feeConfig
@@ -900,6 +906,7 @@ describe('BitcoinChain', () => {
      * - it should return false
      * - `getBlockTransactionIds` should have been called with event blockId
      * - `getTransaction` should have been called with event lock txId
+     * - `getBlockInfoSpy` should have been called with event blockId
      */
     it('should return false when event amount is less than sum of event fees while bridgeFee is less than expected value', async () => {
       // mock feeConfig
@@ -976,6 +983,7 @@ describe('BitcoinChain', () => {
      * - check if function got called
      * @expected
      * - it should return true
+     * - `isBoxUnspentAndValidSpy` should have been called with tx input ids
      */
     it('should return true when all tx inputs are valid and ttl is less than current slot', async () => {
       const payment1 = BitcoinTransaction.fromJson(
@@ -1195,7 +1203,7 @@ describe('BitcoinChain', () => {
      * @dependencies
      * @scenario
      * - mock serialized transactions
-     * - call the function
+     * - run test
      * - check returned value
      * @expected
      * - it should return a map equal to constructed map
@@ -1209,7 +1217,7 @@ describe('BitcoinChain', () => {
           )
       );
 
-      // call the function
+      // run test
       const result = testInstance.callGetTransactionsBoxMapping(
         transactions,
         configs.addresses.lock
@@ -1237,7 +1245,7 @@ describe('BitcoinChain', () => {
      * @dependencies
      * @scenario
      * - mock serialized transactions
-     * - call the function
+     * - run test
      * - check returned value
      * @expected
      * - it should return a map of each box to undefined
@@ -1251,7 +1259,7 @@ describe('BitcoinChain', () => {
           )
       );
 
-      // call the function
+      // run test
       const result = testInstance.callGetTransactionsBoxMapping(
         transactions,
         'another address'

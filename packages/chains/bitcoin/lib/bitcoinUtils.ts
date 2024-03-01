@@ -24,7 +24,7 @@ export const estimateTxFee = (
   outputSize: number,
   feeRatio: number
 ): bigint => {
-  const txBaseWeight = 40 + 2;
+  const txBaseWeight = 40 + 2; // all txs include 40W. P2WPKH txs need additional 2W
   const inputsWeight = inputSize * SEGWIT_INPUT_WEIGHT_UNIT;
   const outputWeight = outputSize * SEGWIT_OUTPUT_WEIGHT_UNIT;
   return BigInt(

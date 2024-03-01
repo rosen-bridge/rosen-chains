@@ -634,7 +634,6 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * generates mapping from input box id to serialized string of output box (filtered by address, containing the token)
    * @param txs list of transactions
    * @param address the address
-   * @param tokenId the token id
    * @returns a Map from input box id to output box
    */
   protected getTransactionsBoxMapping = (
