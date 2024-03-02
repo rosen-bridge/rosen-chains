@@ -261,7 +261,7 @@ describe('CardanoChain', () => {
      * - mock getCoveringBoxes, hasLockAddressEnoughAssets
      * - call the function and expect error
      * @expected
-     * - generateTransaction should throw NotEnoughAssetsError
+     * - generateTransaction should throw NotEnoughValidBoxesError
      */
     it('should throw error when bank boxes can not cover order assets', async () => {
       // mock getCoveringBoxes, hasLockAddressEnoughAssets

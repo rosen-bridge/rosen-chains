@@ -4,7 +4,8 @@ import {
 } from '@rosen-chains/abstract-chain';
 
 export interface BitcoinConfigs extends ChainConfigs {
-  minBoxValue: bigint;
+  aggregatedPublicKey: string;
+  txFeeSlippage: number;
 }
 
 export interface BitcoinTransactionJsonModel
