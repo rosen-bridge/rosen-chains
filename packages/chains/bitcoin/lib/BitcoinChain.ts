@@ -72,8 +72,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
-    serializedSignedTransactions: string[],
-    ...extra: Array<any>
+    serializedSignedTransactions: string[]
   ): Promise<BitcoinTransaction> => {
     this.logger.debug(
       `Generating Bitcoin transaction for Order: ${JsonBigInt.stringify(order)}`
