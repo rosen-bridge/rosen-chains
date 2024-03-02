@@ -2,10 +2,13 @@ import { AbstractLogger } from '@rosen-bridge/abstract-logger';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import {
   AbstractUtxoChain,
+  AssetBalance,
   BoxInfo,
   ChainUtils,
+  CoveringBoxes,
   EventTrigger,
   FailedError,
+  GET_BOX_API_LIMIT,
   NetworkError,
   NotEnoughAssetsError,
   NotEnoughValidBoxesError,
@@ -27,6 +30,7 @@ import JsonBigInt from '@rosen-bridge/json-bigint';
 import { estimateTxFee, getPsbtTxInputBoxId } from './bitcoinUtils';
 import { BITCOIN_CHAIN, SEGWIT_INPUT_WEIGHT_UNIT } from './constants';
 import { blake2b } from 'blakejs';
+import { selectBitcoinUtxos } from '@rosen-bridge/bitcoin-utxo-selection';
 
 class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
   declare network: AbstractBitcoinNetwork;
@@ -74,11 +78,13 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     this.logger.debug(
       `Generating Bitcoin transaction for Order: ${JsonBigInt.stringify(order)}`
     );
+    const feeRatio = await this.network.getFeeRatio();
+
     // calculate required assets
     const requiredAssets = order
       .map((order) => order.assets)
       .reduce(ChainUtils.sumAssetBalance, {
-        nativeToken: await this.minimumMeaningfulSatoshi(),
+        nativeToken: this.minimumMeaningfulSatoshi(feeRatio),
         tokens: [],
       });
     this.logger.debug(
@@ -165,7 +171,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     const estimatedFee = estimateTxFee(
       psbt.txInputs.length,
       psbt.txOutputs.length + 1,
-      await this.network.getFeeRatio()
+      feeRatio
     );
     this.logger.debug(`Estimated Fee: ${estimatedFee}`);
     remainingBtc -= estimatedFee;
@@ -708,12 +714,57 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * additional fee for adding it to a tx
    * @returns the minimum amount
    */
-  minimumMeaningfulSatoshi = async (): Promise<bigint> => {
-    const currentFeeRatio = await this.network.getFeeRatio();
+  minimumMeaningfulSatoshi = (feeRatio: number): bigint => {
     return BigInt(
       Math.ceil(
-        (currentFeeRatio * SEGWIT_INPUT_WEIGHT_UNIT) / 4 // estimate fee per weight and convert to virtual size
+        (feeRatio * SEGWIT_INPUT_WEIGHT_UNIT) / 4 // estimate fee per weight and convert to virtual size
       )
+    );
+  };
+
+  /**
+   * gets useful, allowable and last boxes for an address until required assets are satisfied
+   * @param address the address
+   * @param requiredAssets the required assets
+   * @param forbiddenBoxIds the id of forbidden boxes
+   * @param trackMap the mapping of a box id to it's next box
+   * @returns an object containing the selected boxes with a boolean showing if requirements covered or not
+   */
+  getCoveringBoxes = async (
+    address: string,
+    requiredAssets: AssetBalance,
+    forbiddenBoxIds: Array<string>,
+    trackMap: Map<string, BitcoinUtxo | undefined>
+  ): Promise<CoveringBoxes<BitcoinUtxo>> => {
+    const getAddressBoxes = this.network.getAddressBoxes;
+    async function* generator() {
+      let offset = 0;
+      const limit = GET_BOX_API_LIMIT;
+      while (true) {
+        const page = await getAddressBoxes(address, offset, limit);
+        if (page.length === 0) break;
+        yield* page;
+        offset += limit;
+      }
+      return undefined;
+    }
+    const utxoIterator = generator();
+
+    // estimate tx weight without considering inputs
+    //  0 inputs, 2 outputs, 1 for feeRatio to get weights only, multiply by 4 to convert vSize to weight unit
+    const estimatedTxWeight = Number(estimateTxFee(0, 2, 1)) * 4;
+
+    const feeRatio = await this.network.getFeeRatio();
+    return selectBitcoinUtxos(
+      requiredAssets.nativeToken,
+      forbiddenBoxIds,
+      trackMap,
+      utxoIterator,
+      this.minimumMeaningfulSatoshi(feeRatio),
+      SEGWIT_INPUT_WEIGHT_UNIT,
+      estimatedTxWeight,
+      feeRatio,
+      this.logger
     );
   };
 }
