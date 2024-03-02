@@ -33,6 +33,15 @@ abstract class AbstractBitcoinNetwork extends AbstractUtxoChainNetwork<
    * @returns
    */
   abstract getMempoolTxIds: () => Promise<Array<string>>;
+
+  /**
+   * gets all transactions in mempool (returns empty list if the chain has no mempool)
+   * Note: due to heavy size of transactions in mempool, we ignore getting mempool txs in Bitcoin
+   * @returns empty list
+   */
+  getMempoolTransactions = async (): Promise<Array<BitcoinTx>> => {
+    return [];
+  };
 }
 
 export default AbstractBitcoinNetwork;
