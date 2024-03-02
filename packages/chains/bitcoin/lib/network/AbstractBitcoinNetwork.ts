@@ -1,4 +1,7 @@
-import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
+import {
+  AbstractUtxoChainNetwork,
+  TokenDetail,
+} from '@rosen-chains/abstract-chain';
 import { Psbt } from 'bitcoinjs-lib';
 import { BitcoinTx, BitcoinUtxo } from '../types';
 import { BitcoinRosenExtractor } from '@rosen-bridge/rosen-extractor';
@@ -41,6 +44,14 @@ abstract class AbstractBitcoinNetwork extends AbstractUtxoChainNetwork<
    */
   getMempoolTransactions = async (): Promise<Array<BitcoinTx>> => {
     return [];
+  };
+
+  /**
+   * gets token details (name, decimals)
+   * @param tokenId
+   */
+  getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
+    throw Error(`Bitcoin does not support token`);
   };
 }
 
