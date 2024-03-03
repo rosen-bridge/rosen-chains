@@ -548,7 +548,7 @@ describe('BitcoinChain', () => {
       'targetChainTokenId',
       'toAddress',
       'fromAddress',
-    ])('should return false when event %p is wrong', async (key: string) => {
+    ])('should return false when event %s is wrong', async (key: string) => {
       // mock an event
       const event = testData.validEvent;
 
