@@ -54,7 +54,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       .catch((e) => {
         const baseError = `Failed to fetch current height from Esplora: `;
         if (e.response) {
-          throw new FailedError(baseError + `${e.response.data.reason}`);
+          throw new FailedError(baseError + `${e.response.data}`);
         } else if (e.request) {
           throw new NetworkError(baseError + e.message);
         } else {
@@ -84,8 +84,11 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
         txHeight = txInfo.status.block_height;
     } catch (e: any) {
       const baseError = `Failed to get confirmation for tx [${transactionId}] from Esplora: `;
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data.reason);
+      if (e.response && e.response.status === 404) {
+        this.logger.debug(`tx [${transactionId}] is not found`);
+        return -1;
+      } else if (e.response) {
+        throw new FailedError(baseError + e.response.data);
       } else if (e.request) {
         throw new NetworkError(baseError + e.message);
       } else {
@@ -122,7 +125,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       .catch((e) => {
         const baseError = `Failed to get address [${address}] assets from Esplora: `;
         if (e.response) {
-          throw new FailedError(baseError + e.response.data.reason);
+          throw new FailedError(baseError + e.response.data);
         } else if (e.request) {
           throw new NetworkError(baseError + e.message);
         } else {
@@ -150,7 +153,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       .catch((e) => {
         const baseError = `Failed to get block [${blockId}] transaction ids from Esplora: `;
         if (e.response) {
-          throw new FailedError(baseError + e.response.data.reason);
+          throw new FailedError(baseError + e.response.data);
         } else if (e.request) {
           throw new NetworkError(baseError + e.message);
         } else {
@@ -183,7 +186,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       .catch((e) => {
         const baseError = `Failed to get block [${blockId}] info from Esplora: `;
         if (e.response) {
-          throw new FailedError(baseError + e.response.data.reason);
+          throw new FailedError(baseError + e.response.data);
         } else if (e.request) {
           throw new NetworkError(baseError + e.message);
         } else {
@@ -214,7 +217,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
     } catch (e: any) {
       const baseError = `Failed to get transaction [${transactionId}] from Esplora: `;
       if (e.response) {
-        throw new FailedError(baseError + e.response.data.reason);
+        throw new FailedError(baseError + e.response.data);
       } else if (e.request) {
         throw new NetworkError(baseError + e.message);
       } else {
@@ -280,7 +283,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       .catch((e) => {
         const baseError = `Failed to get address [${address}] Utxos from Esplora: `;
         if (e.response) {
-          throw new FailedError(baseError + e.response.data.reason);
+          throw new FailedError(baseError + e.response.data);
         } else if (e.request) {
           throw new NetworkError(baseError + e.message);
         } else {
@@ -312,8 +315,11 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       );
     } catch (e: any) {
       const baseError = `Failed to get tx [${txId}] Utxos status from Esplora: `;
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data.reason);
+      if (e.response && e.response.status === 404) {
+        this.logger.debug(`tx [${txId}] is not found`);
+        return false;
+      } else if (e.response) {
+        throw new FailedError(baseError + e.response.data);
       } else if (e.request) {
         throw new NetworkError(baseError + e.message);
       } else {
@@ -351,7 +357,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
     } catch (e: any) {
       const baseError = `Failed to get tx [${txId}] Utxos status from Esplora: `;
       if (e.response) {
-        throw new FailedError(baseError + e.response.data.reason);
+        throw new FailedError(baseError + e.response.data);
       } else if (e.request) {
         throw new NetworkError(baseError + e.message);
       } else {
@@ -394,7 +400,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       .catch((e) => {
         const baseError = `Failed to fetch fee estimation from Esplora: `;
         if (e.response) {
-          throw new FailedError(baseError + `${e.response.data.reason}`);
+          throw new FailedError(baseError + `${e.response.data}`);
         } else if (e.request) {
           throw new NetworkError(baseError + e.message);
         } else {
@@ -421,7 +427,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       .catch((e) => {
         const baseError = `Failed to get mempool transaction ids from Esplora: `;
         if (e.response) {
-          throw new FailedError(baseError + e.response.data.reason);
+          throw new FailedError(baseError + e.response.data);
         } else if (e.request) {
           throw new NetworkError(baseError + e.message);
         } else {
