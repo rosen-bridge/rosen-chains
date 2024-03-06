@@ -324,8 +324,8 @@ describe('BitcoinEsploraNetwork', () => {
      * @target `BitcoinEsploraNetwork.isBoxUnspentAndValid` should return true when box is unspent
      * @dependencies
      * @scenario
-     * - mock axios to return tx outspends with box as unspent
-     * - run test
+     * - mock axios to return tx outspends
+     * - run test with unspent box index
      * - check returned value
      * @expected
      * - it should be true
@@ -344,8 +344,8 @@ describe('BitcoinEsploraNetwork', () => {
      * box is spent
      * @dependencies
      * @scenario
-     * - mock axios to return tx outspends with box as spent
-     * - run test
+     * - mock axios to return tx outspends
+     * - run test with spent box index
      * - check returned value
      * @expected
      * - it should be false
@@ -364,7 +364,7 @@ describe('BitcoinEsploraNetwork', () => {
      * tx is not found
      * @dependencies
      * @scenario
-     * - mock axios to return tx outspends with box as unspent
+     * - mock axios to throw not found error
      * - run test
      * - check returned value
      * @expected
@@ -389,8 +389,8 @@ describe('BitcoinEsploraNetwork', () => {
      * box index is more than number of tx outputs
      * @dependencies
      * @scenario
-     * - mock axios to return tx outspends with box as spent
-     * - run test
+     * - mock axios to return tx outspends
+     * - run test with invalid box index
      * - check returned value
      * @expected
      * - it should be false
@@ -431,7 +431,7 @@ describe('BitcoinEsploraNetwork', () => {
      * @dependencies
      * @scenario
      * - mock axios to throw not found error
-     * - run test with wrong block hash and expect exception thrown
+     * - run test and expect exception thrown
      * @expected
      * - it should throw FailedError
      */
@@ -455,7 +455,7 @@ describe('BitcoinEsploraNetwork', () => {
      * @dependencies
      * @scenario
      * - mock axios to return transaction
-     * - run test with wrong block hash and expect exception thrown
+     * - run test expect exception thrown
      * @expected
      * - it should throw FailedError
      */

@@ -290,6 +290,13 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
           throw new UnexpectedApiError(baseError + e.message);
         }
       });
+    // sort boxes to keep consistency between calls
+    boxes.sort((a, b) => {
+      if (a.txId < b.txId) return -1;
+      else if (a.txId === b.txId && a.index < b.index) return -1;
+      else if (a.txId === b.txId && a.index === b.index) return 0;
+      else return 1;
+    });
     return boxes.slice(offset, offset + limit);
   };
 
