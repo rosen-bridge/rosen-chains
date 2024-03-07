@@ -1,13 +1,16 @@
-import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
+import {
+  AbstractUtxoChainNetwork,
+  TokenDetail,
+} from '@rosen-chains/abstract-chain';
 import { Psbt } from 'bitcoinjs-lib';
 import { BitcoinTx, BitcoinUtxo } from '../types';
+import { BitcoinRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
 abstract class AbstractBitcoinNetwork extends AbstractUtxoChainNetwork<
   BitcoinTx,
   BitcoinUtxo
 > {
-  // TODO: uncomment this line (local:ergo/rosen-bridge/utils#169)
-  // abstract extractor: BitcoinRosenExtractor;
+  abstract extractor: BitcoinRosenExtractor;
 
   /**
    * submits a transaction
@@ -26,13 +29,30 @@ abstract class AbstractBitcoinNetwork extends AbstractUtxoChainNetwork<
    * gets current fee ratio of the network
    * @returns
    */
-  abstract getFeeRatio: () => Promise<bigint>;
+  abstract getFeeRatio: () => Promise<number>;
 
   /**
    * gets id of transactions in mempool
    * @returns
    */
   abstract getMempoolTxIds: () => Promise<Array<string>>;
+
+  /**
+   * gets all transactions in mempool (returns empty list if the chain has no mempool)
+   * Note: due to heavy size of transactions in mempool, we ignore getting mempool txs in Bitcoin
+   * @returns empty list
+   */
+  getMempoolTransactions = async (): Promise<Array<BitcoinTx>> => {
+    return [];
+  };
+
+  /**
+   * gets token details (name, decimals)
+   * @param tokenId
+   */
+  getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
+    throw Error(`Bitcoin does not support token`);
+  };
 }
 
 export default AbstractBitcoinNetwork;
