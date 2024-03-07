@@ -9,10 +9,10 @@ import {
   TransactionType,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
-import AbstractEVMNetwork from './network/AbstractEVMNetwork';
-class EVMChain extends AbstractChain {
-  declare network: AbstractEVMNetwork;
-  constructor(network: AbstractEVMNetwork, configs: any, logger?: any) {
+import AbstractEvmNetwork from './network/AbstractEvmNetwork';
+class EvmChain extends AbstractChain {
+  declare network: AbstractEvmNetwork;
+  constructor(network: AbstractEvmNetwork, configs: any, logger?: any) {
     super(network, configs, logger);
   }
 
@@ -185,4 +185,4 @@ class EVMChain extends AbstractChain {
   };
 }
 
-export default EVMChain;
+export default EvmChain;
