@@ -3,6 +3,7 @@ import { AssetBalance } from '../../../../abstract-chain';
 import { TransactionResponse } from 'ethers';
 
 abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionResponse> {
+  // TODO evm extractor is missing for now
   /**
    * gets the amount of the input ERC20 asset in an address
    * @param address the address
