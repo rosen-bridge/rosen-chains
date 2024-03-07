@@ -1,6 +1,7 @@
 import { AbstractChainNetwork } from '@rosen-chains/abstract-chain';
 import { AssetBalance } from '../../../../abstract-chain';
 import { TransactionResponse } from 'ethers';
+import { BlockHeader } from '../types';
 
 abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionResponse> {
   // TODO evm extractor is missing for now

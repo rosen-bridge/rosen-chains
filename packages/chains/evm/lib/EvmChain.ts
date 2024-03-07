@@ -1,6 +1,5 @@
 import {
   AbstractChain,
-  ConfirmationStatus,
   EventTrigger,
   PaymentOrder,
   PaymentTransaction,
