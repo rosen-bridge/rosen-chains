@@ -107,19 +107,6 @@ class EvmChain extends AbstractChain {
   };
 
   /**
-   * extracts confirmation status for a transaction
-   * @param transactionId the transaction id
-   * @param transactionType type of the transaction
-   * @returns the transaction confirmation status
-   */
-  getTxConfirmationStatus = async (
-    transactionId: string,
-    transactionType: TransactionType
-  ): Promise<ConfirmationStatus> => {
-    throw new Error('Not implemented yet.');
-  };
-
-  /**
    * submits a transaction to the blockchain
    * @param transaction the transaction
    */
@@ -143,14 +130,6 @@ class EvmChain extends AbstractChain {
    * @returns the minimum amount
    */
   getMinimumNativeToken = (): bigint => {
-    throw new Error('Not implemented yet.');
-  };
-
-  /**
-   * gets the RWT token id
-   * @returns RWT token id
-   */
-  getRWTToken = (): string => {
     throw new Error('Not implemented yet.');
   };
 

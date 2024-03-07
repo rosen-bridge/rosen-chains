@@ -36,7 +36,7 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
    * @param address the address
    * @returns an integer indicating next nonce
    */
-  abstract getNonce: (address: string) => Promise<number>;
+  abstract getAddressNextNonce: (address: string) => Promise<number>;
 
   /**
    * gets the gas required to call `transfer` function in the given contract
