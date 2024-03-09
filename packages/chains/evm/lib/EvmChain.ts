@@ -13,11 +13,13 @@ import {
   TransactionType,
   AssetBalance,
   SinglePayment,
+  ImpossibleBehavior,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
 import { EvmConfigs } from './types';
 import { Transaction, Contract } from 'ethers';
+import Serializer from './Serializer';
 
 class EvmChain extends AbstractChain {
   declare network: AbstractEvmNetwork;
@@ -78,40 +80,77 @@ class EvmChain extends AbstractChain {
       );
     }
 
-    // let trx
-    // const nonce = await this.network.getAddressNextNonce(this.configs.addresses.lock)
-    // let maxPriorityFeePerGas = await this.network.getMaxPriorityFeePerGas()
-    // const contract = new Contract(contractAddress, contractAbi, provider);
+    // Generate the transaction
+    let trx;
+    const nonce = await this.network.getAddressNextNonce(
+      this.configs.addresses.lock
+    );
+    const maxPriorityFeePerGas = await this.network.getMaxPriorityFeePerGas();
 
-    // Recipient address and amount to transfer
-    // const toAddress = '';
-    // const amount = 1; // replace with the amount you want to transfer
+    if (order[0].assets.nativeToken != BigInt(0)) {
+      trx = Transaction.from({
+        to: order[0].address,
+        nonce: nonce,
+        gasLimit: gasRequired,
+        maxPriorityFeePerGas: maxPriorityFeePerGas,
+        maxFeePerGas: gasPrice,
+        data: null,
+        value: order[0].assets.nativeToken,
+        chainId: this.configs.chainId,
+      });
+    } else {
+      const token = order[0].assets.tokens[0];
+      const data = this.generateTransferCallData(
+        token.id,
+        order[0].address,
+        token.value
+      );
+      trx = Transaction.from({
+        to: token.id,
+        nonce: nonce,
+        gasLimit: gasRequired,
+        maxPriorityFeePerGas: maxPriorityFeePerGas,
+        maxFeePerGas: gasPrice,
+        data: data,
+        value: token.value,
+        chainId: this.configs.chainId,
+      });
+    }
+    if (trx.hash == null) {
+      throw new ImpossibleBehavior("Transaction's hash is null!");
+    }
+    const evmTx = new PaymentTransaction(
+      this.configs.chainName,
+      trx.unsignedHash,
+      eventId,
+      Serializer.serialize(trx),
+      txType
+    );
 
-    // const data = contract.interface.encodeFunctionData('transfer', [toAddress, amount]);
-    // if (order[0].assets.nativeToken != BigInt(0)) {
-    //   trx = Transaction.from({
-    //     to: order[0].address,
-    //     nonce: nonce,
-    //     gasLimit: gasRequired,
-    //     maxPriorityFeePerGas: maxPriorityFeePerGas,
-    //     maxFeePerGas: gasPrice,
-    //     data: null,
-    //     value: order[0].assets.nativeToken,
-    //     chainId: this.configs.chainId,
-    //   })
-    // } else {
-    //   trx = Transaction.from({
-    //     to: order[0].address,
-    //     nonce: nonce,
-    //     gasLimit: gasRequired,
-    //     maxPriorityFeePerGas: maxPriorityFeePerGas,
-    //     maxFeePerGas: gasPrice,
-    //     data: null,
-    //     value: order[0].assets.nativeToken,
-    //     chainId: this.configs.chainId,
-    //   })
-    // }
-    throw Error('Not implemented yet!');
+    this.logger.info(
+      `Cardano transaction [${trx.hash}] as type [${txType}] generated for event [${eventId}]`
+    );
+    return evmTx;
+  };
+
+  /**
+   * generates calldata to execute `transfer` function in the given contract
+   * @param contractAddress the address of the contract
+   * @param to the recipient's address
+   * @param amount the amount to be transfered
+   * @returns calldata in hex string with the initial '0x'
+   */
+  generateTransferCallData = (
+    contractAddress: string,
+    to: string,
+    amount: bigint
+  ): string => {
+    const contract = new Contract(
+      contractAddress,
+      this.configs.abis[contractAddress],
+      null
+    );
+    return contract.interface.encodeFunctionData('transfer', [to, amount]);
   };
 
   /**
