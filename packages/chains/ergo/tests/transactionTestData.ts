@@ -7,6 +7,7 @@ import {
   ErgoStateContext,
   PreHeader,
 } from 'ergo-lib-wasm-nodejs';
+import { testLockAddress } from './ergoTestUtils';
 
 export const transaction0 = `{
   "id": "e4f8b36193e75f1530dbe4e2b6b46d0e737fd81c4377d9f0ffe9cbaa79a169d7",
@@ -771,6 +772,48 @@ export const transaction3Order: PaymentOrder = [
   },
 ];
 
+export const transaction3ChangeBox1Assets = {
+  nativeToken: 43982007523,
+  tokens: [
+    {
+      id: 'fc6c2070eb004fc08fcde1514dee56b1d0587477748d8af647179b098f52f559',
+      value: 3054248707,
+    },
+    {
+      id: '517c91b4ea680166ddd3f67b27b0274c20bbd2aeb82b60eaf5bf5471b37f684a',
+      value: 525050486,
+    },
+    {
+      id: 'fbbaac7337d051c10fc3da0ccb864f4d32d40027551e1c3ea3ce361f39b91e40',
+      value: 1,
+    },
+    {
+      id: '10278c102bf890fdab8ef5111e94053c90b3541bc25b0de2ee8aa6305ccec3de',
+      value: 4591235,
+    },
+  ],
+};
+export const transaction3ChangeBox2Assets = {
+  nativeToken: 43982007523,
+  tokens: [
+    {
+      id: 'fc6c2070eb004fc08fcde1514dee56b1d0587477748d8af647179b098f52f559',
+      value: 3054248708,
+    },
+    {
+      id: '517c91b4ea680166ddd3f67b27b0274c20bbd2aeb82b60eaf5bf5471b37f684a',
+      value: 525050487,
+    },
+    {
+      id: 'fbbaac7337d051c10fc3da0ccb864f4d32d40027551e1c3ea3ce361f39b91e40',
+      value: 2,
+    },
+    {
+      id: '10278c102bf890fdab8ef5111e94053c90b3541bc25b0de2ee8aa6305ccec3de',
+      value: 4591235,
+    },
+  ],
+};
 export const transaction3Assets: TransactionAssetBalance = {
   inputAssets: {
     nativeToken: 88019480848n,
@@ -1261,5 +1304,22 @@ export const transaction6Order: PaymentOrder = [
       ],
     },
     extra: 'c318fdf3aec1aa2cfb8282001cdbf233d320e4faf55c8fa5d1670f537d4ebff6',
+  },
+];
+
+export const invalidOrder = [
+  {
+    address: transaction6InAddress,
+    assets: {
+      nativeToken: 300000n,
+      tokens: [],
+    },
+  },
+  {
+    address: testLockAddress,
+    assets: {
+      nativeToken: 300000n,
+      tokens: [],
+    },
   },
 ];

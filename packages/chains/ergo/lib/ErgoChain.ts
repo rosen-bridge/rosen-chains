@@ -84,10 +84,17 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     this.logger.debug(
       `Generating Ergo transaction for Order: ${JsonBigInt.stringify(order)}`
     );
+    if (order.at(-1)?.address === this.configs.addresses.lock)
+      throw new Error(
+        `Last item on Order cannot be to lock address in ErgoChain`
+      );
     // calculate required assets
     const orderRequiredAssets = order
       .map((order) => order.assets)
-      .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
+      .reduce(ChainUtils.sumAssetBalance, {
+        nativeToken: 2n * this.configs.minBoxValue,
+        tokens: [],
+      });
     this.logger.debug(
       `Order required assets: ${JsonBigInt.stringify(orderRequiredAssets)}`
     );
@@ -244,28 +251,63 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       `Remaining assets: ${JsonBigInt.stringify(remainingAssets)}`
     );
 
-    // create change box
-    const boxBuilder = new wasm.ErgoBoxCandidateBuilder(
+    // split remaining assets to each change box (also reduce fee from it)
+    remainingAssets.nativeToken -= this.configs.fee;
+    const changeBox1Assets = structuredClone(remainingAssets);
+    changeBox1Assets.nativeToken /= 2n;
+    changeBox1Assets.tokens = changeBox1Assets.tokens
+      .map((token) => {
+        token.value /= 2n;
+        return token;
+      })
+      .filter((token) => token.value !== 0n);
+    this.logger.debug(
+      `Change box 1 assets: ${JsonBigInt.stringify(changeBox1Assets)}`
+    );
+    const changeBox2Assets = ChainUtils.subtractAssetBalance(
+      remainingAssets,
+      changeBox1Assets,
+      this.configs.minBoxValue
+    );
+    this.logger.debug(
+      `Change box 2 assets: ${JsonBigInt.stringify(changeBox2Assets)}`
+    );
+
+    // create change box 1
+    const changeBox1Builder = new wasm.ErgoBoxCandidateBuilder(
       wasm.BoxValue.from_i64(
-        wasm.I64.from_str(
-          (remainingAssets.nativeToken - this.configs.fee).toString()
-        )
+        wasm.I64.from_str(changeBox1Assets.nativeToken.toString())
       ),
       wasm.Contract.new(
         wasm.Address.from_base58(this.configs.addresses.lock).to_ergo_tree()
       ),
       currentHeight
     );
-    // add change box tokens
-    remainingAssets.tokens.forEach((token) =>
-      boxBuilder.add_token(
+    changeBox1Assets.tokens.forEach((token) =>
+      changeBox1Builder.add_token(
         wasm.TokenId.from_str(token.id),
         wasm.TokenAmount.from_i64(wasm.I64.from_str(token.value.toString()))
       )
     );
-    // build and add change box
-    const changeBox = boxBuilder.build();
-    outBoxCandidates.add(changeBox);
+    outBoxCandidates.add(changeBox1Builder.build());
+
+    // create change box 2
+    const changeBox2Builder = new wasm.ErgoBoxCandidateBuilder(
+      wasm.BoxValue.from_i64(
+        wasm.I64.from_str(changeBox2Assets.nativeToken.toString())
+      ),
+      wasm.Contract.new(
+        wasm.Address.from_base58(this.configs.addresses.lock).to_ergo_tree()
+      ),
+      currentHeight
+    );
+    changeBox2Assets.tokens.forEach((token) =>
+      changeBox2Builder.add_token(
+        wasm.TokenId.from_str(token.id),
+        wasm.TokenAmount.from_i64(wasm.I64.from_str(token.value.toString()))
+      )
+    );
+    outBoxCandidates.add(changeBox2Builder.build());
 
     // create the box selector in tx builder
     const inBoxSelection = new wasm.BoxSelection(
