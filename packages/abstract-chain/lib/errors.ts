@@ -46,6 +46,18 @@ class ValueError extends Error {
   }
 }
 
+class MaxParallelTxError extends Error {
+  constructor(msg: string) {
+    super('MaxParallelTxError: ' + msg);
+  }
+}
+
+class OrderError extends Error {
+  constructor(msg: string) {
+    super('OrderError: ' + msg);
+  }
+}
+
 export {
   FailedError,
   ImpossibleBehavior,
@@ -55,4 +67,6 @@ export {
   NotFoundError,
   UnexpectedApiError,
   ValueError,
+  OrderError,
+  MaxParallelTxError,
 };

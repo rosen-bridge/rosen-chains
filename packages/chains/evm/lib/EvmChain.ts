@@ -1,16 +1,27 @@
+import JSONBigInt from '@rosen-bridge/json-bigint';
 import {
   AbstractChain,
   EventTrigger,
+  MaxParallelTxError,
+  OrderError,
+  ChainUtils,
+  NotEnoughAssetsError,
   PaymentOrder,
   PaymentTransaction,
   SigningStatus,
   TransactionAssetBalance,
   TransactionType,
+  AssetBalance,
+  SinglePayment,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
+import { EvmConfigs } from './types';
+import { Transaction, Contract } from 'ethers';
+
 class EvmChain extends AbstractChain {
   declare network: AbstractEvmNetwork;
+  declare configs: EvmConfigs;
   constructor(network: AbstractEvmNetwork, configs: any, logger?: any) {
     super(network, configs, logger);
   }
@@ -29,10 +40,96 @@ class EvmChain extends AbstractChain {
     txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
-    serializedSignedTransactions: string[],
-    ...extra: Array<any>
+    serializedSignedTransactions: string[]
   ): Promise<PaymentTransaction> => {
-    throw new Error('Not implemented yet.');
+    // Check the number of parallel transaction won't be exceeded
+    const waiting =
+      unsignedTransactions.length + serializedSignedTransactions.length;
+    if (waiting >= this.configs.maxParallelTx) {
+      throw new MaxParallelTxError(`
+      There are ${waiting}transactions already in the process!`);
+    }
+
+    // Chech the number of orders
+    if (order.length != 1) {
+      throw new OrderError(`
+      Only one order is allowed, but ${order.length} are found!`);
+    }
+    if (
+      order[0].assets.nativeToken != BigInt(0) &&
+      order[0].assets.tokens.length > 0
+    ) {
+      throw new OrderError(`
+      Both Native token and non-native assets are being transfered!`);
+    }
+
+    // Check the balance in the lock address
+    const gasPrice = await this.network.getMaxFeePerGas();
+    const gasRequired = this.getGasRequired(order[0]);
+    const requiredAssets = ChainUtils.sumAssetBalance(order[0].assets, {
+      nativeToken: gasRequired * gasPrice,
+      tokens: [],
+    });
+    if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
+      const neededADA = requiredAssets.nativeToken.toString();
+      const neededTokens = JSONBigInt.stringify(requiredAssets.tokens);
+      throw new NotEnoughAssetsError(
+        `Locked assets cannot cover required assets. ETH: ${neededADA}, Tokens: ${neededTokens}`
+      );
+    }
+
+    // let trx
+    // const nonce = await this.network.getAddressNextNonce(this.configs.addresses.lock)
+    // let maxPriorityFeePerGas = await this.network.getMaxPriorityFeePerGas()
+    // const contract = new Contract(contractAddress, contractAbi, provider);
+
+    // Recipient address and amount to transfer
+    // const toAddress = '';
+    // const amount = 1; // replace with the amount you want to transfer
+
+    // const data = contract.interface.encodeFunctionData('transfer', [toAddress, amount]);
+    // if (order[0].assets.nativeToken != BigInt(0)) {
+    //   trx = Transaction.from({
+    //     to: order[0].address,
+    //     nonce: nonce,
+    //     gasLimit: gasRequired,
+    //     maxPriorityFeePerGas: maxPriorityFeePerGas,
+    //     maxFeePerGas: gasPrice,
+    //     data: null,
+    //     value: order[0].assets.nativeToken,
+    //     chainId: this.configs.chainId,
+    //   })
+    // } else {
+    //   trx = Transaction.from({
+    //     to: order[0].address,
+    //     nonce: nonce,
+    //     gasLimit: gasRequired,
+    //     maxPriorityFeePerGas: maxPriorityFeePerGas,
+    //     maxFeePerGas: gasPrice,
+    //     data: null,
+    //     value: order[0].assets.nativeToken,
+    //     chainId: this.configs.chainId,
+    //   })
+    // }
+    throw Error('Not implemented yet!');
+  };
+
+  /**
+   * gets gas required to do the transfer.
+   * Note that we assume checks have been done before calling this function;
+   * either nativeToken should be non zero, or there is only one asset in the tokens list.
+   * @param payment the SinglePayment to be made
+   * @returns gas required in bigint
+   */
+  getGasRequired = (payment: SinglePayment): bigint => {
+    if (payment.assets.nativeToken != BigInt(0)) {
+      return this.network.getGasRequiredNativeTransfer(payment.address);
+    }
+    return this.network.getGasRequiredERC20Transfer(
+      payment.assets.tokens[0].id,
+      payment.address,
+      payment.assets.tokens[0].value
+    );
   };
 
   /**

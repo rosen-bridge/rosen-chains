@@ -1,6 +1,6 @@
 import { AbstractChainNetwork } from '@rosen-chains/abstract-chain';
 import { AssetBalance } from '../../../../abstract-chain';
-import { TransactionResponse } from 'ethers';
+import { TransactionResponse, Transaction } from 'ethers';
 import { BlockHeader } from '../types';
 
 abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionResponse> {
@@ -42,20 +42,36 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
   /**
    * gets the gas required to call `transfer` function in the given contract
    * @param contract the contract address
+   * @param to the recipient address
+   * @param amount the amount to be transfered
    * @returns required gas as a bigint
    */
   abstract getGasRequiredERC20Transfer: (
     contract: string,
-    ...extra: Array<any>
-  ) => Promise<bigint>;
+    to: string,
+    amount: bigint
+  ) => bigint;
 
   /**
    * gets the gas required to transfer native token
+   * @param to the recipient address
    * @returns required gas as a bigint
    */
-  abstract getGasRequiredNativeransfer: (
-    ...extra: Array<any>
-  ) => Promise<bigint>;
+  abstract getGasRequiredNativeTransfer: (to: string) => bigint;
+
+  /**
+   * gets the maximum wei we would pay to the miner pay gas according
+   * to the network's current condition
+   * @returns gas price as a bigint
+   */
+  abstract getMaxPriorityFeePerGas: (...extra: Array<any>) => Promise<bigint>;
+
+  /**
+   * gets the maximum wei we would pay (miner + base fee) according
+   * to the network's current condition
+   * @returns gas price as a bigint
+   */
+  abstract getMaxFeePerGas: (...extra: Array<any>) => Promise<bigint>;
 }
 
 export default AbstractEvmNetwork;

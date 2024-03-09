@@ -1,3 +1,5 @@
+import { ChainConfigs } from '@rosen-chains/abstract-chain';
+
 interface BlockHeader {
   hash: string;
   number: number;
@@ -6,21 +8,9 @@ interface BlockHeader {
   baseFeePerGas: null | bigint;
 }
 
-interface EIP1559Fee {
-  gasLimit: bigint;
-  baseFeePerGas: bigint;
-  maxPriorityFeePerGas: bigint;
-  maxFeePerGas: bigint;
+interface EvmConfigs extends ChainConfigs {
+  maxParallelTx: number;
+  chainId: number;
 }
 
-interface EvmTx {
-  hash: string;
-  value: bigint;
-  from: string;
-  data: string;
-  to: string;
-  nonce: number;
-  fee: EIP1559Fee;
-}
-
-export { BlockHeader, EvmTx };
+export { BlockHeader, EvmConfigs };
