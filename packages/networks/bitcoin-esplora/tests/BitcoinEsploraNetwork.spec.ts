@@ -281,7 +281,7 @@ describe('BitcoinEsploraNetwork', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should be expected BTC balance with no tokens
+     * - it should be mocked utxos in BitcoinUtxo format
      */
     it('should return address utxos successfully', async () => {
       mockAxiosGet(testData.addressUtxoResponse);
@@ -304,7 +304,7 @@ describe('BitcoinEsploraNetwork', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should be zero native tokens with no tokens
+     * - it should be empty list
      */
     it('should return empty list when no utxo is returned', async () => {
       mockAxiosGet([]);
