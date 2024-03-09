@@ -625,9 +625,9 @@ describe('ErgoChain', () => {
     it('should extract transaction order successfully', () => {
       // mock PaymentTransaction
       const paymentTx = ErgoTransaction.fromJson(
-        transactionTestData.transaction3PaymentTransaction
+        transactionTestData.transaction6PaymentTransaction
       );
-      const expectedOrder = transactionTestData.transaction3Order;
+      const expectedOrder = transactionTestData.transaction6Order;
       const config: ErgoConfigs = {
         fee: 1100000n,
         confirmations: {
@@ -637,10 +637,10 @@ describe('ErgoChain', () => {
           manual: manualTxConfirmation,
         },
         addresses: {
-          lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+          lock: transactionTestData.transaction6InAddress,
           cold: 'cold_addr',
           permit: 'permit_addr',
-          fraud: 'fraud_addr',
+          fraud: 'fraud',
         },
         rwtId: rwtId,
         minBoxValue: 1000000n,
@@ -2371,7 +2371,7 @@ describe('ErgoChain', () => {
           manual: manualTxConfirmation,
         },
         addresses: {
-          lock: '9hcBZ7khJGepr2ZXz4ZktxAa1bTmnRSmjTNb9vhsi2EwGprGE6Q',
+          lock: transactionTestData.transaction6InAddress,
           cold: 'cold_addr',
           permit: 'permit_addr',
           fraud: 'fraud',
