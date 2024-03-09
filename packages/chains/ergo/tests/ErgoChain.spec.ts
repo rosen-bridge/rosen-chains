@@ -1,12 +1,11 @@
 import * as boxTestData from './boxTestData';
 import * as transactionTestData from './transactionTestData';
 import * as ergoTestUtils from './ergoTestUtils';
-import { ErgoChain, NUMBER_OF_BLOCKS_PER_YEAR } from '../lib';
+import { ErgoChain } from '../lib';
 import {
   AssetBalance,
   BlockInfo,
   BoxInfo,
-  ConfirmationStatus,
   NotEnoughAssetsError,
   NotEnoughValidBoxesError,
   TransactionType,
@@ -18,7 +17,6 @@ import * as wasm from 'ergo-lib-wasm-nodejs';
 import ErgoTransaction from '../lib/ErgoTransaction';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
 import { Fee } from '@rosen-bridge/minimum-fee';
-import JsonBigInt from '@rosen-bridge/json-bigint';
 
 const spyOn = jest.spyOn;
 

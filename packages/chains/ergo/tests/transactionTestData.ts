@@ -1316,7 +1316,7 @@ export const invalidOrder = [
     },
   },
   {
-    address: testLockAddress,
+    address: 'lock_addr',
     assets: {
       nativeToken: 300000n,
       tokens: [],
