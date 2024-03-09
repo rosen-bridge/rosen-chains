@@ -1435,59 +1435,6 @@ describe('ErgoChain', () => {
 
     /**
      * @target ErgoChain.verifyTransactionExtraConditions should return false
-     * when change box address is wrong
-     * @dependencies
-     * @scenario
-     * - mock PaymentTransaction
-     * - mock a config with different lockAddress
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when change box address is wrong', async () => {
-      // mock PaymentTransaction
-      const paymentTx = ErgoTransaction.fromJson(
-        transactionTestData.transaction4PaymentTransaction
-      );
-
-      // mock a config with different lockAddress
-      const config: ErgoConfigs = {
-        fee: 1200000n,
-        confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
-        },
-        addresses: {
-          lock: '9i1rTxaZpLprUkVHpY4YNyooksLuouiKqZ2v1J5nf8xFTXBCVcB',
-          cold: 'cold_addr',
-          permit: 'permit_addr',
-          fraud: 'fraud_addr',
-        },
-        rwtId: rwtId,
-        minBoxValue: 1000000n,
-        eventTxConfirmation: 18,
-      };
-
-      // run test
-      const ergoChain = new ErgoChain(
-        network,
-        config,
-        feeRatioDivisor,
-        signFunction
-      );
-      const result = await ergoChain.verifyTransactionExtraConditions(
-        paymentTx
-      );
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
-     * @target ErgoChain.verifyTransactionExtraConditions should return false
      * when change box has value in R4
      * @dependencies
      * @scenario

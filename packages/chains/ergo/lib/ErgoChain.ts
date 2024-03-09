@@ -593,8 +593,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
 
   /**
    * verifies additional conditions for a PaymentTransaction
-   *   1. change box address should equal to lock address
-   *   2. change box should not have register
+   *   1. change boxes should not have register
    * @param transaction the PaymentTransaction
    * @returns true if the transaction verified
    */
@@ -603,29 +602,30 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
   ): boolean => {
     const tx = Serializer.deserialize(transaction.txBytes).unsigned_tx();
     const outputBoxes = tx.output_candidates();
-
-    const box = outputBoxes.get(outputBoxes.len() - 2);
-    const boxErgoTree = box.ergo_tree().to_base16_bytes();
     const lockErgoTree = wasm.Address.from_base58(this.configs.addresses.lock)
       .to_ergo_tree()
       .to_base16_bytes();
-    if (boxErgoTree === lockErgoTree) {
-      const r4Value = box.register_value(4);
+
+    for (let i = outputBoxes.len() - 1; i >= 0; i--) {
+      const output = outputBoxes.get(i);
+      // skip fee box
+      if (output.ergo_tree().to_base16_bytes() === ErgoChain.feeBoxErgoTree)
+        continue;
+      // finish process if non-lock box is seen
+      if (output.ergo_tree().to_base16_bytes() !== lockErgoTree) break;
+
+      const r4Value = output.register_value(4);
       if (r4Value) {
         this.logger.debug(
           `Tx [${
             transaction.txId
-          }] is invalid. Change box has value [${r4Value.encode_to_base16()}] in R4`
+          }] is invalid. Change box at index [${i}] has value [${r4Value.encode_to_base16()}] in R4`
         );
         return false;
       }
-      return true;
-    } else {
-      this.logger.debug(
-        `Tx [${transaction.txId}] is invalid. Change box ergoTree [${boxErgoTree}] is not equal to lock address ergoTree [${lockErgoTree}]`
-      );
-      return false;
     }
+
+    return true;
   };
 
   /**
