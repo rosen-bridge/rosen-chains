@@ -30,8 +30,7 @@ class EvmChain extends AbstractChain {
     txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
-    serializedSignedTransactions: string[],
-    ...extra: Array<any>
+    serializedSignedTransactions: string[]
   ): Promise<PaymentTransaction> => {
     throw new Error('Not implemented yet.');
   };
@@ -135,6 +134,7 @@ class EvmChain extends AbstractChain {
 
   /**
    * converts json representation of the payment transaction to PaymentTransaction
+   * @param jsonString the payment transaction's json representation
    * @returns PaymentTransaction object
    */
   PaymentTransactionFromJson = (jsonString: string): PaymentTransaction => {

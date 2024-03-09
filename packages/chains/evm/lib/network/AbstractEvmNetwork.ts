@@ -41,20 +41,22 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
   /**
    * gets the gas required to call `transfer` function in the given contract
    * @param contract the contract address
+   * @param to the recipient address
+   * @param amount the amount to be transfered
    * @returns required gas as a bigint
    */
   abstract getGasRequiredERC20Transfer: (
     contract: string,
-    ...extra: Array<any>
-  ) => Promise<bigint>;
+    to: string,
+    amount: bigint
+  ) => bigint;
 
   /**
    * gets the gas required to transfer native token
+   * @param to the recipient address
    * @returns required gas as a bigint
    */
-  abstract getGasRequiredNativeransfer: (
-    ...extra: Array<any>
-  ) => Promise<bigint>;
+  abstract getGasRequiredNativeTransfer: (to: string) => bigint;
 }
 
 export default AbstractEvmNetwork;
