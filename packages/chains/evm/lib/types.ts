@@ -5,7 +5,7 @@ interface BlockHeader {
   number: number;
   gasLimit: bigint;
   gasUsed: bigint;
-  baseFeePerGas: null | bigint;
+  baseFeePerGas: bigint;
 }
 
 interface EvmConfigs extends ChainConfigs {
