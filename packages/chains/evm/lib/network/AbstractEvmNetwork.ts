@@ -1,10 +1,12 @@
 import { AbstractChainNetwork } from '@rosen-chains/abstract-chain';
 import { AssetBalance } from '../../../../abstract-chain';
-import { TransactionResponse, Transaction } from 'ethers';
+import { TransactionResponse } from 'ethers';
 import { BlockHeader } from '../types';
+import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
 
 abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionResponse> {
-  // TODO evm extractor is missing for now
+  abstract extractor: AbstractRosenDataExtractor<string>; // TODO: fix type!
+
   /**
    * gets the amount of the input ERC20 asset in an address
    * @param address the address
