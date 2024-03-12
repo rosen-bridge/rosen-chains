@@ -1,7 +1,9 @@
-import { AbstractChainNetwork } from '@rosen-chains/abstract-chain';
-import { AssetBalance } from '../../../../abstract-chain';
-import { TransactionResponse } from 'ethers';
+import {
+  AbstractChainNetwork,
+  AssetBalance,
+} from '@rosen-chains/abstract-chain';
 import { BlockHeader } from '../types';
+import { TransactionResponse } from 'ethers';
 import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
 
 abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionResponse> {
@@ -66,14 +68,14 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
    * to the network's current condition
    * @returns gas price as a bigint
    */
-  abstract getMaxPriorityFeePerGas: (...extra: Array<any>) => Promise<bigint>;
+  abstract getMaxPriorityFeePerGas: () => Promise<bigint>;
 
   /**
    * gets the maximum wei we would pay (miner + base fee) according
    * to the network's current condition
    * @returns gas price as a bigint
    */
-  abstract getMaxFeePerGas: (...extra: Array<any>) => Promise<bigint>;
+  abstract getMaxFeePerGas: () => Promise<bigint>;
 }
 
 export default AbstractEvmNetwork;

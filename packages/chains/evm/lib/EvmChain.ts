@@ -135,9 +135,6 @@ abstract class EvmChain extends AbstractChain {
         chainId: this.configs.chainId,
       });
     }
-    if (trx.hash == null) {
-      throw new ImpossibleBehavior("Transaction's hash is null!");
-    }
     const evmTx = new PaymentTransaction(
       this.configs.chainName,
       trx.unsignedHash,
