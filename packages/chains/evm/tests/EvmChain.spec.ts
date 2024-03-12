@@ -1,5 +1,5 @@
 import TestEvmNetwork from './network/TestEvmNetwork';
-import { EvmConfigs } from '../lib/types';
+import { EvmConfigs } from '../lib';
 import TestChain from './TestChain';
 import * as testData from './testData';
 
@@ -58,8 +58,8 @@ describe('EvmChain', () => {
      * - it should return mocked transaction order
      */
     it('should construct transaction successfully', async () => {
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.rawTxToPaymentTransaction(
+      const evmChain = generateChainObject(network);
+      const result = await evmChain.rawTxToPaymentTransaction(
         testData.transaction0JsonString
       );
 

@@ -12,25 +12,17 @@ import {
   TransactionAssetBalance,
   TransactionType,
   SinglePayment,
-  ImpossibleBehavior,
   PaymentTransactionJsonModel,
-  UnexpectedApiError,
-  NotFoundError,
-  FailedError,
-  NetworkError,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
 import { EvmConfigs } from './types';
 import { Transaction, Contract } from 'ethers';
 import Serializer from './Serializer';
-import { blake2b } from 'blakejs';
-import JsonBigInt from '@rosen-bridge/json-bigint';
 
 abstract class EvmChain extends AbstractChain {
   declare network: AbstractEvmNetwork;
   declare configs: EvmConfigs;
-  // TODO: fix 'CHAIN' vars
   abstract CHAIN: string;
   feeRatioDivisor: bigint;
   protected signFunction: (txHash: Uint8Array) => Promise<string>;
