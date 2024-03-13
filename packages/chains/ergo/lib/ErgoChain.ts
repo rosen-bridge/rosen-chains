@@ -92,7 +92,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     const orderRequiredAssets = order
       .map((order) => order.assets)
       .reduce(ChainUtils.sumAssetBalance, {
-        nativeToken: 2n * this.configs.minBoxValue,
+        nativeToken: 0n,
         tokens: [],
       });
     this.logger.debug(
@@ -117,7 +117,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         true
       ),
       {
-        nativeToken: this.getMinimumNativeToken() + this.configs.fee,
+        nativeToken: 2n * this.getMinimumNativeToken() + this.configs.fee,
         tokens: [],
       }
     );
