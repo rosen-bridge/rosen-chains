@@ -11,9 +11,8 @@ import {
   SigningStatus,
   TransactionAssetBalance,
   TransactionType,
-  AssetBalance,
   SinglePayment,
-  ImpossibleBehavior,
+  PaymentTransactionJsonModel,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
@@ -268,7 +267,23 @@ abstract class EvmChain extends AbstractChain {
   submitTransaction = async (
     transaction: PaymentTransaction
   ): Promise<void> => {
-    throw new Error('Not implemented yet.');
+    // deserialize transaction
+    const tx = Serializer.signedDeserialize(transaction.txBytes);
+
+    // send transaction
+    try {
+      const response = await this.network.submitTransaction(tx);
+      this.logger.info(
+        `${this.CHAIN} Transaction [${transaction.txId}] submitted. Response: ${response}`
+      );
+    } catch (e) {
+      this.logger.warn(
+        `An error occurred while submitting ${this.CHAIN} transaction [${transaction.txId}]: ${e}`
+      );
+      if (e instanceof Error && e.stack) {
+        this.logger.warn(e.stack);
+      }
+    }
   };
 
   /**
@@ -284,9 +299,7 @@ abstract class EvmChain extends AbstractChain {
    * gets the minimum amount of native token for transferring asset
    * @returns the minimum amount
    */
-  getMinimumNativeToken = (): bigint => {
-    throw new Error('Not implemented yet.');
-  };
+  getMinimumNativeToken = (): bigint => 0n;
 
   /**
    * converts json representation of the payment transaction to PaymentTransaction
@@ -294,7 +307,14 @@ abstract class EvmChain extends AbstractChain {
    * @returns PaymentTransaction object
    */
   PaymentTransactionFromJson = (jsonString: string): PaymentTransaction => {
-    throw new Error('Not implemented yet.');
+    const obj = JSON.parse(jsonString) as PaymentTransactionJsonModel;
+    return new PaymentTransaction(
+      this.CHAIN,
+      obj.txId,
+      obj.eventId,
+      Buffer.from(obj.txBytes, 'hex'),
+      obj.txType as TransactionType
+    );
   };
 
   /**
@@ -305,7 +325,19 @@ abstract class EvmChain extends AbstractChain {
   rawTxToPaymentTransaction = async (
     rawTxJsonString: string
   ): Promise<PaymentTransaction> => {
-    throw new Error('Not implemented yet.');
+    const trx = Transaction.from(JSON.parse(rawTxJsonString));
+    const evmTx = new PaymentTransaction(
+      this.CHAIN,
+      trx.unsignedHash,
+      '',
+      Serializer.serialize(trx),
+      TransactionType.manual
+    );
+
+    this.logger.info(
+      `Parsed ${this.CHAIN} transaction [${trx.unsignedHash}] successfully`
+    );
+    return evmTx;
   };
 
   /**

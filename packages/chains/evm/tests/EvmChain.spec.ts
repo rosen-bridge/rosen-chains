@@ -199,4 +199,28 @@ describe('EvmChain', () => {
       }).rejects.toThrow(MaxParallelTxError);
     });
   });
+
+  describe('rawTxToPaymentTransaction', () => {
+    /**
+     * @target EvmChain.rawTxToPaymentTransaction should construct transaction successfully
+     * @dependencies
+     * @scenario
+     * - mock a network object
+     *   - mock 'getHeight'
+     *   - mock 'getStateContext'
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction order
+     */
+    it('should construct transaction successfully', async () => {
+      const result = await evmChain.rawTxToPaymentTransaction(
+        TestData.transaction0JsonString
+      );
+
+      expect(result.toJson()).toEqual(
+        TestData.transaction0PaymentTransaction.toJson()
+      );
+    });
+  });
 });

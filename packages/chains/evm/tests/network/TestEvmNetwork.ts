@@ -8,16 +8,14 @@ import {
 import { BlockHeader } from '../../lib';
 
 class TestEvmNetwork extends AbstractEvmNetwork {
-  extractor = undefined as any;
+  extractor = undefined as any; // TODO: fix this!
 
   notImplemented = () => {
     throw Error('Not implemented');
   };
-
-  getAddressAssets = this.notImplemented;
   submitTransaction = this.notImplemented;
 
-  getBlockTransactionIds = (blockId: string): Promise<Array<string>> => {
+  getAddressAssets = (): Promise<AssetBalance> => {
     throw Error('Not mocked');
   };
 
@@ -25,11 +23,19 @@ class TestEvmNetwork extends AbstractEvmNetwork {
     throw Error('Not mocked');
   };
 
-  getMempoolTransactions = (): Promise<Array<Transaction>> => {
+  getTransaction = (txId: string, blockId: string): Promise<Transaction> => {
     throw Error('Not mocked');
   };
 
-  getTransaction = (txId: string, blockId: string): Promise<Transaction> => {
+  getBlockTransactionIds = (blockId: string): Promise<Array<string>> => {
+    throw Error('Not mocked');
+  };
+
+  getBlockInfo = (blockId: string): Promise<BlockInfo> => {
+    throw Error('Not mocked');
+  };
+
+  isBoxUnspentAndValid = (boxId: string): Promise<boolean> => {
     throw Error('Not mocked');
   };
 
@@ -37,7 +43,7 @@ class TestEvmNetwork extends AbstractEvmNetwork {
     throw Error('Not mocked');
   };
 
-  getBlockInfo = (blockId: string): Promise<BlockInfo> => {
+  getMempoolTransactions = (): Promise<Array<Transaction>> => {
     throw Error('Not mocked');
   };
 

@@ -4,9 +4,12 @@ import {
 } from '@rosen-chains/abstract-chain';
 import { BlockHeader } from '../types';
 import { Transaction } from 'ethers';
+import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
 
 abstract class AbstractEvmNetwork extends AbstractChainNetwork<Transaction> {
   // TODO evm extractor is missing for now
+  abstract extractor: AbstractRosenDataExtractor<string>; // TODO: fix type!
+
   /**
    * gets the amount of the input ERC20 asset in an address
    * @param address the address

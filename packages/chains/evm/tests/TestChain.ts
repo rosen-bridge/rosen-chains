@@ -1,4 +1,4 @@
-import EvmChain from '../lib/EvmChain';
+import { EvmChain } from '../lib';
 
 class TestChain extends EvmChain {
   CHAIN = 'test';
