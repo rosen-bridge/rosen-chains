@@ -3,9 +3,9 @@ import {
   AssetBalance,
 } from '@rosen-chains/abstract-chain';
 import { BlockHeader } from '../types';
-import { TransactionResponse } from 'ethers';
+import { Transaction } from 'ethers';
 
-abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionResponse> {
+abstract class AbstractEvmNetwork extends AbstractChainNetwork<Transaction> {
   // TODO evm extractor is missing for now
   /**
    * gets the amount of the input ERC20 asset in an address
@@ -74,6 +74,18 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
    * @returns gas price as a bigint
    */
   abstract getMaxFeePerGas: () => Promise<bigint>;
+
+  /**
+   * gets the transaction with the specefic nonce for that address
+   * if there is not such a mined transaction, it returns null
+   * @param address the input address in string
+   * @param nonce the input nonce in bigint
+   * @returns a transaction of type Transaction or null
+   */
+  abstract getTransactionViaAddressNonce: (
+    address: string,
+    nonce: bigint
+  ) => Promise<Transaction | null>;
 }
 
 export default AbstractEvmNetwork;

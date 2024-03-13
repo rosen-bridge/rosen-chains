@@ -18,14 +18,28 @@ import {
 import { Fee } from '@rosen-bridge/minimum-fee';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
 import { EvmConfigs } from './types';
-import { Transaction, Contract } from 'ethers';
+import { Transaction, TransactionLike } from 'ethers';
 import Serializer from './Serializer';
+import EvmUtils from './EvmUtils';
 
-class EvmChain extends AbstractChain {
+abstract class EvmChain extends AbstractChain {
   declare network: AbstractEvmNetwork;
   declare configs: EvmConfigs;
-  constructor(network: AbstractEvmNetwork, configs: any, logger?: any) {
+  // TODO: fix 'CHAIN' vars
+  abstract CHAIN: string;
+  feeRatioDivisor: bigint;
+  protected signFunction: (txHash: Uint8Array) => Promise<string>;
+
+  constructor(
+    network: AbstractEvmNetwork,
+    configs: any,
+    feeRatioDivisor: bigint,
+    signFunction: (txHash: Uint8Array) => Promise<string>,
+    logger?: any
+  ) {
     super(network, configs, logger);
+    this.feeRatioDivisor = feeRatioDivisor;
+    this.signFunction = signFunction;
   }
 
   /**
@@ -44,6 +58,8 @@ class EvmChain extends AbstractChain {
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[]
   ): Promise<PaymentTransaction> => {
+    // TODO later change this to return a transaction per SinglePayment
+    order = [EvmUtils.splitPaymentOrders(order)[0]];
     // Check the number of parallel transaction won't be exceeded
     const waiting =
       unsignedTransactions.length + serializedSignedTransactions.length;
@@ -68,15 +84,16 @@ class EvmChain extends AbstractChain {
     // Check the balance in the lock address
     const gasPrice = await this.network.getMaxFeePerGas();
     const gasRequired = this.getGasRequired(order[0]);
+    const amount = gasRequired * gasPrice;
     const requiredAssets = ChainUtils.sumAssetBalance(order[0].assets, {
-      nativeToken: gasRequired * gasPrice,
+      nativeToken: amount,
       tokens: [],
     });
     if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
-      const neededADA = requiredAssets.nativeToken.toString();
+      const neededETH = requiredAssets.nativeToken.toString();
       const neededTokens = JSONBigInt.stringify(requiredAssets.tokens);
       throw new NotEnoughAssetsError(
-        `Locked assets cannot cover required assets. ETH: ${neededADA}, Tokens: ${neededTokens}`
+        `Locked assets cannot cover required assets. ETH: ${neededETH}, Tokens: ${neededTokens}`
       );
     }
 
@@ -94,13 +111,13 @@ class EvmChain extends AbstractChain {
         gasLimit: gasRequired,
         maxPriorityFeePerGas: maxPriorityFeePerGas,
         maxFeePerGas: gasPrice,
-        data: null,
+        data: '0x' + eventId,
         value: order[0].assets.nativeToken,
         chainId: this.configs.chainId,
       });
     } else {
       const token = order[0].assets.tokens[0];
-      const data = this.generateTransferCallData(
+      const data = EvmUtils.generateTransferCallData(
         token.id,
         order[0].address,
         token.value
@@ -111,13 +128,13 @@ class EvmChain extends AbstractChain {
         gasLimit: gasRequired,
         maxPriorityFeePerGas: maxPriorityFeePerGas,
         maxFeePerGas: gasPrice,
-        data: data,
-        value: token.value,
+        data: data + eventId,
+        value: BigInt(0),
         chainId: this.configs.chainId,
-      });
+      } as TransactionLike);
     }
     const evmTx = new PaymentTransaction(
-      this.configs.chainName,
+      this.CHAIN,
       trx.unsignedHash,
       eventId,
       Serializer.serialize(trx),
@@ -128,26 +145,6 @@ class EvmChain extends AbstractChain {
       `Cardano transaction [${trx.hash}] as type [${txType}] generated for event [${eventId}]`
     );
     return evmTx;
-  };
-
-  /**
-   * generates calldata to execute `transfer` function in the given contract
-   * @param contractAddress the address of the contract
-   * @param to the recipient's address
-   * @param amount the amount to be transfered
-   * @returns calldata in hex string with the initial '0x'
-   */
-  generateTransferCallData = (
-    contractAddress: string,
-    to: string,
-    amount: bigint
-  ): string => {
-    const contract = new Contract(
-      contractAddress,
-      this.configs.abis[contractAddress],
-      null
-    );
-    return contract.interface.encodeFunctionData('transfer', [to, amount]);
   };
 
   /**
@@ -185,7 +182,33 @@ class EvmChain extends AbstractChain {
    * @returns the transaction payment order (list of single payments)
    */
   extractTransactionOrder = (transaction: PaymentTransaction): PaymentOrder => {
-    throw new Error('Not implemented yet.');
+    const tx = Serializer.deserialize(transaction.txBytes);
+    if (tx.value != BigInt(0)) {
+      return [
+        {
+          address: tx.to!.toLowerCase(),
+          assets: {
+            nativeToken: tx.value,
+            tokens: [],
+          },
+        },
+      ];
+    } else {
+      return [
+        {
+          address: '0x' + tx.data.substring(34, 74),
+          assets: {
+            nativeToken: BigInt(0),
+            tokens: [
+              {
+                id: tx.to!.toLowerCase(),
+                value: BigInt('0x' + tx.data.substring(74, 138)),
+              },
+            ],
+          },
+        },
+      ];
+    }
   };
 
   /**
