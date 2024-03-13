@@ -32,7 +32,8 @@ abstract class AbstractChain {
   }
 
   /**
-   * generates unsigned PaymentTransaction for payment order
+   * generates a single unsigned PaymentTransaction for payment order
+   *  throws error if its not possible with single transaction
    * @param eventId the id of event
    * @param txType transaction type
    * @param order the payment order (list of single payments)
@@ -40,14 +41,46 @@ abstract class AbstractChain {
    * @param serializedSignedTransactions the serialized string of ongoing signed transactions (used for chaining transaction)
    * @returns the generated PaymentTransaction
    */
-  abstract generateTransaction: (
+  generateTransaction = async (
     eventId: string,
     txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[],
     ...extra: Array<any>
-  ) => Promise<PaymentTransaction>;
+  ): Promise<PaymentTransaction> => {
+    const txs = await this.generateMultipleTransactions(
+      eventId,
+      txType,
+      order,
+      unsignedTransactions,
+      serializedSignedTransactions,
+      ...extra
+    );
+    if (txs.length !== 1)
+      throw Error(
+        `Cannot generate single tx for given order. [${txs.length}] txs are generated`
+      );
+    return txs[0];
+  };
+
+  /**
+   * generates single or multiple unsigned PaymentTransactions for a payment order
+   * @param eventId the id of event
+   * @param txType transaction type
+   * @param order the payment order (list of single payments)
+   * @param unsignedTransactions ongoing unsigned PaymentTransactions (used for preventing double spend)
+   * @param serializedSignedTransactions the serialized string of ongoing signed transactions (used for chaining transaction)
+   * @returns the generated PaymentTransaction
+   */
+  abstract generateMultipleTransactions: (
+    eventId: string,
+    txType: TransactionType,
+    order: PaymentOrder,
+    unsignedTransactions: PaymentTransaction[],
+    serializedSignedTransactions: string[],
+    ...extra: Array<any>
+  ) => Promise<PaymentTransaction[]>;
 
   /**
    * gets input and output assets of a PaymentTransaction

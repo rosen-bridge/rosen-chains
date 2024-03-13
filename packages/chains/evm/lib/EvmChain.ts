@@ -36,6 +36,25 @@ class EvmChain extends AbstractChain {
   };
 
   /**
+   * generates single or multiple unsigned PaymentTransactions for a payment order
+   * @param eventId the id of event
+   * @param txType transaction type
+   * @param order the payment order (list of single payments)
+   * @param unsignedTransactions ongoing unsigned PaymentTransactions (used for preventing double spend)
+   * @param serializedSignedTransactions the serialized string of ongoing signed transactions (used for chaining transaction)
+   * @returns the generated PaymentTransaction
+   */
+  generateMultipleTransactions = async (
+    eventId: string,
+    txType: TransactionType,
+    order: PaymentOrder,
+    unsignedTransactions: PaymentTransaction[],
+    serializedSignedTransactions: string[]
+  ): Promise<PaymentTransaction[]> => {
+    throw new Error('Not implemented yet.');
+  };
+
+  /**
    * gets input and output assets of a PaymentTransaction
    * @param transaction the PaymentTransaction
    * @returns an object containing the amount of input and output assets

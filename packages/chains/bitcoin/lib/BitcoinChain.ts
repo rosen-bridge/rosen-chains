@@ -67,13 +67,13 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * @param serializedSignedTransactions the serialized string of ongoing signed transactions (used for chaining transaction)
    * @returns the generated PaymentTransaction
    */
-  generateTransaction = async (
+  generateMultipleTransactions = async (
     eventId: string,
     txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[]
-  ): Promise<BitcoinTransaction> => {
+  ): Promise<BitcoinTransaction[]> => {
     this.logger.debug(
       `Generating Bitcoin transaction for Order: ${JsonBigInt.stringify(order)}`
     );
@@ -193,7 +193,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     this.logger.info(
       `Bitcoin transaction [${txId}] as type [${txType}] generated for event [${eventId}]`
     );
-    return bitcoinTx;
+    return [bitcoinTx];
   };
 
   /**

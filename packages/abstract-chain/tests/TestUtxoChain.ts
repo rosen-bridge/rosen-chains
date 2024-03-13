@@ -5,7 +5,7 @@ class TestUtxoChain extends AbstractUtxoChain<string> {
     throw Error('Not implemented');
   };
 
-  generateTransaction = this.notImplemented;
+  generateMultipleTransactions = this.notImplemented;
   getTransactionAssets = this.notImplemented;
   extractTransactionOrder = this.notImplemented;
   verifyTransactionFee = this.notImplemented;

@@ -100,13 +100,13 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
    * @param serializedSignedTransactions the serialized string of ongoing signed transactions in Cardano Wasm format (used for chaining transactions)
    * @returns the generated payment transaction
    */
-  generateTransaction = async (
+  generateMultipleTransactions = async (
     eventId: string,
     txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[]
-  ): Promise<PaymentTransaction> => {
+  ): Promise<PaymentTransaction[]> => {
     this.logger.debug(
       `Generating Cardano transaction for Order: ${JsonBigInt.stringify(order)}`
     );
@@ -259,7 +259,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     this.logger.info(
       `Cardano transaction [${txId}] as type [${txType}] generated for event [${eventId}]`
     );
-    return cardanoTx;
+    return [cardanoTx];
   };
 
   /**

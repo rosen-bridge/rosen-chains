@@ -33,6 +33,55 @@ describe('AbstractChain', () => {
     return new TestChain(network, config);
   };
 
+  describe('generateTransaction', () => {
+    const requiredAssets = {
+      nativeToken: 100n,
+      tokens: [],
+    };
+    const network = new TestChainNetwork();
+
+    /**
+     * @target AbstractChain.generateTransaction should return generated txs
+     * @dependencies
+     * @scenario
+     * - mock chain 'generateMultipleTransactions' function to return 1 tx
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the only mocked tx
+     */
+    it('should return generated txs', async () => {
+      const mockedTxs = [
+        new PaymentTransaction(
+          'test',
+          'tx-id',
+          'event-id',
+          Buffer.from(''),
+          TransactionType.manual
+        ),
+      ];
+
+      const chain = generateChainObject(network);
+      const getLockAddressAssetsSpy = spyOn(
+        chain,
+        'generateMultipleTransactions'
+      );
+      getLockAddressAssetsSpy.mockResolvedValueOnce(mockedTxs);
+
+      // run test
+      const result = await chain.generateTransaction(
+        'event-id',
+        TransactionType.manual,
+        [],
+        [],
+        []
+      );
+
+      // Check returned value
+      expect(result).toEqual(mockedTxs[0]);
+    });
+  });
+
   describe('verifyNoTokenBurned', () => {
     const paymentTx: PaymentTransaction = {
       network: 'ergo',

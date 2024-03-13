@@ -72,7 +72,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
    * @param dataInputs the data inputs for transaction
    * @returns the generated payment transaction
    */
-  generateTransaction = async (
+  generateMultipleTransactions = async (
     eventId: string,
     txType: TransactionType,
     order: PaymentOrder,
@@ -80,7 +80,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     serializedSignedTransactions: string[],
     inputs: Array<string>,
     dataInputs: Array<string>
-  ): Promise<PaymentTransaction> => {
+  ): Promise<PaymentTransaction[]> => {
     this.logger.debug(
       `Generating Ergo transaction for Order: ${JsonBigInt.stringify(order)}`
     );
@@ -350,7 +350,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     this.logger.info(
       `Ergo transaction [${txId}] as type [${txType}] generated for event [${eventId}]`
     );
-    return ergoTx;
+    return [ergoTx];
   };
 
   /**

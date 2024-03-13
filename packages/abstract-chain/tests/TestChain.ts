@@ -1,8 +1,10 @@
 import {
   AbstractChain,
   AssetBalance,
+  PaymentOrder,
   PaymentTransaction,
   TransactionAssetBalance,
+  TransactionType,
 } from '../lib';
 
 class TestChain extends AbstractChain {
@@ -10,7 +12,6 @@ class TestChain extends AbstractChain {
     throw Error('Not implemented');
   };
 
-  generateTransaction = this.notImplemented;
   extractTransactionOrder = this.notImplemented;
   verifyTransactionFee = this.notImplemented;
   verifyTransactionExtraConditions = this.notImplemented;
@@ -22,6 +23,17 @@ class TestChain extends AbstractChain {
   getMinimumNativeToken = this.notImplemented;
   PaymentTransactionFromJson = this.notImplemented;
   rawTxToPaymentTransaction = this.notImplemented;
+
+  generateMultipleTransactions = (
+    eventId: string,
+    txType: TransactionType,
+    order: PaymentOrder,
+    unsignedTransactions: PaymentTransaction[],
+    serializedSignedTransactions: string[],
+    ...extra: Array<any>
+  ): Promise<PaymentTransaction[]> => {
+    throw Error('Not mocked');
+  };
 
   getTransactionAssets = (
     transaction: PaymentTransaction
