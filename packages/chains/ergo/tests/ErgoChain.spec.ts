@@ -1,12 +1,11 @@
 import * as boxTestData from './boxTestData';
 import * as transactionTestData from './transactionTestData';
 import * as ergoTestUtils from './ergoTestUtils';
-import { ErgoChain, NUMBER_OF_BLOCKS_PER_YEAR } from '../lib';
+import { ErgoChain } from '../lib';
 import {
   AssetBalance,
   BlockInfo,
   BoxInfo,
-  ConfirmationStatus,
   NotEnoughAssetsError,
   NotEnoughValidBoxesError,
   TransactionType,
@@ -18,7 +17,6 @@ import * as wasm from 'ergo-lib-wasm-nodejs';
 import ErgoTransaction from '../lib/ErgoTransaction';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
 import { Fee } from '@rosen-bridge/minimum-fee';
-import JsonBigInt from '@rosen-bridge/json-bigint';
 
 const spyOn = jest.spyOn;
 
@@ -74,7 +72,31 @@ describe('ErgoChain', () => {
 
   describe('generateTransaction', () => {
     /**
-     * @target ErgoChain.getTransactionAssets should generate payment
+     * @target ErgoChain.generateTransaction should throw error when
+     * last item on order is to lock address
+     * @dependencies
+     * @scenario
+     * - run test and expect exception thrown
+     * @expected
+     * - it should throw Error
+     */
+    it('should throw error when last item on order is to lock address', async () => {
+      const ergoChain = generateChainObject(new TestErgoNetwork());
+      await expect(async () => {
+        await ergoChain.generateTransaction(
+          '',
+          TransactionType.manual,
+          transactionTestData.invalidOrder,
+          [],
+          [],
+          [],
+          []
+        );
+      }).rejects.toThrow(Error);
+    });
+
+    /**
+     * @target ErgoChain.generateTransaction should generate payment
      * transaction successfully
      * @dependencies
      * @scenario
@@ -96,6 +118,7 @@ describe('ErgoChain', () => {
      * - extracted order of generated transaction should be the same as input
      *   order
      * - transaction fee should be the same as config fee
+     * - two change boxes should be as expected
      */
     it('should generate payment transaction successfully', async () => {
       // mock transaction order, input and data input boxes
@@ -227,10 +250,50 @@ describe('ErgoChain', () => {
         }
       }
       expect(boxChecked).toEqual(true);
+      // two change boxes should be as expected
+      const outputsLength = tx.output_candidates().len();
+      const changeBox1 = tx.output_candidates().get(outputsLength - 3);
+      expect(changeBox1.value().as_i64().to_str()).toEqual(
+        transactionTestData.transaction3ChangeBox1Assets.nativeToken.toString()
+      );
+      const changeBox1Tokens = changeBox1.tokens();
+      expect(changeBox1Tokens.len()).toEqual(
+        transactionTestData.transaction3ChangeBox1Assets.tokens.length
+      );
+      for (let i = 0; i < changeBox1Tokens.len(); i++) {
+        const token = changeBox1Tokens.get(i);
+        expect(token.id().to_str()).toEqual(
+          transactionTestData.transaction3ChangeBox1Assets.tokens[i].id
+        );
+        expect(token.amount().as_i64().to_str()).toEqual(
+          transactionTestData.transaction3ChangeBox1Assets.tokens[
+            i
+          ].value.toString()
+        );
+      }
+      const changeBox2 = tx.output_candidates().get(outputsLength - 2);
+      expect(changeBox2.value().as_i64().to_str()).toEqual(
+        transactionTestData.transaction3ChangeBox2Assets.nativeToken.toString()
+      );
+      const changeBox2Tokens = changeBox2.tokens();
+      expect(changeBox2Tokens.len()).toEqual(
+        transactionTestData.transaction3ChangeBox2Assets.tokens.length
+      );
+      for (let i = 0; i < changeBox2Tokens.len(); i++) {
+        const token = changeBox2Tokens.get(i);
+        expect(token.id().to_str()).toEqual(
+          transactionTestData.transaction3ChangeBox2Assets.tokens[i].id
+        );
+        expect(token.amount().as_i64().to_str()).toEqual(
+          transactionTestData.transaction3ChangeBox2Assets.tokens[
+            i
+          ].value.toString()
+        );
+      }
     });
 
     /**
-     * @target ErgoChain.getTransactionAssets should throw appropriate
+     * @target ErgoChain.generateTransaction should throw appropriate
      * error when locked assets are not enough to generate transaction
      * @dependencies
      * @scenario
@@ -317,7 +380,7 @@ describe('ErgoChain', () => {
     });
 
     /**
-     * @target ErgoChain.getTransactionAssets should throw appropriate
+     * @target ErgoChain.generateTransaction should throw appropriate
      * error when available boxes cannot cover required assets to generate
      * transaction
      * @dependencies
@@ -433,7 +496,7 @@ describe('ErgoChain', () => {
     });
 
     /**
-     * @target ErgoChain.getTransactionAssets should filter boxes that
+     * @target ErgoChain.generateTransaction should filter boxes that
      * are used in unsigned transactions successfully
      * @dependencies
      * @scenario
@@ -625,9 +688,9 @@ describe('ErgoChain', () => {
     it('should extract transaction order successfully', () => {
       // mock PaymentTransaction
       const paymentTx = ErgoTransaction.fromJson(
-        transactionTestData.transaction3PaymentTransaction
+        transactionTestData.transaction6PaymentTransaction
       );
-      const expectedOrder = transactionTestData.transaction3Order;
+      const expectedOrder = transactionTestData.transaction6Order;
       const config: ErgoConfigs = {
         fee: 1100000n,
         confirmations: {
@@ -637,10 +700,10 @@ describe('ErgoChain', () => {
           manual: manualTxConfirmation,
         },
         addresses: {
-          lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+          lock: transactionTestData.transaction6InAddress,
           cold: 'cold_addr',
           permit: 'permit_addr',
-          fraud: 'fraud_addr',
+          fraud: 'fraud',
         },
         rwtId: rwtId,
         minBoxValue: 1000000n,
@@ -1366,59 +1429,6 @@ describe('ErgoChain', () => {
 
       // check returned value
       expect(result).toEqual(true);
-    });
-
-    /**
-     * @target ErgoChain.verifyTransactionExtraConditions should return false
-     * when change box address is wrong
-     * @dependencies
-     * @scenario
-     * - mock PaymentTransaction
-     * - mock a config with different lockAddress
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when change box address is wrong', async () => {
-      // mock PaymentTransaction
-      const paymentTx = ErgoTransaction.fromJson(
-        transactionTestData.transaction4PaymentTransaction
-      );
-
-      // mock a config with different lockAddress
-      const config: ErgoConfigs = {
-        fee: 1200000n,
-        confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
-        },
-        addresses: {
-          lock: '9i1rTxaZpLprUkVHpY4YNyooksLuouiKqZ2v1J5nf8xFTXBCVcB',
-          cold: 'cold_addr',
-          permit: 'permit_addr',
-          fraud: 'fraud_addr',
-        },
-        rwtId: rwtId,
-        minBoxValue: 1000000n,
-        eventTxConfirmation: 18,
-      };
-
-      // run test
-      const ergoChain = new ErgoChain(
-        network,
-        config,
-        feeRatioDivisor,
-        signFunction
-      );
-      const result = await ergoChain.verifyTransactionExtraConditions(
-        paymentTx
-      );
-
-      // check returned value
-      expect(result).toEqual(false);
     });
 
     /**
@@ -2371,7 +2381,7 @@ describe('ErgoChain', () => {
           manual: manualTxConfirmation,
         },
         addresses: {
-          lock: '9hcBZ7khJGepr2ZXz4ZktxAa1bTmnRSmjTNb9vhsi2EwGprGE6Q',
+          lock: transactionTestData.transaction6InAddress,
           cold: 'cold_addr',
           permit: 'permit_addr',
           fraud: 'fraud',

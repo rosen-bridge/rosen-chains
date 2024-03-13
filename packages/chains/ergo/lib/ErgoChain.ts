@@ -5,7 +5,6 @@ import {
   AssetBalance,
   BoxInfo,
   ChainUtils,
-  ConfirmationStatus,
   EventTrigger,
   FailedError,
   ImpossibleBehavior,
@@ -85,10 +84,17 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     this.logger.debug(
       `Generating Ergo transaction for Order: ${JsonBigInt.stringify(order)}`
     );
+    if (order.at(-1)?.address === this.configs.addresses.lock)
+      throw new Error(
+        `Last item on Order cannot be to lock address in ErgoChain`
+      );
     // calculate required assets
     const orderRequiredAssets = order
       .map((order) => order.assets)
-      .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
+      .reduce(ChainUtils.sumAssetBalance, {
+        nativeToken: 0n,
+        tokens: [],
+      });
     this.logger.debug(
       `Order required assets: ${JsonBigInt.stringify(orderRequiredAssets)}`
     );
@@ -111,7 +117,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         true
       ),
       {
-        nativeToken: this.getMinimumNativeToken() + this.configs.fee,
+        nativeToken: 2n * this.getMinimumNativeToken() + this.configs.fee,
         tokens: [],
       }
     );
@@ -245,28 +251,63 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
       `Remaining assets: ${JsonBigInt.stringify(remainingAssets)}`
     );
 
-    // create change box
-    const boxBuilder = new wasm.ErgoBoxCandidateBuilder(
+    // split remaining assets to each change box (also reduce fee from it)
+    remainingAssets.nativeToken -= this.configs.fee;
+    const changeBox1Assets = structuredClone(remainingAssets);
+    changeBox1Assets.nativeToken /= 2n;
+    changeBox1Assets.tokens = changeBox1Assets.tokens
+      .map((token) => {
+        token.value /= 2n;
+        return token;
+      })
+      .filter((token) => token.value !== 0n);
+    this.logger.debug(
+      `Change box 1 assets: ${JsonBigInt.stringify(changeBox1Assets)}`
+    );
+    const changeBox2Assets = ChainUtils.subtractAssetBalance(
+      remainingAssets,
+      changeBox1Assets,
+      this.configs.minBoxValue
+    );
+    this.logger.debug(
+      `Change box 2 assets: ${JsonBigInt.stringify(changeBox2Assets)}`
+    );
+
+    // create change box 1
+    const changeBox1Builder = new wasm.ErgoBoxCandidateBuilder(
       wasm.BoxValue.from_i64(
-        wasm.I64.from_str(
-          (remainingAssets.nativeToken - this.configs.fee).toString()
-        )
+        wasm.I64.from_str(changeBox1Assets.nativeToken.toString())
       ),
       wasm.Contract.new(
         wasm.Address.from_base58(this.configs.addresses.lock).to_ergo_tree()
       ),
       currentHeight
     );
-    // add change box tokens
-    remainingAssets.tokens.forEach((token) =>
-      boxBuilder.add_token(
+    changeBox1Assets.tokens.forEach((token) =>
+      changeBox1Builder.add_token(
         wasm.TokenId.from_str(token.id),
         wasm.TokenAmount.from_i64(wasm.I64.from_str(token.value.toString()))
       )
     );
-    // build and add change box
-    const changeBox = boxBuilder.build();
-    outBoxCandidates.add(changeBox);
+    outBoxCandidates.add(changeBox1Builder.build());
+
+    // create change box 2
+    const changeBox2Builder = new wasm.ErgoBoxCandidateBuilder(
+      wasm.BoxValue.from_i64(
+        wasm.I64.from_str(changeBox2Assets.nativeToken.toString())
+      ),
+      wasm.Contract.new(
+        wasm.Address.from_base58(this.configs.addresses.lock).to_ergo_tree()
+      ),
+      currentHeight
+    );
+    changeBox2Assets.tokens.forEach((token) =>
+      changeBox2Builder.add_token(
+        wasm.TokenId.from_str(token.id),
+        wasm.TokenAmount.from_i64(wasm.I64.from_str(token.value.toString()))
+      )
+    );
+    outBoxCandidates.add(changeBox2Builder.build());
 
     // create the box selector in tx builder
     const inBoxSelection = new wasm.BoxSelection(
@@ -373,25 +414,27 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
    */
   extractTransactionOrder = (transaction: PaymentTransaction): PaymentOrder => {
     const tx = Serializer.deserialize(transaction.txBytes).unsigned_tx();
+    const lockErgoTree = wasm.Address.from_base58(this.configs.addresses.lock)
+      .to_ergo_tree()
+      .to_base16_bytes();
 
     const order: PaymentOrder = [];
     const outputCandidates = tx.output_candidates();
     const outputCandidatesLength = outputCandidates.len();
-    for (let i = 0; i < outputCandidatesLength; i++) {
+
+    let addBox = false;
+    for (let i = outputCandidatesLength - 1; i >= 0; i--) {
       const output = outputCandidates.get(i);
+      // skip boxes until non-lock and non-fee box is seen
+      if (
+        output.ergo_tree().to_base16_bytes() !== ErgoChain.feeBoxErgoTree &&
+        output.ergo_tree().to_base16_bytes() !== lockErgoTree
+      )
+        addBox = true;
+      if (addBox === false) continue;
+
       const assets = ErgoUtils.getBoxAssets(output);
       const r4Value = output.register_value(4)?.to_byte_array();
-
-      // skip change box and fee box
-      if (
-        output.ergo_tree().to_base16_bytes() === ErgoChain.feeBoxErgoTree ||
-        (outputCandidatesLength - i === 2 &&
-          output.ergo_tree().to_base16_bytes() ===
-            wasm.Address.from_base58(this.configs.addresses.lock)
-              .to_ergo_tree()
-              .to_base16_bytes())
-      )
-        continue;
 
       const payment: SinglePayment = {
         address: wasm.Address.recreate_from_ergo_tree(
@@ -403,6 +446,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         payment.extra = Buffer.from(r4Value).toString('hex');
       order.push(payment);
     }
+
+    // reverse result to keep order
+    order.reverse();
 
     return order;
   };
@@ -547,8 +593,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
 
   /**
    * verifies additional conditions for a PaymentTransaction
-   *   1. change box address should equal to lock address
-   *   2. change box should not have register
+   *   1. change boxes should not have register
    * @param transaction the PaymentTransaction
    * @returns true if the transaction verified
    */
@@ -557,29 +602,30 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
   ): boolean => {
     const tx = Serializer.deserialize(transaction.txBytes).unsigned_tx();
     const outputBoxes = tx.output_candidates();
-
-    const box = outputBoxes.get(outputBoxes.len() - 2);
-    const boxErgoTree = box.ergo_tree().to_base16_bytes();
     const lockErgoTree = wasm.Address.from_base58(this.configs.addresses.lock)
       .to_ergo_tree()
       .to_base16_bytes();
-    if (boxErgoTree === lockErgoTree) {
-      const r4Value = box.register_value(4);
+
+    for (let i = outputBoxes.len() - 1; i >= 0; i--) {
+      const output = outputBoxes.get(i);
+      // skip fee box
+      if (output.ergo_tree().to_base16_bytes() === ErgoChain.feeBoxErgoTree)
+        continue;
+      // finish process if non-lock box is seen
+      if (output.ergo_tree().to_base16_bytes() !== lockErgoTree) break;
+
+      const r4Value = output.register_value(4);
       if (r4Value) {
         this.logger.debug(
           `Tx [${
             transaction.txId
-          }] is invalid. Change box has value [${r4Value.encode_to_base16()}] in R4`
+          }] is invalid. Change box at index [${i}] has value [${r4Value.encode_to_base16()}] in R4`
         );
         return false;
       }
-      return true;
-    } else {
-      this.logger.debug(
-        `Tx [${transaction.txId}] is invalid. Change box ergoTree [${boxErgoTree}] is not equal to lock address ergoTree [${lockErgoTree}]`
-      );
-      return false;
     }
+
+    return true;
   };
 
   /**
@@ -983,23 +1029,26 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
     const tx = Serializer.signedDeserialize(
       Buffer.from(serializedTransaction, 'hex')
     );
+    const lockErgoTree = wasm.Address.from_base58(this.configs.addresses.lock)
+      .to_ergo_tree()
+      .to_base16_bytes();
 
     const order: PaymentOrder = [];
     const outputs = tx.outputs();
     const outputsLength = outputs.len();
-    for (let i = 0; i < outputsLength; i++) {
+
+    let addBox = false;
+    for (let i = outputsLength - 1; i >= 0; i--) {
       const output = outputs.get(i);
       const boxErgoTree = output.ergo_tree().to_base16_bytes();
-      const lockErgoTree = wasm.Address.from_base58(this.configs.addresses.lock)
-        .to_ergo_tree()
-        .to_base16_bytes();
 
       // skip change box and fee box
       if (
-        boxErgoTree === ErgoChain.feeBoxErgoTree ||
-        (outputsLength - i === 2 && boxErgoTree === lockErgoTree)
+        boxErgoTree !== ErgoChain.feeBoxErgoTree &&
+        boxErgoTree !== lockErgoTree
       )
-        continue;
+        addBox = true;
+      if (addBox === false) continue;
 
       const assets = ErgoUtils.getBoxAssets(output);
       const r4Value = output.register_value(4)?.to_byte_array();
@@ -1014,6 +1063,9 @@ class ErgoChain extends AbstractUtxoChain<wasm.ErgoBox> {
         payment.extra = Buffer.from(r4Value).toString('hex');
       order.push(payment);
     }
+
+    // reverse result to keep order
+    order.reverse();
 
     return order;
   };
