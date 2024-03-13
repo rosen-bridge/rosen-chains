@@ -50,7 +50,6 @@ class EvmUtils {
     amount: bigint
   ): string => {
     const contract = new Contract(contractAddress, transferABI, null);
-    console.log(transferABI);
     return contract.interface.encodeFunctionData('transfer', [to, amount]);
   };
 }

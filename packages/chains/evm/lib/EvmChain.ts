@@ -13,6 +13,7 @@ import {
   TransactionType,
   SinglePayment,
   PaymentTransactionJsonModel,
+  AssetBalance,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
@@ -64,7 +65,7 @@ abstract class EvmChain extends AbstractChain {
       unsignedTransactions.length + serializedSignedTransactions.length;
     if (waiting >= this.configs.maxParallelTx) {
       throw new MaxParallelTxError(`
-      There are ${waiting}transactions already in the process!`);
+      There are ${waiting} transactions already in the process!`);
     }
 
     // Chech the number of orders
@@ -172,7 +173,35 @@ abstract class EvmChain extends AbstractChain {
   getTransactionAssets = async (
     transaction: PaymentTransaction
   ): Promise<TransactionAssetBalance> => {
-    throw new Error('Not implemented yet.');
+    const tx = Serializer.deserialize(transaction.txBytes);
+
+    const outputAssets: AssetBalance = {
+      nativeToken: 0n,
+      tokens: [],
+    };
+    const inputAssets: AssetBalance = {
+      nativeToken: 0n,
+      tokens: [],
+    };
+
+    const networkFee = tx.maxFeePerGas! * tx.gasLimit;
+    outputAssets.nativeToken = tx.value + networkFee;
+    inputAssets.nativeToken = tx.value + networkFee;
+
+    if (tx.data.substring(2, 10) == 'a9059cbb') {
+      outputAssets.tokens.push({
+        id: tx.to!.toLowerCase(),
+        value: BigInt('0x' + tx.data.slice(74, 72 + 66)),
+      });
+      inputAssets.tokens.push({
+        id: tx.to!.toLowerCase(),
+        value: BigInt('0x' + tx.data.slice(74, 72 + 66)),
+      });
+    }
+    return {
+      inputAssets,
+      outputAssets,
+    };
   };
 
   /**

@@ -2,7 +2,7 @@ import {
   PaymentTransaction,
   TransactionType,
 } from '@rosen-chains/abstract-chain';
-import { PaymentOrder } from '@rosen-chains/abstract-chain';
+import { PaymentOrder, AssetBalance } from '@rosen-chains/abstract-chain';
 
 export const lockAddress = '0xedee4752e5a2f595151c94762fb38e5730357785';
 
@@ -58,3 +58,28 @@ export const transaction0JsonString = `{
   "accessList": []
 }
 `;
+
+export const transaction1JsonString = {
+  type: 2,
+  to: '0xeDee4752e5a2F595151c94762fB38e5730357785',
+  data: '0xa9059cbb0000000000000000000000004f0d2dde80b45e24ad4019a5aabd6c23aff2842b00000000000000000000000000000000000000000000000000000000e319aa30bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+  nonce: 10,
+  gasLimit: '21000',
+  gasPrice: null,
+  maxPriorityFeePerGas: '500000000',
+  maxFeePerGas: '48978500000',
+  value: '0',
+  chainId: '1',
+  sig: null,
+  accessList: [],
+};
+
+export const transaction1Assets: AssetBalance = {
+  nativeToken: BigInt(21000 * 48978500000),
+  tokens: [
+    {
+      id: '0xedee4752e5a2f595151c94762fb38e5730357785',
+      value: BigInt(3810110000),
+    },
+  ],
+};

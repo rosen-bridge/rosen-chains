@@ -11,6 +11,7 @@ import * as testUtils from './TestUtils';
 import TestChain from './TestChain';
 import Serializer from '../lib/Serializer';
 import { MockGenerator } from './TestUtils';
+import { Transaction } from 'ethers';
 
 describe('EvmChain', () => {
   const network = new TestEvmNetwork();
@@ -43,7 +44,7 @@ describe('EvmChain', () => {
      * - eventId should be properly encoded at the end of the transaction data
      * - no extra data should be found in the transaction data
      */
-    it('should generate payment transaction successfully', async () => {
+    it('should generate payment transaction successfully for ERC-20 token transfer', async () => {
       const order = TestData.erc20PaymentOrder;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
@@ -103,7 +104,7 @@ describe('EvmChain', () => {
      * - eventId should be properly in the transaction data
      * - no extra data should be found in the transaction data
      */
-    it('should generate payment transaction successfully', async () => {
+    it('should generate payment transaction successfully for the native-token transfer', async () => {
       const order = TestData.nativePaymentOrder;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
@@ -177,7 +178,7 @@ describe('EvmChain', () => {
      * @expected
      * - generateTransaction should throw MaxParallelTxError
      */
-    it('should throw error when lock address does not have enough assets', async () => {
+    it('should throw error when there is no slot for generating new transactions', async () => {
       const order = TestData.nativePaymentOrder;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
@@ -221,6 +222,78 @@ describe('EvmChain', () => {
       expect(result.toJson()).toEqual(
         TestData.transaction0PaymentTransaction.toJson()
       );
+    });
+  });
+
+  describe('getTransactionAssets', () => {
+    /**
+     * @target EvmChain.getTransactionAssets should get transaction assets
+     * successfully when there is ERC-20 token transfer.
+     * Inputs and outputs must be equal and network fee should be considered.
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction assets (both input and output assets)
+     */
+    it('should get transaction assets successfully when there is ERC-20 token transfer.', async () => {
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = 'payment' as TransactionType;
+      // mock PaymentTransaction
+      const tx = Transaction.from(TestData.transaction1JsonString);
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        eventId,
+        tx.unsignedHash,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // check returned value
+      const result = await evmChain.getTransactionAssets(paymentTx);
+
+      // check returned value
+      expect(result.inputAssets).toEqual(TestData.transaction1Assets);
+      expect(result.outputAssets).toEqual(TestData.transaction1Assets);
+    });
+
+    /**
+     * @target EvmChain.getTransactionAssets should get transaction assets
+     * successfully when there is only native-token transfer.
+     * Inputs and outputs must be equal and network fee should be considered.
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction assets (both input and output assets)
+     */
+    it('should get transaction assets successfully when there is only native-token transfer', async () => {
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = 'payment' as TransactionType;
+      // mock PaymentTransaction
+      const trx = { ...TestData.transaction1JsonString };
+      trx.data = '0x';
+      const tx = Transaction.from(trx);
+      const assets = { ...TestData.transaction1Assets };
+      assets.tokens = [];
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        eventId,
+        tx.unsignedHash,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // check returned value
+      const result = await evmChain.getTransactionAssets(paymentTx);
+
+      // check returned value
+      expect(result.inputAssets).toEqual(assets);
+      expect(result.outputAssets).toEqual(assets);
     });
   });
 });
