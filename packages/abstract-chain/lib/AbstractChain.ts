@@ -1,7 +1,15 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { Fee } from '@rosen-bridge/minimum-fee';
+import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
+import { blake2b } from 'blakejs';
 import ChainUtils from './ChainUtils';
-import { ValueError } from './errors';
+import {
+  FailedError,
+  NetworkError,
+  NotFoundError,
+  UnexpectedApiError,
+  ValueError,
+} from './errors';
 import AbstractChainNetwork from './network/AbstractChainNetwork';
 import {
   AssetBalance,
@@ -16,18 +24,23 @@ import {
 } from './types';
 import PaymentTransaction from './PaymentTransaction';
 
-abstract class AbstractChain {
-  protected network: AbstractChainNetwork<unknown>;
+abstract class AbstractChain<TxType> {
+  protected abstract CHAIN: string;
+  protected abstract extractor: AbstractRosenDataExtractor<string>;
+  protected network: AbstractChainNetwork<TxType>;
   protected configs: ChainConfigs;
+  feeRatioDivisor: bigint;
   logger: AbstractLogger;
 
   constructor(
-    network: AbstractChainNetwork<unknown>,
+    network: AbstractChainNetwork<TxType>,
     configs: ChainConfigs,
+    feeRatioDivisor: bigint,
     logger?: AbstractLogger
   ) {
     this.network = network;
     this.configs = configs;
+    this.feeRatioDivisor = feeRatioDivisor;
     this.logger = logger ? logger : new DummyLogger();
   }
 
@@ -317,6 +330,11 @@ abstract class AbstractChain {
    */
   getTokenDetail = (tokenId: string): Promise<TokenDetail> =>
     this.network.getTokenDetail(tokenId);
+
+  /**
+   * serializes the transaction of this chain into string
+   */
+  protected abstract serializeTx: (tx: TxType) => string;
 }
 
 export default AbstractChain;

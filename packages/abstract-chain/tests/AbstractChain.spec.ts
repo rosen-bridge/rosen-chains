@@ -13,6 +13,7 @@ const spyOn = jest.spyOn;
 
 describe('AbstractChain', () => {
   const paymentTxConfirmation = 6;
+  const feeRatioDivisor = 1n;
   const generateChainObject = (network: TestChainNetwork) => {
     const config: ChainConfigs = {
       fee: 100n,
@@ -30,7 +31,7 @@ describe('AbstractChain', () => {
       },
       rwtId: 'rwt',
     };
-    return new TestChain(network, config);
+    return new TestChain(network, config, feeRatioDivisor);
   };
 
   describe('generateTransaction', () => {
