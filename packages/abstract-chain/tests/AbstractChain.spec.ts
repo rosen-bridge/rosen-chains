@@ -80,6 +80,53 @@ describe('AbstractChain', () => {
       // Check returned value
       expect(result).toEqual(mockedTxs[0]);
     });
+
+    /**
+     * @target AbstractChain.generateTransaction should throw error when
+     * multiple txs are generated
+     * @dependencies
+     * @scenario
+     * - mock chain 'generateMultipleTransactions' function to return 1 tx
+     * - run test and expect exception thrown
+     * @expected
+     * - it should throw Error
+     */
+    it('should throw error when multiple txs are generated', async () => {
+      const mockedTxs = [
+        new PaymentTransaction(
+          'test',
+          'tx-id',
+          'event-id',
+          Buffer.from(''),
+          TransactionType.manual
+        ),
+        new PaymentTransaction(
+          'test',
+          'tx-id',
+          'event-id',
+          Buffer.from(''),
+          TransactionType.manual
+        ),
+      ];
+
+      const chain = generateChainObject(network);
+      const getLockAddressAssetsSpy = spyOn(
+        chain,
+        'generateMultipleTransactions'
+      );
+      getLockAddressAssetsSpy.mockResolvedValueOnce(mockedTxs);
+
+      // run test
+      await expect(async () => {
+        await chain.generateTransaction(
+          'event-id',
+          TransactionType.manual,
+          [],
+          [],
+          []
+        );
+      }).rejects.toThrow(Error);
+    });
   });
 
   describe('verifyNoTokenBurned', () => {
