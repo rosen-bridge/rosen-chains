@@ -150,12 +150,121 @@ abstract class AbstractChain<TxType> {
    * verifies an event data with its corresponding lock transaction
    * @param event the event trigger model
    * @param feeConfig minimum fee and rsn ratio config for the event
-   * @returns true if the event is verified
+   * @returns true if the event verified
    */
-  abstract verifyEvent: (
+  verifyEvent = async (
     event: EventTrigger,
     feeConfig: Fee
-  ) => Promise<boolean>;
+  ): Promise<boolean> => {
+    const eventId = Buffer.from(
+      blake2b(event.sourceTxId, undefined, 32)
+    ).toString('hex');
+
+    try {
+      const blockTxs = await this.network.getBlockTransactionIds(
+        event.sourceBlockId
+      );
+      if (!blockTxs.includes(event.sourceTxId)) {
+        this.logger.info(
+          `Event [${eventId}] is not valid, lock tx [${event.sourceTxId}] is not in event source block [${event.sourceBlockId}]`
+        );
+        return false;
+      }
+      const tx = await this.network.getTransaction(
+        event.sourceTxId,
+        event.sourceBlockId
+      );
+      const blockHeight = (await this.network.getBlockInfo(event.sourceBlockId))
+        .height;
+      const data = this.extractor.get(this.serializeTx(tx));
+      if (!data) {
+        this.logger.info(
+          `Event [${eventId}] is not valid, failed to extract rosen data from lock transaction`
+        );
+        return false;
+      }
+      if (
+        event.fromChain == this.CHAIN &&
+        event.toChain == data.toChain &&
+        event.networkFee == data.networkFee &&
+        event.bridgeFee == data.bridgeFee &&
+        event.amount == data.amount &&
+        event.sourceChainTokenId == data.sourceChainTokenId &&
+        event.targetChainTokenId == data.targetChainTokenId &&
+        event.toAddress == data.toAddress &&
+        event.fromAddress == data.fromAddress &&
+        event.sourceChainHeight == blockHeight
+      ) {
+        try {
+          // check if amount is more than fees
+          const eventAmount = BigInt(event.amount);
+          let bridgeFee = BigInt(event.bridgeFee);
+          if (feeConfig.bridgeFee > bridgeFee) bridgeFee = feeConfig.bridgeFee;
+          const transferringAmountFee =
+            (eventAmount * feeConfig.feeRatio) / this.feeRatioDivisor;
+          if (transferringAmountFee > bridgeFee)
+            bridgeFee = transferringAmountFee;
+          const networkFee =
+            BigInt(event.networkFee) > feeConfig.networkFee
+              ? BigInt(event.networkFee)
+              : feeConfig.networkFee;
+          if (eventAmount < bridgeFee + networkFee) {
+            this.logger.info(
+              `Event [${eventId}] is not valid, event amount [${eventAmount}] is less than sum of bridgeFee [${bridgeFee}] and networkFee [${networkFee}]`
+            );
+            return false;
+          }
+        } catch (e) {
+          throw new UnexpectedApiError(
+            `Failed in comparing event amount to fees: ${e}`
+          );
+        }
+        if (this.verifyLockTransactionExtraConditions(tx)) {
+          this.logger.info(
+            `Event [${eventId}] has been successfully validated`
+          );
+          return true;
+        } else {
+          this.logger.info(
+            `Event [${eventId}] is not valid, lock tx [${event.sourceTxId}] is not verified`
+          );
+          return false;
+        }
+      } else {
+        this.logger.info(
+          `Event [${eventId}] is not valid, event data does not match with lock tx [${event.sourceTxId}]`
+        );
+        return false;
+      }
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        this.logger.info(
+          `Event [${eventId}] is not valid, lock tx [${event.sourceTxId}] is not available in network`
+        );
+        return false;
+      } else if (
+        e instanceof FailedError ||
+        e instanceof NetworkError ||
+        e instanceof UnexpectedApiError
+      ) {
+        throw Error(`Skipping event [${eventId}] validation: ${e}`);
+      } else {
+        this.logger.warn(`Event [${eventId}] validation failed: ${e}`);
+        return false;
+      }
+    }
+  };
+
+  /**
+   * verifies additional conditions for a event lock transaction
+   * @param transaction the lock transaction
+   * @returns true if the transaction is verified
+   */
+  verifyLockTransactionExtraConditions = (transaction: TxType): boolean => {
+    throw Error(
+      `You must implement 'verifyLockTransactionExtraConditions' or override 'verifyEvent' implementation`
+    );
+  };
 
   /**
    * checks if a transaction is still valid and can be sent to the network
