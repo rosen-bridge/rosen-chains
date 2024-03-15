@@ -692,7 +692,7 @@ describe('AbstractChain', () => {
      *   - 'getBlockTransactionIds'
      *   - 'getTransaction'
      *   - 'getBlockInfo' to return event block height
-     * - mock rosen-extractor to return event data
+     * - mock rosen-extractor to return event d ata
      * - mock verifyLockTransactionExtraConditions to return false
      * - run test
      * - check returned value

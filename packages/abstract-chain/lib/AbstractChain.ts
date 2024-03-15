@@ -13,6 +13,7 @@ import {
 import AbstractChainNetwork from './network/AbstractChainNetwork';
 import {
   AssetBalance,
+  BlockInfo,
   ChainConfigs,
   ConfirmationStatus,
   EventTrigger,
@@ -174,8 +175,7 @@ abstract class AbstractChain<TxType> {
         event.sourceTxId,
         event.sourceBlockId
       );
-      const blockHeight = (await this.network.getBlockInfo(event.sourceBlockId))
-        .height;
+      const blockInfo = await this.network.getBlockInfo(event.sourceBlockId)
       const data = this.extractor.get(this.serializeTx(tx));
       if (!data) {
         this.logger.info(
@@ -193,7 +193,7 @@ abstract class AbstractChain<TxType> {
         event.targetChainTokenId == data.targetChainTokenId &&
         event.toAddress == data.toAddress &&
         event.fromAddress == data.fromAddress &&
-        event.sourceChainHeight == blockHeight
+        event.sourceChainHeight == blockInfo.height
       ) {
         try {
           // check if amount is more than fees
@@ -219,7 +219,7 @@ abstract class AbstractChain<TxType> {
             `Failed in comparing event amount to fees: ${e}`
           );
         }
-        if (this.verifyLockTransactionExtraConditions(tx)) {
+        if (this.verifyLockTransactionExtraConditions(tx, blockInfo)) {
           this.logger.info(
             `Event [${eventId}] has been successfully validated`
           );
@@ -258,9 +258,10 @@ abstract class AbstractChain<TxType> {
   /**
    * verifies additional conditions for a event lock transaction
    * @param transaction the lock transaction
+   * @param blockInfo
    * @returns true if the transaction is verified
    */
-  verifyLockTransactionExtraConditions = (transaction: TxType): boolean => {
+  verifyLockTransactionExtraConditions = (transaction: TxType, blockInfo: BlockInfo): boolean => {
     throw Error(
       `You must implement 'verifyLockTransactionExtraConditions' or override 'verifyEvent' implementation`
     );
