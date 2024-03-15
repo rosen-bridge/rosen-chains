@@ -1,13 +1,10 @@
 import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
 import { ErgoBox, ErgoStateContext, Transaction } from 'ergo-lib-wasm-nodejs';
-import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
 abstract class AbstractErgoNetwork extends AbstractUtxoChainNetwork<
   Transaction,
   ErgoBox
 > {
-  declare extractor: ErgoRosenExtractor;
-
   /**
    * submits a transaction
    * @param transaction the transaction
