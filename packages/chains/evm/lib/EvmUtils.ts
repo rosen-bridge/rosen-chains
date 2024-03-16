@@ -1,57 +1,88 @@
 import { transferABI } from './constants';
 import { PaymentOrder, SinglePayment } from '@rosen-chains/abstract-chain';
-import { Contract } from 'ethers';
+import { Contract, Result } from 'ethers';
 
-class EvmUtils {
-  /**
-   * extracts every SinglePayment from PaymentOrder
-   * @param orders the aggregated PaymentOrder
-   * @returns the splitted PaymentOrder
-   */
-  static splitPaymentOrders = (orders: PaymentOrder): PaymentOrder => {
-    return orders.reduce<PaymentOrder>(
-      (sum: PaymentOrder, order: SinglePayment) => {
-        if (order.assets.nativeToken != BigInt(0)) {
-          sum.push({
-            address: order.address,
-            assets: {
-              nativeToken: order.assets.nativeToken,
-              tokens: [],
-            },
-            extra: order.extra,
-          });
-        }
-        order.assets.tokens.forEach((token) => {
-          sum.push({
-            address: order.address,
-            assets: {
-              nativeToken: BigInt(0),
-              tokens: [token],
-            },
-            extra: order.extra,
-          });
+/**
+ * extracts every SinglePayment from PaymentOrder
+ * @param orders the aggregated PaymentOrder
+ * @returns the splitted PaymentOrder
+ */
+export const splitPaymentOrders = (orders: PaymentOrder): PaymentOrder => {
+  return orders.reduce<PaymentOrder>(
+    (sum: PaymentOrder, order: SinglePayment) => {
+      if (order.assets.nativeToken != BigInt(0)) {
+        sum.push({
+          address: order.address,
+          assets: {
+            nativeToken: order.assets.nativeToken,
+            tokens: [],
+          },
+          extra: order.extra,
         });
-        return sum;
-      },
-      []
-    );
-  };
+      }
+      order.assets.tokens.forEach((token) => {
+        sum.push({
+          address: order.address,
+          assets: {
+            nativeToken: BigInt(0),
+            tokens: [token],
+          },
+          extra: order.extra,
+        });
+      });
+      return sum;
+    },
+    []
+  );
+};
 
-  /**
-   * generates calldata to execute `transfer` function in the given contract
-   * @param contractAddress the address of the contract
-   * @param to the recipient's address
-   * @param amount the amount to be transfered
-   * @returns calldata in hex string with the initial '0x'
-   */
-  static generateTransferCallData = (
-    contractAddress: string,
-    to: string,
-    amount: bigint
-  ): string => {
-    const contract = new Contract(contractAddress, transferABI, null);
-    return contract.interface.encodeFunctionData('transfer', [to, amount]);
-  };
-}
+/**
+ * generates calldata to execute `transfer` function in the given contract
+ * @param contractAddress the address of the contract
+ * @param to the recipient's address
+ * @param amount the amount to be transfered
+ * @returns calldata in hex string with the initial '0x'
+ */
+export const encodeTransferCallData = (
+  contractAddress: string,
+  to: string,
+  amount: bigint
+): string => {
+  const contract = new Contract(contractAddress, transferABI, null);
+  return contract.interface.encodeFunctionData('transfer', [to, amount]);
+};
 
-export default EvmUtils;
+/**
+ * checks whether the transaction is an erc-20 `transfer`
+ * @param contractAddress the address of the contract
+ * @param data the transaction's call data
+ * @returns true if it performs a `transfer` call, otherwise false
+ */
+export const isTransfer = (contractAddress: string, data: string): boolean => {
+  const contract = new Contract(contractAddress, transferABI, null);
+  const description = contract.interface.parseTransaction({ data: data });
+
+  if (description == null) return false;
+  if (description.name != 'transfer') return false;
+  try {
+    description.args[0];
+  } catch {
+    return false;
+  }
+  return true;
+};
+
+/**
+ * extracts `to` and `value from calldata
+ * @param contractAddress the address of the contract
+ * @param to the recipient's address
+ * @param amount the amount to be transfered
+ * @returns calldata in hex string with the initial '0x'
+ */
+export const decodeTransferCallData = (
+  contractAddress: string,
+  calldata: string
+): Array<any> => {
+  const contract = new Contract(contractAddress, transferABI, null);
+  return contract.interface.decodeFunctionData('transfer', calldata);
+};

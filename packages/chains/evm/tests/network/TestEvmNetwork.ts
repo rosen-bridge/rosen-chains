@@ -66,7 +66,7 @@ class TestEvmNetwork extends AbstractEvmNetwork {
     throw Error('Not mocked');
   };
 
-  getAddressNextNonce = (address: string): Promise<number> => {
+  getAddressNextAvailableNonce = (address: string): Promise<number> => {
     throw Error('Not mocked');
   };
 

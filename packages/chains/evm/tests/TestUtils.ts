@@ -29,42 +29,49 @@ export const configs: EvmConfigs = {
     cold: coldTxConfirmation,
     manual: manualTxConfirmation,
   },
+  slippage: 15,
 };
+
 export const mockedSignFn = () => Promise.resolve('');
 
-export class MockGenerator {
-  static mockHasLockAddressEnoughAssets = (chain: EvmChain, value: boolean) => {
-    spyOn(chain, 'hasLockAddressEnoughAssets').mockResolvedValue(value);
-  };
-  static mockGetMaxFeePerGas = (network: AbstractEvmNetwork, value: bigint) => {
-    spyOn(network, 'getMaxFeePerGas').mockResolvedValue(value);
-  };
+export const mockHasLockAddressEnoughAssets = (
+  chain: EvmChain,
+  value: boolean
+) => {
+  spyOn(chain, 'hasLockAddressEnoughAssets').mockResolvedValue(value);
+};
 
-  static mockGetGasRequiredERC20Transfer = (
-    network: AbstractEvmNetwork,
-    value: bigint
-  ) => {
-    spyOn(network, 'getGasRequiredERC20Transfer').mockReturnValue(value);
-  };
+export const mockGetMaxFeePerGas = (
+  network: AbstractEvmNetwork,
+  value: bigint
+) => {
+  spyOn(network, 'getMaxFeePerGas').mockResolvedValue(value);
+};
 
-  static mockGetGasRequiredNativeTransfer = (
-    network: AbstractEvmNetwork,
-    value: bigint
-  ) => {
-    spyOn(network, 'getGasRequiredNativeTransfer').mockReturnValue(value);
-  };
+export const mockGetGasRequiredERC20Transfer = (
+  network: AbstractEvmNetwork,
+  value: bigint
+) => {
+  spyOn(network, 'getGasRequiredERC20Transfer').mockReturnValue(value);
+};
 
-  static mockGetAddressNextNonce = (
-    network: AbstractEvmNetwork,
-    value: number
-  ) => {
-    spyOn(network, 'getAddressNextNonce').mockResolvedValue(value);
-  };
+export const mockGetGasRequiredNativeTransfer = (
+  network: AbstractEvmNetwork,
+  value: bigint
+) => {
+  spyOn(network, 'getGasRequiredNativeTransfer').mockReturnValue(value);
+};
 
-  static mockGetMaxPriorityFeePerGas = (
-    network: AbstractEvmNetwork,
-    value: bigint
-  ) => {
-    spyOn(network, 'getMaxPriorityFeePerGas').mockResolvedValue(value);
-  };
-}
+export const mockGetAddressNextAvailableNonce = (
+  network: AbstractEvmNetwork,
+  value: number
+) => {
+  spyOn(network, 'getAddressNextAvailableNonce').mockResolvedValue(value);
+};
+
+export const mockGetMaxPriorityFeePerGas = (
+  network: AbstractEvmNetwork,
+  value: bigint
+) => {
+  spyOn(network, 'getMaxPriorityFeePerGas').mockResolvedValue(value);
+};

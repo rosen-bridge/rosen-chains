@@ -20,7 +20,7 @@ import AbstractEvmNetwork from './network/AbstractEvmNetwork';
 import { EvmConfigs } from './types';
 import { Transaction, TransactionLike } from 'ethers';
 import Serializer from './Serializer';
-import EvmUtils from './EvmUtils';
+import * as EvmUtils from './EvmUtils';
 
 abstract class EvmChain extends AbstractChain {
   declare network: AbstractEvmNetwork;
@@ -99,7 +99,7 @@ abstract class EvmChain extends AbstractChain {
 
     // Generate the transaction
     let trx;
-    const nonce = await this.network.getAddressNextNonce(
+    const nonce = await this.network.getAddressNextAvailableNonce(
       this.configs.addresses.lock
     );
     const maxPriorityFeePerGas = await this.network.getMaxPriorityFeePerGas();
@@ -114,10 +114,11 @@ abstract class EvmChain extends AbstractChain {
         data: '0x' + eventId,
         value: order[0].assets.nativeToken,
         chainId: this.configs.chainId,
+        maxFeePerBlobGas: 0,
       });
     } else {
       const token = order[0].assets.tokens[0];
-      const data = EvmUtils.generateTransferCallData(
+      const data = EvmUtils.encodeTransferCallData(
         token.id,
         order[0].address,
         token.value
@@ -131,6 +132,7 @@ abstract class EvmChain extends AbstractChain {
         data: data + eventId,
         value: BigInt(0),
         chainId: this.configs.chainId,
+        maxFeePerBlobGas: 0,
       } as TransactionLike);
     }
     const evmTx = new PaymentTransaction(
@@ -187,17 +189,20 @@ abstract class EvmChain extends AbstractChain {
     const networkFee = tx.maxFeePerGas! * tx.gasLimit;
     outputAssets.nativeToken = tx.value + networkFee;
     inputAssets.nativeToken = tx.value + networkFee;
-
-    if (tx.data.substring(2, 10) == 'a9059cbb') {
+    try {
+      const [_, amount] = EvmUtils.decodeTransferCallData(tx.to!, tx.data);
       outputAssets.tokens.push({
         id: tx.to!.toLowerCase(),
-        value: BigInt('0x' + tx.data.slice(74, 72 + 66)),
+        value: amount,
       });
       inputAssets.tokens.push({
         id: tx.to!.toLowerCase(),
-        value: BigInt('0x' + tx.data.slice(74, 72 + 66)),
+        value: amount,
       });
+    } catch {
+      // tx does not make any erc-20 transfer
     }
+
     return {
       inputAssets,
       outputAssets,
@@ -211,28 +216,31 @@ abstract class EvmChain extends AbstractChain {
    */
   extractTransactionOrder = (transaction: PaymentTransaction): PaymentOrder => {
     const tx = Serializer.deserialize(transaction.txBytes);
-    if (tx.value != BigInt(0)) {
+    try {
+      // erco-20 transfer
+      const [to, amount] = EvmUtils.decodeTransferCallData(tx.to!, tx.data);
+      return [
+        {
+          address: to.toLowerCase(),
+          assets: {
+            nativeToken: BigInt(0),
+            tokens: [
+              {
+                id: tx.to!.toLowerCase(),
+                value: amount,
+              },
+            ],
+          },
+        },
+      ];
+    } catch {
+      // native-token transfer
       return [
         {
           address: tx.to!.toLowerCase(),
           assets: {
             nativeToken: tx.value,
             tokens: [],
-          },
-        },
-      ];
-    } else {
-      return [
-        {
-          address: '0x' + tx.data.substring(34, 74),
-          assets: {
-            nativeToken: BigInt(0),
-            tokens: [
-              {
-                id: tx.to!.toLowerCase(),
-                value: BigInt('0x' + tx.data.substring(74, 138)),
-              },
-            ],
           },
         },
       ];
@@ -244,10 +252,62 @@ abstract class EvmChain extends AbstractChain {
    * @param transaction the PaymentTransaction
    * @returns true if the transaction fee is verified
    */
-  verifyTransactionFee = (
+  verifyTransactionFee = async (
     transaction: PaymentTransaction
   ): Promise<boolean> => {
-    throw new Error('Not implemented yet.');
+    // blobs must be zero
+    const tx = Serializer.deserialize(transaction.txBytes);
+    let gasRequired = BigInt(0);
+    if (EvmUtils.isTransfer(tx.to!, tx.data)) {
+      const [to, amount] = EvmUtils.decodeTransferCallData(tx.to!, tx.data);
+      gasRequired = this.network.getGasRequiredERC20Transfer(
+        tx.to!,
+        to,
+        amount
+      );
+    }
+    if (tx.value != BigInt(0)) {
+      gasRequired += this.network.getGasRequiredNativeTransfer(tx.to!);
+    }
+
+    if (tx.gasLimit != gasRequired) {
+      this.logger.debug(
+        `Tx [${transaction.txId}] invalid: Transaction gasLimit [${tx.gasLimit}] is more than maximum required [${gasRequired}]`
+      );
+      return false;
+    }
+
+    const networkMaxFee = await this.network.getMaxFeePerGas();
+    const feeSlippage = (networkMaxFee * BigInt(this.configs.slippage)) / 100n;
+    if (
+      tx.maxFeePerGas! - networkMaxFee > feeSlippage ||
+      networkMaxFee - tx.maxFeePerGas! > feeSlippage
+    ) {
+      this.logger.debug(
+        `Tx [${transaction.txId}] invalid: Transaction fee [${tx.maxFeePerGas!}]
+         is too far from network's max fee [${networkMaxFee}]`
+      );
+      return false;
+    }
+
+    const networkMaxPriorityMaxFee =
+      await this.network.getMaxPriorityFeePerGas();
+    const priorityFeeSlippage =
+      (networkMaxPriorityMaxFee * BigInt(this.configs.slippage)) / 100n;
+    if (
+      tx.maxPriorityFeePerGas! - networkMaxPriorityMaxFee >
+        priorityFeeSlippage ||
+      networkMaxPriorityMaxFee - tx.maxPriorityFeePerGas! > priorityFeeSlippage
+    ) {
+      this.logger.debug(
+        `Tx [${
+          transaction.txId
+        }] invalid: Transaction fee [${tx.maxPriorityFeePerGas!}]
+         is too far from network's max priority fee [${networkMaxPriorityMaxFee!}]`
+      );
+      return false;
+    }
+    return true;
   };
 
   /**
@@ -260,6 +320,7 @@ abstract class EvmChain extends AbstractChain {
     event: EventTrigger,
     feeConfig: Fee
   ): Promise<boolean> => {
+    // TODO: remove this function (local:ergo/rosen-bridge/rosen-chains#93)
     throw new Error('Not implemented yet.');
   };
 
@@ -273,7 +334,32 @@ abstract class EvmChain extends AbstractChain {
     transaction: PaymentTransaction,
     signingStatus: SigningStatus
   ): Promise<boolean> => {
-    throw new Error('Not implemented yet.');
+    let trx: Transaction;
+    if (signingStatus === SigningStatus.Signed) {
+      trx = Serializer.signedDeserialize(transaction.txBytes);
+    } else {
+      trx = Serializer.deserialize(transaction.txBytes);
+    }
+
+    // check the nonce wasn't increased
+    const nextNonce = await this.network.getAddressNextAvailableNonce(
+      this.configs.addresses.lock
+    );
+    if (nextNonce != trx.nonce) {
+      return false;
+    }
+
+    // check lock still has enough assets (as a result of re-org)
+    const txAssets = await this.getTransactionAssets(transaction);
+    if (!(await this.hasLockAddressEnoughAssets(txAssets.inputAssets))) {
+      return false;
+    }
+
+    // check inputs and outputs match (it always must be the case in evm)
+    return ChainUtils.isEqualAssetBalance(
+      txAssets.inputAssets,
+      txAssets.outputAssets
+    );
   };
 
   /**
@@ -286,6 +372,7 @@ abstract class EvmChain extends AbstractChain {
     transaction: PaymentTransaction,
     requiredSign: number
   ): Promise<PaymentTransaction> => {
+    // TODO: implement this function (local:ergo/rosen-bridge/rosen-chains#94)
     throw new Error('Not implemented yet.');
   };
 
@@ -321,7 +408,8 @@ abstract class EvmChain extends AbstractChain {
    * @returns true if the transaction is in mempool
    */
   isTxInMempool = async (transactionId: string): Promise<boolean> => {
-    throw new Error('Not implemented yet.');
+    // we ignore mempool as it doesn't affect us
+    return false;
   };
 
   /**
@@ -377,7 +465,57 @@ abstract class EvmChain extends AbstractChain {
   verifyTransactionExtraConditions = (
     transaction: PaymentTransaction
   ): boolean => {
-    throw new Error('Not implemented yet.');
+    const tx = Serializer.deserialize(transaction.txBytes);
+
+    // eventId must be at the end of calldata
+    const eventId = tx.data!.substring(tx.data!.length - 32);
+    if (eventId != transaction.eventId) {
+      this.logger.debug(
+        `Tx [${transaction.txId}] is invalid. Encoded eventId [${eventId}] does 
+        not match with the expected one [${transaction.eventId}]`
+      );
+      return false;
+    }
+
+    // tx must be a single payment
+    if (tx.value != BigInt(0) && tx.data.length != 32 + 2) {
+      this.logger.debug(
+        `Tx [${transaction.txId}] is invalid. It both transfers native-token and has extra call-data.`
+      );
+      return false;
+    }
+
+    // tx must have either 32 or 170 bytes of data
+    if (![32, 32 + 2 + 136].includes(tx.data.length)) {
+      this.logger.debug(
+        `Tx [${transaction.txId}] is invalid. Calldata has extra bytes.`
+      );
+      return false;
+    }
+
+    // only erc-20 `transfer` is allowed
+    if (tx.value == 0n) {
+      if (!EvmUtils.isTransfer(tx.to!, tx.data)) {
+        this.logger.debug(
+          `Tx [${transaction.txId}] is invalid. Calldata [${tx.data}] can not be parsed for 'transfer'.`
+        );
+        return false;
+      }
+    }
+
+    // blobs are zero
+    if (
+      tx.type == 3 &&
+      tx.maxFeePerBlobGas != null &&
+      tx.maxFeePerBlobGas != 0n
+    ) {
+      this.logger.debug(
+        `Tx [${transaction.txId}] is invalid. maxFeePerBlobGas non-zero [${tx.maxFeePerBlobGas}]`
+      );
+      return false;
+    }
+
+    return true;
   };
 }
 
