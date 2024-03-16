@@ -189,7 +189,7 @@ abstract class EvmChain extends AbstractChain {
     const networkFee = tx.maxFeePerGas! * tx.gasLimit;
     outputAssets.nativeToken = tx.value + networkFee;
     inputAssets.nativeToken = tx.value + networkFee;
-    try {
+    if (EvmUtils.isTransfer(tx.to!, tx.data)) {
       const [_, amount] = EvmUtils.decodeTransferCallData(tx.to!, tx.data);
       outputAssets.tokens.push({
         id: tx.to!.toLowerCase(),
@@ -199,8 +199,6 @@ abstract class EvmChain extends AbstractChain {
         id: tx.to!.toLowerCase(),
         value: amount,
       });
-    } catch {
-      // tx does not make any erc-20 transfer
     }
 
     return {
@@ -216,7 +214,8 @@ abstract class EvmChain extends AbstractChain {
    */
   extractTransactionOrder = (transaction: PaymentTransaction): PaymentOrder => {
     const tx = Serializer.deserialize(transaction.txBytes);
-    try {
+
+    if (EvmUtils.isTransfer(tx.to!, tx.data)) {
       // erco-20 transfer
       const [to, amount] = EvmUtils.decodeTransferCallData(tx.to!, tx.data);
       return [
@@ -233,18 +232,17 @@ abstract class EvmChain extends AbstractChain {
           },
         },
       ];
-    } catch {
-      // native-token transfer
-      return [
-        {
-          address: tx.to!.toLowerCase(),
-          assets: {
-            nativeToken: tx.value,
-            tokens: [],
-          },
-        },
-      ];
     }
+    // native-token transfer
+    return [
+      {
+        address: tx.to!.toLowerCase(),
+        assets: {
+          nativeToken: tx.value,
+          tokens: [],
+        },
+      },
+    ];
   };
 
   /**
