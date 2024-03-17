@@ -77,7 +77,7 @@ export const isTransfer = (contractAddress: string, data: string): boolean => {
  * @param contractAddress the address of the contract
  * @param to the recipient's address
  * @param amount the amount to be transfered
- * @returns calldata in hex string with the initial '0x'
+ * @returns the array of [`to`, `amount`], if can't decode, puts error inside the array!
  */
 export const decodeTransferCallData = (
   contractAddress: string,

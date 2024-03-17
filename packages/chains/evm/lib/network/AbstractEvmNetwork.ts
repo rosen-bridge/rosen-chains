@@ -65,7 +65,7 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<Transaction> {
   abstract getGasRequiredNativeTransfer: (to: string) => bigint;
 
   /**
-   * gets the maximum wei we would pay to the miner pay gas according
+   * gets the maximum wei we would pay to the miner according
    * to the network's current condition
    * @returns gas price as a bigint
    */
@@ -79,7 +79,7 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<Transaction> {
   abstract getMaxFeePerGas: () => Promise<bigint>;
 
   /**
-   * gets the transaction with the specefic nonce for that address
+   * gets the transaction with the specefic nonce and address
    * if there is not such a mined transaction, it returns null
    * @param address the input address in string
    * @param nonce the input nonce in bigint

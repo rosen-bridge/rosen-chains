@@ -133,7 +133,7 @@ describe('CardanoChain', () => {
       expect(extractedOrder).toEqual(order);
 
       // transaction fee and ttl should be the same as input configs
-      const tx = Serializer.deserialize(cardanoTx.txBytes);
+      const tx = Transaction.from_bytes(cardanoTx.txBytes);
       expect(tx.body().fee().to_str()).toEqual(configs.fee.toString());
       expect(tx.body().ttl()).toEqual(164);
 

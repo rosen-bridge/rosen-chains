@@ -10,8 +10,6 @@ interface BlockHeader {
 
 interface EvmConfigs extends ChainConfigs {
   maxParallelTx: number;
-  chainId: number;
-  chainName: string;
   slippage: number;
 }
 

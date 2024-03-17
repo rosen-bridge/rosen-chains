@@ -3,7 +3,6 @@ import {
   AbstractChain,
   EventTrigger,
   MaxParallelTxError,
-  OrderError,
   ChainUtils,
   NotEnoughAssetsError,
   PaymentOrder,
@@ -26,7 +25,8 @@ abstract class EvmChain extends AbstractChain {
   declare network: AbstractEvmNetwork;
   declare configs: EvmConfigs;
   // TODO: fix 'CHAIN' vars
-  abstract CHAIN: string;
+  abstract CHAIN_NAME: string;
+  abstract CHAIN_ID: bigint;
   feeRatioDivisor: bigint;
   protected signFunction: (txHash: Uint8Array) => Promise<string>;
 
@@ -68,25 +68,12 @@ abstract class EvmChain extends AbstractChain {
       There are ${waiting} transactions already in the process!`);
     }
 
-    // Chech the number of orders
-    if (order.length != 1) {
-      throw new OrderError(`
-      Only one order is allowed, but ${order.length} are found!`);
-    }
-    if (
-      order[0].assets.nativeToken != BigInt(0) &&
-      order[0].assets.tokens.length > 0
-    ) {
-      throw new OrderError(`
-      Both Native token and non-native assets are being transfered!`);
-    }
-
     // Check the balance in the lock address
     const gasPrice = await this.network.getMaxFeePerGas();
     const gasRequired = this.getGasRequired(order[0]);
-    const amount = gasRequired * gasPrice;
+    const fee = gasRequired * gasPrice;
     const requiredAssets = ChainUtils.sumAssetBalance(order[0].assets, {
-      nativeToken: amount,
+      nativeToken: fee,
       tokens: [],
     });
     if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
@@ -104,8 +91,9 @@ abstract class EvmChain extends AbstractChain {
     );
     const maxPriorityFeePerGas = await this.network.getMaxPriorityFeePerGas();
 
-    if (order[0].assets.nativeToken != BigInt(0)) {
+    if (order[0].assets.nativeToken != 0n) {
       trx = Transaction.from({
+        type: 2,
         to: order[0].address,
         nonce: nonce,
         gasLimit: gasRequired,
@@ -113,8 +101,7 @@ abstract class EvmChain extends AbstractChain {
         maxFeePerGas: gasPrice,
         data: '0x' + eventId,
         value: order[0].assets.nativeToken,
-        chainId: this.configs.chainId,
-        maxFeePerBlobGas: 0,
+        chainId: this.CHAIN_ID,
       });
     } else {
       const token = order[0].assets.tokens[0];
@@ -124,19 +111,19 @@ abstract class EvmChain extends AbstractChain {
         token.value
       );
       trx = Transaction.from({
+        type: 2,
         to: token.id,
         nonce: nonce,
         gasLimit: gasRequired,
         maxPriorityFeePerGas: maxPriorityFeePerGas,
         maxFeePerGas: gasPrice,
         data: data + eventId,
-        value: BigInt(0),
-        chainId: this.configs.chainId,
-        maxFeePerBlobGas: 0,
+        value: 0n,
+        chainId: this.CHAIN_ID,
       } as TransactionLike);
     }
     const evmTx = new PaymentTransaction(
-      this.CHAIN,
+      this.CHAIN_NAME,
       trx.unsignedHash,
       eventId,
       Serializer.serialize(trx),
@@ -151,13 +138,13 @@ abstract class EvmChain extends AbstractChain {
 
   /**
    * gets gas required to do the transfer.
-   * Note that we assume checks have been done before calling this function;
+   * note that we assume checks have been done before calling this function;
    * either nativeToken should be non zero, or there is only one asset in the tokens list.
    * @param payment the SinglePayment to be made
    * @returns gas required in bigint
    */
   getGasRequired = (payment: SinglePayment): bigint => {
-    if (payment.assets.nativeToken != BigInt(0)) {
+    if (payment.assets.nativeToken != 0n) {
       return this.network.getGasRequiredNativeTransfer(payment.address);
     }
     return this.network.getGasRequiredERC20Transfer(
@@ -222,7 +209,7 @@ abstract class EvmChain extends AbstractChain {
         {
           address: to.toLowerCase(),
           assets: {
-            nativeToken: BigInt(0),
+            nativeToken: tx.value,
             tokens: [
               {
                 id: tx.to!.toLowerCase(),
@@ -253,9 +240,10 @@ abstract class EvmChain extends AbstractChain {
   verifyTransactionFee = async (
     transaction: PaymentTransaction
   ): Promise<boolean> => {
-    // blobs must be zero
     const tx = Serializer.deserialize(transaction.txBytes);
-    let gasRequired = BigInt(0);
+
+    // check gas limit
+    let gasRequired = 0n;
     if (EvmUtils.isTransfer(tx.to!, tx.data)) {
       const [to, amount] = EvmUtils.decodeTransferCallData(tx.to!, tx.data);
       gasRequired = this.network.getGasRequiredERC20Transfer(
@@ -264,7 +252,7 @@ abstract class EvmChain extends AbstractChain {
         amount
       );
     }
-    if (tx.value != BigInt(0)) {
+    if (tx.value != 0n) {
       gasRequired += this.network.getGasRequiredNativeTransfer(tx.to!);
     }
 
@@ -275,6 +263,7 @@ abstract class EvmChain extends AbstractChain {
       return false;
     }
 
+    // check fees
     const networkMaxFee = await this.network.getMaxFeePerGas();
     const feeSlippage = (networkMaxFee * BigInt(this.configs.slippage)) / 100n;
     if (
@@ -282,7 +271,9 @@ abstract class EvmChain extends AbstractChain {
       networkMaxFee - tx.maxFeePerGas! > feeSlippage
     ) {
       this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction fee [${tx.maxFeePerGas!}]
+        `Tx [${
+          transaction.txId
+        }] invalid: Transaction max fee [${tx.maxFeePerGas!}]
          is too far from network's max fee [${networkMaxFee}]`
       );
       return false;
@@ -300,7 +291,7 @@ abstract class EvmChain extends AbstractChain {
       this.logger.debug(
         `Tx [${
           transaction.txId
-        }] invalid: Transaction fee [${tx.maxPriorityFeePerGas!}]
+        }] invalid: Transaction max priority fee [${tx.maxPriorityFeePerGas!}]
          is too far from network's max priority fee [${networkMaxPriorityMaxFee!}]`
       );
       return false;
@@ -388,11 +379,11 @@ abstract class EvmChain extends AbstractChain {
     try {
       const response = await this.network.submitTransaction(tx);
       this.logger.info(
-        `${this.CHAIN} Transaction [${transaction.txId}] submitted. Response: ${response}`
+        `${this.CHAIN_NAME} Transaction [${transaction.txId}] submitted. Response: ${response}`
       );
     } catch (e) {
       this.logger.warn(
-        `An error occurred while submitting ${this.CHAIN} transaction [${transaction.txId}]: ${e}`
+        `An error occurred while submitting ${this.CHAIN_NAME} transaction [${transaction.txId}]: ${e}`
       );
       if (e instanceof Error && e.stack) {
         this.logger.warn(e.stack);
@@ -424,7 +415,7 @@ abstract class EvmChain extends AbstractChain {
   PaymentTransactionFromJson = (jsonString: string): PaymentTransaction => {
     const obj = JSON.parse(jsonString) as PaymentTransactionJsonModel;
     return new PaymentTransaction(
-      this.CHAIN,
+      this.CHAIN_NAME,
       obj.txId,
       obj.eventId,
       Buffer.from(obj.txBytes, 'hex'),
@@ -442,7 +433,7 @@ abstract class EvmChain extends AbstractChain {
   ): Promise<PaymentTransaction> => {
     const trx = Transaction.from(JSON.parse(rawTxJsonString));
     const evmTx = new PaymentTransaction(
-      this.CHAIN,
+      this.CHAIN_NAME,
       trx.unsignedHash,
       '',
       Serializer.serialize(trx),
@@ -450,7 +441,7 @@ abstract class EvmChain extends AbstractChain {
     );
 
     this.logger.info(
-      `Parsed ${this.CHAIN} transaction [${trx.unsignedHash}] successfully`
+      `Parsed ${this.CHAIN_NAME} transaction [${trx.unsignedHash}] successfully`
     );
     return evmTx;
   };
@@ -476,7 +467,10 @@ abstract class EvmChain extends AbstractChain {
     }
 
     // tx must be a single payment
-    if (tx.value != BigInt(0) && tx.data.length != 32 + 2) {
+    if (
+      (tx.value == 0n && tx.data.length == 32 + 2) ||
+      (tx.value != 0n && tx.data.length == 136 + 32 + 2)
+    ) {
       this.logger.debug(
         `Tx [${transaction.txId}] is invalid. It both transfers native-token and has extra call-data.`
       );
@@ -501,12 +495,8 @@ abstract class EvmChain extends AbstractChain {
       }
     }
 
-    // blobs are zero
-    if (
-      tx.type == 3 &&
-      tx.maxFeePerBlobGas != null &&
-      tx.maxFeePerBlobGas != 0n
-    ) {
+    // only type 2 transactions are allowed, and blobs must be null
+    if (tx.type != 2 || tx.maxFeePerBlobGas != null) {
       this.logger.debug(
         `Tx [${transaction.txId}] is invalid. maxFeePerBlobGas non-zero [${tx.maxFeePerBlobGas}]`
       );
