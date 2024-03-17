@@ -43,32 +43,9 @@ vi.mock('@rosen-clients/ergo-node');
 const getNetwork = () =>
   new ErgoNodeNetwork({
     nodeBaseUrl: 'https://test.node',
-    extractorOptions: {
-      lockAddress: testAddress,
-      tokens: {
-        idKeys: {},
-        tokens: [],
-      },
-    },
   });
 
 describe('ErgoNodeNetwork', () => {
-  describe('constructor', () => {
-    /**
-     * @target constructor of `ErgoNodeNetwork` should set extractor
-     * @dependencies
-     * @scenario
-     * - construct an `ErgoNodeNetwork`
-     * @expected
-     * - extractor of network should be defined
-     */
-    it('should set extractor', () => {
-      const network = getNetwork();
-
-      expect(network.extractor).toBeDefined();
-    });
-  });
-
   describe('getHeight', () => {
     /**
      * @target `ErgoNodeNetwork.getHeight` should return current height

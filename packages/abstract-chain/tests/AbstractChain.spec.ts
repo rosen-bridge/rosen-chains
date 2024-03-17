@@ -1,43 +1,20 @@
-import TestChain from './TestChain';
+import { Fee } from '@rosen-bridge/minimum-fee';
+import { RosenData } from '@rosen-bridge/rosen-extractor';
+import { when } from 'jest-when';
 import TestChainNetwork from './network/TestChainNetwork';
+import * as testData from './testData';
+import { generateChainObject, generateRandomId } from './testUtils';
 import {
   AssetBalance,
-  ChainConfigs,
   ConfirmationStatus,
   PaymentTransaction,
   TransactionType,
 } from '../lib';
-import { when } from 'jest-when';
 
 const spyOn = jest.spyOn;
 
 describe('AbstractChain', () => {
-  const paymentTxConfirmation = 6;
-  const generateChainObject = (network: TestChainNetwork) => {
-    const config: ChainConfigs = {
-      fee: 100n,
-      confirmations: {
-        observation: 5,
-        payment: paymentTxConfirmation,
-        cold: 7,
-        manual: 8,
-      },
-      addresses: {
-        lock: 'lock_addr',
-        cold: 'cold_addr',
-        permit: 'permit_addr',
-        fraud: 'fraud_addr',
-      },
-      rwtId: 'rwt',
-    };
-    return new TestChain(network, config);
-  };
-
   describe('generateTransaction', () => {
-    const requiredAssets = {
-      nativeToken: 100n,
-      tokens: [],
-    };
     const network = new TestChainNetwork();
 
     /**
@@ -227,10 +204,559 @@ describe('AbstractChain', () => {
     });
   });
 
+  describe('verifyEvent', () => {
+    const feeConfig: Fee = {
+      bridgeFee: 0n,
+      networkFee: 0n,
+      feeRatio: 0n,
+      rsnRatio: 0n,
+    };
+
+    /**
+     * @target AbstractChain.verifyEvent should return true when event is valid
+     * @dependencies
+     * @scenario
+     * - mock an event
+     * - mock a network object functions
+     *   - 'getBlockTransactionIds'
+     *   - 'getTransaction'
+     *   - 'getBlockInfo' to return event block height
+     * - mock rosen-extractor to return event data
+     * - mock verifyLockTransactionExtraConditions to return true
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return true
+     */
+    it('should return true when event is valid', async () => {
+      //  mock an event
+      const event = testData.validEvent;
+
+      // mock a network object with mocked 'getBlockTransactionIds' and
+      //   'getTransaction' functions
+      const network = new TestChainNetwork();
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([
+          generateRandomId(),
+          event.sourceTxId,
+          generateRandomId(),
+        ]);
+
+      // mock 'getTransaction'
+      const tx = 'tx';
+      const getTransactionSpy = spyOn(network, 'getTransaction');
+      when(getTransactionSpy)
+        .calledWith(event.sourceTxId, event.sourceBlockId)
+        .mockResolvedValueOnce(tx);
+
+      // mock getBlockInfo to return event block height
+      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
+      when(getBlockInfoSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce({
+          height: event.sourceChainHeight,
+        } as any);
+
+      // mock rosen-extractor to return event data
+      const chain = generateChainObject(network);
+      const extractorSpy = spyOn((chain as any).extractor, 'get');
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
+
+      // mock verifyLockTransactionExtraConditions to return true
+      const verifyLockTxSpy = spyOn(
+        chain,
+        'verifyLockTransactionExtraConditions'
+      );
+      verifyLockTxSpy.mockReturnValueOnce(true);
+
+      // run test
+      const result = await chain.verifyEvent(event, feeConfig);
+
+      // check returned value
+      expect(result).toEqual(true);
+    });
+
+    /**
+     * @target AbstractChain.verifyEvent should return false when event transaction
+     * is not in event block
+     * @dependencies
+     * @scenario
+     * - mock an event
+     * - mock a network object functions
+     *   - 'getBlockTransactionIds'
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when event transaction is not in event block', async () => {
+      // mock an event
+      const event = testData.validEvent;
+
+      // mock a network object with mocked 'getBlockTransactionIds'
+      const network = new TestChainNetwork();
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([generateRandomId(), generateRandomId()]);
+
+      // run test
+      const chain = generateChainObject(network);
+      const result = await chain.verifyEvent(event, feeConfig);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target AbstractChain.verifyEvent should return false when a field of event
+     * is wrong
+     * @dependencies
+     * @scenario
+     * - mock an event
+     * - mock a network object functions
+     *   - 'getBlockTransactionIds'
+     *   - 'getTransaction'
+     *   - 'getBlockInfo' to return event block height
+     * - mock rosen-extractor to return event data (expect for a key which
+     *   should be wrong)
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it.each([
+      'fromChain',
+      'toChain',
+      'networkFee',
+      'bridgeFee',
+      'amount',
+      'sourceChainTokenId',
+      'targetChainTokenId',
+      'toAddress',
+      'fromAddress',
+    ])('should return false when event %p is wrong', async (key: string) => {
+      // mock an event
+      const event = testData.validEvent;
+
+      //  mock a network object with mocked 'getBlockTransactionIds' and
+      //   'getTransaction' functions
+      const network = new TestChainNetwork();
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([
+          generateRandomId(),
+          event.sourceTxId,
+          generateRandomId(),
+        ]);
+
+      // mock 'getTransaction'
+      const tx = 'tx';
+      const getTransactionSpy = spyOn(network, 'getTransaction');
+      when(getTransactionSpy)
+        .calledWith(event.sourceTxId, event.sourceBlockId)
+        .mockResolvedValueOnce(tx);
+
+      // mock getBlockInfo to return event block height
+      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
+      when(getBlockInfoSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce({
+          height: event.sourceChainHeight,
+        } as any);
+
+      // mock rosen-extractor to return event data (expect for a key which
+      //   should be wrong)
+      const chain = generateChainObject(network);
+      const invalidData = event as unknown as RosenData;
+      invalidData[key as keyof RosenData] = `fake_${key}`;
+      const extractorSpy = spyOn((chain as any).extractor, 'get');
+      extractorSpy.mockReturnValueOnce(invalidData);
+
+      // run test
+      const result = await chain.verifyEvent(event, feeConfig);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target AbstractChain.verifyEvent should return false when event
+     * sourceChainHeight is wrong
+     * @dependencies
+     * @scenario
+     * - mock an event
+     * - mock a network object functions
+     *   - 'getBlockTransactionIds'
+     *   - 'getTransaction'
+     *   - 'getBlockInfo' to return event block height
+     * - mock rosen-extractor to return event data (expect for a key which
+     *   should be wrong)
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when event sourceChainHeight is wrong', async () => {
+      //  mock an event
+      const event = testData.validEvent;
+
+      // mock a network object with mocked 'getBlockTransactionIds' and
+      //   'getTransaction' functions
+      const network = new TestChainNetwork();
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([
+          generateRandomId(),
+          event.sourceTxId,
+          generateRandomId(),
+        ]);
+
+      // mock 'getTransaction'
+      const tx = 'tx';
+      const getTransactionSpy = spyOn(network, 'getTransaction');
+      when(getTransactionSpy)
+        .calledWith(event.sourceTxId, event.sourceBlockId)
+        .mockResolvedValueOnce(tx);
+
+      // mock getBlockInfo to return -1 as event block height
+      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
+      when(getBlockInfoSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce({
+          height: -1,
+        } as any);
+
+      // mock rosen-extractor to return event data
+      const chain = generateChainObject(network);
+      const extractorSpy = spyOn((chain as any).extractor, 'get');
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
+
+      // run test
+      const result = await chain.verifyEvent(event, feeConfig);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target AbstractChain.verifyEvent should return false when event amount
+     * is less than sum of event fees
+     * @dependencies
+     * @scenario
+     * - mock an event
+     * - mock a network object functions
+     *   - 'getBlockTransactionIds'
+     *   - 'getTransaction'
+     *   - 'getBlockInfo' to return event block height
+     * - mock rosen-extractor to return event data
+     * - mock verifyLockTransactionExtraConditions to return true
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when event amount is less than sum of event fees', async () => {
+      // mock an event
+      const event = testData.invalidEvent;
+
+      // mock a network object with mocked 'getBlockTransactionIds' and
+      //   'getTransaction' functions
+      const network = new TestChainNetwork();
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([
+          generateRandomId(),
+          event.sourceTxId,
+          generateRandomId(),
+        ]);
+
+      // mock 'getTransaction'
+      const tx = 'tx';
+      const getTransactionSpy = spyOn(network, 'getTransaction');
+      when(getTransactionSpy)
+        .calledWith(event.sourceTxId, event.sourceBlockId)
+        .mockResolvedValueOnce(tx);
+
+      // mock getBlockInfo to return event block height
+      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
+      when(getBlockInfoSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce({
+          height: event.sourceChainHeight,
+        } as any);
+
+      // mock rosen-extractor to return event data
+      const chain = generateChainObject(network);
+      const extractorSpy = spyOn((chain as any).extractor, 'get');
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
+
+      // mock verifyLockTransactionExtraConditions to return true
+      const verifyLockTxSpy = spyOn(
+        chain,
+        'verifyLockTransactionExtraConditions'
+      );
+      verifyLockTxSpy.mockReturnValueOnce(true);
+
+      // run test
+      const result = await chain.verifyEvent(event, feeConfig);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target AbstractChain.verifyEvent should return false when event amount
+     * is less than sum of event fees while bridgeFee is less than minimum-fee
+     * @dependencies
+     * @scenario
+     * - mock feeConfig
+     * - mock an event
+     * - mock a network object functions
+     *   - 'getBlockTransactionIds'
+     *   - 'getTransaction'
+     *   - 'getBlockInfo' to return event block height
+     * - mock rosen-extractor to return event data
+     * - mock verifyLockTransactionExtraConditions to return true
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when event amount is less than sum of event fees while bridgeFee is less than minimum-fee', async () => {
+      // mock feeConfig
+      const fee: Fee = {
+        bridgeFee: 1200000n,
+        networkFee: 0n,
+        rsnRatio: 0n,
+        feeRatio: 0n,
+      };
+
+      // mock an event
+      const event = testData.validEventWithHighFee;
+
+      // mock a network object with mocked 'getBlockTransactionIds' and
+      //   'getTransaction' functions
+      const network = new TestChainNetwork();
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([
+          generateRandomId(),
+          event.sourceTxId,
+          generateRandomId(),
+        ]);
+
+      // mock 'getTransaction'
+      const tx = 'tx';
+      const getTransactionSpy = spyOn(network, 'getTransaction');
+      when(getTransactionSpy)
+        .calledWith(event.sourceTxId, event.sourceBlockId)
+        .mockResolvedValueOnce(tx);
+
+      // mock getBlockInfo to return event block height
+      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
+      when(getBlockInfoSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce({
+          height: event.sourceChainHeight,
+        } as any);
+
+      // mock rosen-extractor to return event data
+      const chain = generateChainObject(network);
+      const extractorSpy = spyOn((chain as any).extractor, 'get');
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
+
+      // mock verifyLockTransactionExtraConditions to return true
+      const verifyLockTxSpy = spyOn(
+        chain,
+        'verifyLockTransactionExtraConditions'
+      );
+      verifyLockTxSpy.mockReturnValueOnce(true);
+
+      // run test
+      const result = await chain.verifyEvent(event, fee);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target AbstractChain.verifyEvent should return false when event amount
+     * is less than sum of event fees while bridgeFee is less than expected value
+     * @dependencies
+     * @scenario
+     * - mock feeConfig
+     * - mock an event
+     * - mock a network object functions
+     *   - 'getBlockTransactionIds'
+     *   - 'getTransaction'
+     *   - 'getBlockInfo' to return event block height
+     * - mock rosen-extractor to return event data
+     * - mock verifyLockTransactionExtraConditions to return true
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when event amount is less than sum of event fees while bridgeFee is less than expected value', async () => {
+      // mock feeConfig
+      const fee: Fee = {
+        bridgeFee: 0n,
+        networkFee: 0n,
+        rsnRatio: 0n,
+        feeRatio: 1200n,
+      };
+
+      // mock an event
+      const event = testData.validEventWithHighFee;
+
+      // mock a network object with mocked 'getBlockTransactionIds' and
+      //   'getTransaction' functions
+      const network = new TestChainNetwork();
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([
+          generateRandomId(),
+          event.sourceTxId,
+          generateRandomId(),
+        ]);
+
+      // mock 'getTransaction'
+      const tx = 'tx';
+      const getTransactionSpy = spyOn(network, 'getTransaction');
+      when(getTransactionSpy)
+        .calledWith(event.sourceTxId, event.sourceBlockId)
+        .mockResolvedValueOnce(tx);
+
+      // mock getBlockInfo to return event block height
+      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
+      when(getBlockInfoSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce({
+          height: event.sourceChainHeight,
+        } as any);
+
+      // mock rosen-extractor to return event data
+      const chain = generateChainObject(network);
+      const extractorSpy = spyOn((chain as any).extractor, 'get');
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
+
+      // mock verifyLockTransactionExtraConditions to return true
+      const verifyLockTxSpy = spyOn(
+        chain,
+        'verifyLockTransactionExtraConditions'
+      );
+      verifyLockTxSpy.mockReturnValueOnce(true);
+
+      // run test
+      const result = await chain.verifyEvent(event, fee);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target AbstractChain.verifyEvent should return false when lock tx is not verified
+     * @dependencies
+     * @scenario
+     * - mock an event
+     * - mock a network object functions
+     *   - 'getBlockTransactionIds'
+     *   - 'getTransaction'
+     *   - 'getBlockInfo' to return event block height
+     * - mock rosen-extractor to return event d ata
+     * - mock verifyLockTransactionExtraConditions to return false
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when lock tx is not verified', async () => {
+      //  mock an event
+      const event = testData.validEvent;
+
+      // mock a network object with mocked 'getBlockTransactionIds' and
+      //   'getTransaction' functions
+      const network = new TestChainNetwork();
+      const getBlockTransactionIdsSpy = spyOn(
+        network,
+        'getBlockTransactionIds'
+      );
+      when(getBlockTransactionIdsSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce([
+          generateRandomId(),
+          event.sourceTxId,
+          generateRandomId(),
+        ]);
+
+      // mock 'getTransaction'
+      const tx = 'tx';
+      const getTransactionSpy = spyOn(network, 'getTransaction');
+      when(getTransactionSpy)
+        .calledWith(event.sourceTxId, event.sourceBlockId)
+        .mockResolvedValueOnce(tx);
+
+      // mock getBlockInfo to return event block height
+      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
+      when(getBlockInfoSpy)
+        .calledWith(event.sourceBlockId)
+        .mockResolvedValueOnce({
+          height: event.sourceChainHeight,
+        } as any);
+
+      // mock rosen-extractor to return event data
+      const chain = generateChainObject(network);
+      const extractorSpy = spyOn((chain as any).extractor, 'get');
+      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
+
+      // mock verifyLockTransactionExtraConditions to return false
+      const verifyLockTxSpy = spyOn(
+        chain,
+        'verifyLockTransactionExtraConditions'
+      );
+      verifyLockTxSpy.mockReturnValueOnce(false);
+
+      // run test
+      const result = await chain.verifyEvent(event, feeConfig);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+  });
+
   describe('getTxConfirmationStatus', () => {
     const txId = 'tx-id';
     const txType = TransactionType.payment;
-    const requiredConfirmation = paymentTxConfirmation;
+    const requiredConfirmation = testData.paymentTxConfirmation;
     const network = new TestChainNetwork();
 
     /**

@@ -1,14 +1,11 @@
 import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
 import { CardanoProtocolParameters, CardanoTx, CardanoUtxo } from '../types';
-import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 
 abstract class AbstractCardanoNetwork extends AbstractUtxoChainNetwork<
   CardanoTx,
   CardanoUtxo
 > {
-  declare extractor: CardanoRosenExtractor;
-
   /**
    * submits a transaction (in CardanoWasm serialized hex string)
    * @param transaction the transaction

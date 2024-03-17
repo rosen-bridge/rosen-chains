@@ -1,5 +1,4 @@
 import { AbstractLogger } from '@rosen-bridge/abstract-logger';
-import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import {
   AbstractCardanoNetwork,
   CardanoUtxo,
@@ -10,7 +9,6 @@ import {
   CardanoMetadata,
   CardanoUtils,
 } from '@rosen-chains/cardano';
-import { RosenTokens } from '@rosen-bridge/tokens';
 import {
   AssetBalance,
   BlockInfo,
@@ -43,17 +41,13 @@ import { UNKNOWN_TOKEN } from '@rosen-chains/abstract-chain';
 
 class CardanoBlockFrostNetwork extends AbstractCardanoNetwork {
   protected client: BlockFrostAPI;
-  extractor: CardanoRosenExtractor;
 
   constructor(
     projectId: string,
-    lockAddress: string,
-    tokens: RosenTokens,
     blockFrostUrl?: string,
     logger?: AbstractLogger
   ) {
     super(logger);
-    this.extractor = new CardanoRosenExtractor(lockAddress, tokens, logger);
     this.client = new BlockFrostAPI({
       projectId: projectId,
       customBackend: blockFrostUrl,

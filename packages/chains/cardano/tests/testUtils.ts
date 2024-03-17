@@ -1,7 +1,11 @@
 import { randomBytes } from 'crypto';
-import { CardanoUtxo } from '../lib/types';
+import { CardanoConfigs, CardanoUtxo } from '../lib/types';
 import * as CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import CardanoUtils from '../lib/CardanoUtils';
+import { RosenTokens } from '@rosen-bridge/tokens';
+import { testTokenMap } from './testData';
+import TestCardanoNetwork from './network/TestCardanoNetwork';
+import { CardanoChain } from '../lib';
 
 export const mockBankBoxes = (): CardanoUtxo[] => {
   const box1: CardanoUtxo = {
@@ -118,4 +122,47 @@ export const protocolParameters = {
   maxValueSize: 4000,
   maxTxSize: 8000,
   coinsPerUtxoSize: '4311',
+};
+
+export const observationTxConfirmation = 5;
+export const paymentTxConfirmation = 9;
+export const coldTxConfirmation = 10;
+export const manualTxConfirmation = 11;
+export const rwtId =
+  '9410db5b39388c6b515160e7248346d7ec63d5457292326da12a26cc02efb526';
+export const feeRationDivisor = 1n;
+export const minBoxValue = 2000000n;
+export const configs: CardanoConfigs = {
+  fee: 1000000n,
+  minBoxValue: minBoxValue,
+  txTtl: 64,
+  addresses: {
+    lock: 'addr1qxwkc9uhw02wvkgw9qkrw2twescuc2ss53t5yaedl0zcyen2a0y7redvgjx0t0al56q9dkyzw095eh8jw7luan2kh38qpw3xgs',
+    cold: 'cold',
+    permit: 'permit',
+    fraud: 'fraud',
+  },
+  rwtId: rwtId,
+  confirmations: {
+    observation: observationTxConfirmation,
+    payment: paymentTxConfirmation,
+    cold: coldTxConfirmation,
+    manual: manualTxConfirmation,
+  },
+  aggregatedPublicKey:
+    'bcb07faa6c0f19e2f2587aa9ef6f43a68fc0135321216a71dc87c8527af4ca6a',
+};
+export const rosenTokens: RosenTokens = JSON.parse(testTokenMap);
+export const mockedSignFn = () => Promise.resolve('');
+export const generateChainObject = (
+  network: TestCardanoNetwork,
+  signFn: (txHash: Uint8Array) => Promise<string> = mockedSignFn
+) => {
+  return new CardanoChain(
+    network,
+    configs,
+    feeRationDivisor,
+    rosenTokens,
+    signFn
+  );
 };

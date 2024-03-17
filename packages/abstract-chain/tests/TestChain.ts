@@ -1,13 +1,16 @@
 import {
   AbstractChain,
-  AssetBalance,
   PaymentOrder,
   PaymentTransaction,
   TransactionAssetBalance,
   TransactionType,
 } from '../lib';
+import TestRosenDataExtractor from './TestRosenDataExtractor';
 
-class TestChain extends AbstractChain {
+class TestChain extends AbstractChain<string> {
+  protected CHAIN = 'test';
+  protected extractor = new TestRosenDataExtractor();
+
   notImplemented = () => {
     throw Error('Not implemented');
   };
@@ -15,7 +18,6 @@ class TestChain extends AbstractChain {
   extractTransactionOrder = this.notImplemented;
   verifyTransactionFee = this.notImplemented;
   verifyTransactionExtraConditions = this.notImplemented;
-  verifyEvent = this.notImplemented;
   isTxValid = this.notImplemented;
   signTransaction = this.notImplemented;
   submitTransaction = this.notImplemented;
@@ -40,6 +42,8 @@ class TestChain extends AbstractChain {
   ): Promise<TransactionAssetBalance> => {
     throw Error('Not mocked');
   };
+
+  serializeTx = (tx: string) => tx;
 }
 
 export default TestChain;

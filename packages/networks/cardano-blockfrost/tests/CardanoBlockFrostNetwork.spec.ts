@@ -23,29 +23,8 @@ describe('CardanoBlockFrostNetwork', () => {
   const mockNetwork = () =>
     new TestCardanoBlockFrostNetwork(
       'testProjectId',
-      'lockAddress',
-      {
-        idKeys: {},
-        tokens: [],
-      },
       'http://blockfrost_test_url.test'
     );
-
-  describe('constructor', () => {
-    /**
-     * @target constructor of `CardanoBlockFrostNetwork` should set extractor
-     * @dependencies
-     * @scenario
-     * - construct an `CardanoBlockFrostNetwork`
-     * @expected
-     * - extractor of network should be defined
-     */
-    it('should set extractor', () => {
-      const network = mockNetwork();
-
-      expect(network.extractor).toBeDefined();
-    });
-  });
 
   describe('getHeight', () => {
     /**

@@ -1,5 +1,4 @@
 import { AbstractLogger } from '@rosen-bridge/abstract-logger';
-import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import {
   AbstractCardanoNetwork,
   CardanoUtxo,
@@ -10,7 +9,6 @@ import {
   CardanoMetadata,
   CardanoUtils,
 } from '@rosen-chains/cardano';
-import { RosenTokens } from '@rosen-bridge/tokens';
 import {
   AssetBalance,
   BlockInfo,
@@ -43,16 +41,9 @@ import * as GraphQLTypes from './graphQLTypes';
 
 class CardanoGraphQLNetwork extends AbstractCardanoNetwork {
   protected client: ApolloClient<NormalizedCacheObject>;
-  extractor: CardanoRosenExtractor;
 
-  constructor(
-    graphqlUri: string,
-    lockAddress: string,
-    tokens: RosenTokens,
-    logger?: AbstractLogger
-  ) {
+  constructor(graphqlUri: string, logger?: AbstractLogger) {
     super(logger);
-    this.extractor = new CardanoRosenExtractor(lockAddress, tokens, logger);
     this.client = new ApolloClient({
       cache: new InMemoryCache(),
       uri: graphqlUri,

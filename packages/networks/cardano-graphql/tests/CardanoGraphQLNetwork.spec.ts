@@ -12,27 +12,7 @@ describe('CardanoGraphQLNetwork', () => {
     vi.spyOn(client, 'query').mockResolvedValue(result);
   };
 
-  const mockNetwork = () =>
-    new TestCardanoGraphQLNetwork('testProjectId', 'lockAddress', {
-      idKeys: {},
-      tokens: [],
-    });
-
-  describe('constructor', () => {
-    /**
-     * @target constructor of `CardanoGraphQLNetwork` should set extractor
-     * @dependencies
-     * @scenario
-     * - construct an `CardanoGraphQLNetwork`
-     * @expected
-     * - extractor of network should be defined
-     */
-    it('should set extractor', () => {
-      const network = mockNetwork();
-
-      expect(network.extractor).toBeDefined();
-    });
-  });
+  const mockNetwork = () => new TestCardanoGraphQLNetwork('testProjectId');
 
   describe('getHeight', () => {
     /**

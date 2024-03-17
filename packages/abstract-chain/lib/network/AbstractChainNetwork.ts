@@ -1,9 +1,7 @@
 import { AssetBalance, BlockInfo, TokenDetail } from '../types';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
 
 abstract class AbstractChainNetwork<TxType> {
-  protected abstract extractor: AbstractRosenDataExtractor<string>;
   logger: AbstractLogger;
 
   constructor(logger?: AbstractLogger) {

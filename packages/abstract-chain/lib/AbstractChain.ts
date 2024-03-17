@@ -1,10 +1,19 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { Fee } from '@rosen-bridge/minimum-fee';
+import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
+import { blake2b } from 'blakejs';
 import ChainUtils from './ChainUtils';
-import { ValueError } from './errors';
+import {
+  FailedError,
+  NetworkError,
+  NotFoundError,
+  UnexpectedApiError,
+  ValueError,
+} from './errors';
 import AbstractChainNetwork from './network/AbstractChainNetwork';
 import {
   AssetBalance,
+  BlockInfo,
   ChainConfigs,
   ConfirmationStatus,
   EventTrigger,
@@ -16,18 +25,23 @@ import {
 } from './types';
 import PaymentTransaction from './PaymentTransaction';
 
-abstract class AbstractChain {
-  protected network: AbstractChainNetwork<unknown>;
+abstract class AbstractChain<TxType> {
+  protected abstract CHAIN: string;
+  protected abstract extractor: AbstractRosenDataExtractor<string>;
+  protected network: AbstractChainNetwork<TxType>;
   protected configs: ChainConfigs;
+  feeRatioDivisor: bigint;
   logger: AbstractLogger;
 
   constructor(
-    network: AbstractChainNetwork<unknown>,
+    network: AbstractChainNetwork<TxType>,
     configs: ChainConfigs,
+    feeRatioDivisor: bigint,
     logger?: AbstractLogger
   ) {
     this.network = network;
     this.configs = configs;
+    this.feeRatioDivisor = feeRatioDivisor;
     this.logger = logger ? logger : new DummyLogger();
   }
 
@@ -137,12 +151,121 @@ abstract class AbstractChain {
    * verifies an event data with its corresponding lock transaction
    * @param event the event trigger model
    * @param feeConfig minimum fee and rsn ratio config for the event
-   * @returns true if the event is verified
+   * @returns true if the event verified
    */
-  abstract verifyEvent: (
+  verifyEvent = async (
     event: EventTrigger,
     feeConfig: Fee
-  ) => Promise<boolean>;
+  ): Promise<boolean> => {
+    const eventId = Buffer.from(
+      blake2b(event.sourceTxId, undefined, 32)
+    ).toString('hex');
+
+    try {
+      const blockTxs = await this.network.getBlockTransactionIds(
+        event.sourceBlockId
+      );
+      if (!blockTxs.includes(event.sourceTxId)) {
+        this.logger.info(
+          `Event [${eventId}] is not valid, lock tx [${event.sourceTxId}] is not in event source block [${event.sourceBlockId}]`
+        );
+        return false;
+      }
+      const tx = await this.network.getTransaction(
+        event.sourceTxId,
+        event.sourceBlockId
+      );
+      const blockInfo = await this.network.getBlockInfo(event.sourceBlockId)
+      const data = this.extractor.get(this.serializeTx(tx));
+      if (!data) {
+        this.logger.info(
+          `Event [${eventId}] is not valid, failed to extract rosen data from lock transaction`
+        );
+        return false;
+      }
+      if (
+        event.fromChain == this.CHAIN &&
+        event.toChain == data.toChain &&
+        event.networkFee == data.networkFee &&
+        event.bridgeFee == data.bridgeFee &&
+        event.amount == data.amount &&
+        event.sourceChainTokenId == data.sourceChainTokenId &&
+        event.targetChainTokenId == data.targetChainTokenId &&
+        event.toAddress == data.toAddress &&
+        event.fromAddress == data.fromAddress &&
+        event.sourceChainHeight == blockInfo.height
+      ) {
+        try {
+          // check if amount is more than fees
+          const eventAmount = BigInt(event.amount);
+          let bridgeFee = BigInt(event.bridgeFee);
+          if (feeConfig.bridgeFee > bridgeFee) bridgeFee = feeConfig.bridgeFee;
+          const transferringAmountFee =
+            (eventAmount * feeConfig.feeRatio) / this.feeRatioDivisor;
+          if (transferringAmountFee > bridgeFee)
+            bridgeFee = transferringAmountFee;
+          const networkFee =
+            BigInt(event.networkFee) > feeConfig.networkFee
+              ? BigInt(event.networkFee)
+              : feeConfig.networkFee;
+          if (eventAmount < bridgeFee + networkFee) {
+            this.logger.info(
+              `Event [${eventId}] is not valid, event amount [${eventAmount}] is less than sum of bridgeFee [${bridgeFee}] and networkFee [${networkFee}]`
+            );
+            return false;
+          }
+        } catch (e) {
+          throw new UnexpectedApiError(
+            `Failed in comparing event amount to fees: ${e}`
+          );
+        }
+        if (this.verifyLockTransactionExtraConditions(tx, blockInfo)) {
+          this.logger.info(
+            `Event [${eventId}] has been successfully validated`
+          );
+          return true;
+        } else {
+          this.logger.info(
+            `Event [${eventId}] is not valid, lock tx [${event.sourceTxId}] is not verified`
+          );
+          return false;
+        }
+      } else {
+        this.logger.info(
+          `Event [${eventId}] is not valid, event data does not match with lock tx [${event.sourceTxId}]`
+        );
+        return false;
+      }
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        this.logger.info(
+          `Event [${eventId}] is not valid, lock tx [${event.sourceTxId}] is not available in network`
+        );
+        return false;
+      } else if (
+        e instanceof FailedError ||
+        e instanceof NetworkError ||
+        e instanceof UnexpectedApiError
+      ) {
+        throw Error(`Skipping event [${eventId}] validation: ${e}`);
+      } else {
+        this.logger.warn(`Event [${eventId}] validation failed: ${e}`);
+        return false;
+      }
+    }
+  };
+
+  /**
+   * verifies additional conditions for a event lock transaction
+   * @param transaction the lock transaction
+   * @param blockInfo
+   * @returns true if the transaction is verified
+   */
+  verifyLockTransactionExtraConditions = (transaction: TxType, blockInfo: BlockInfo): boolean => {
+    throw Error(
+      `You must implement 'verifyLockTransactionExtraConditions' or override 'verifyEvent' implementation`
+    );
+  };
 
   /**
    * checks if a transaction is still valid and can be sent to the network
@@ -317,6 +440,11 @@ abstract class AbstractChain {
    */
   getTokenDetail = (tokenId: string): Promise<TokenDetail> =>
     this.network.getTokenDetail(tokenId);
+
+  /**
+   * serializes the transaction of this chain into string
+   */
+  protected abstract serializeTx: (tx: TxType) => string;
 }
 
 export default AbstractChain;

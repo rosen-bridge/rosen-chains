@@ -1,6 +1,10 @@
 import { AbstractUtxoChain, BoxInfo } from '../lib';
+import TestRosenDataExtractor from './TestRosenDataExtractor';
 
-class TestUtxoChain extends AbstractUtxoChain<string> {
+class TestUtxoChain extends AbstractUtxoChain<string, string> {
+  protected CHAIN = 'test-utxo';
+  protected extractor = new TestRosenDataExtractor();
+
   notImplemented = () => {
     throw Error('Not implemented');
   };
@@ -24,6 +28,8 @@ class TestUtxoChain extends AbstractUtxoChain<string> {
   getBoxInfo = (box: string): BoxInfo => {
     throw Error('Not mocked');
   };
+
+  serializeTx = (tx: string) => tx;
 }
 
 export default TestUtxoChain;
