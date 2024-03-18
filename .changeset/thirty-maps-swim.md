@@ -2,4 +2,4 @@
 '@rosen-chains/abstract-chain': minor
 ---
 
-Introduced a new error type MaxParallelTxError
+Introduced new error types for EvmChain
