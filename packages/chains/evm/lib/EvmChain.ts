@@ -13,6 +13,7 @@ import {
   SinglePayment,
   PaymentTransactionJsonModel,
   AssetBalance,
+  AssetNotSupportedError,
 } from '@rosen-chains/abstract-chain';
 import { Fee } from '@rosen-bridge/minimum-fee';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
@@ -28,22 +29,29 @@ abstract class EvmChain extends AbstractChain {
   abstract CHAIN_NAME: string;
   abstract CHAIN_ID: bigint;
   feeRatioDivisor: bigint;
+  supportedTokens: Array<string>;
   protected signFunction: (txHash: Uint8Array) => Promise<string>;
 
   constructor(
     network: AbstractEvmNetwork,
     configs: any,
     feeRatioDivisor: bigint,
+    supportedTokens: Array<string>,
     signFunction: (txHash: Uint8Array) => Promise<string>,
     logger?: any
   ) {
     super(network, configs, logger);
     this.feeRatioDivisor = feeRatioDivisor;
+    this.supportedTokens = supportedTokens;
     this.signFunction = signFunction;
   }
 
   /**
    * generates unsigned PaymentTransaction for payment order
+   * performs the following checks before:
+   * - in case of erc-20 transfer, the tokenId must be in our supported list
+   * - numbere of pending transactions shouldn't exceed our maxParallelTx
+   * - lock address should have enough balance
    * @param eventId the id of event
    * @param txType transaction type
    * @param order the payment order (list of single payments)
@@ -59,7 +67,15 @@ abstract class EvmChain extends AbstractChain {
     serializedSignedTransactions: string[]
   ): Promise<PaymentTransaction> => {
     // TODO later change this to return a transaction per SinglePayment
-    order = [EvmUtils.splitPaymentOrders(order)[0]];
+    const singleOrder = EvmUtils.splitPaymentOrders(order)[0];
+    if (singleOrder.assets.tokens.length === 1) {
+      const assetId = singleOrder.assets.tokens[0].id;
+      if (!this.supportedTokens.includes(assetId)) {
+        throw new AssetNotSupportedError(
+          `Asset id ${assetId} is not supported`
+        );
+      }
+    }
     // Check the number of parallel transaction won't be exceeded
     const waiting =
       unsignedTransactions.length + serializedSignedTransactions.length;
@@ -70,9 +86,9 @@ abstract class EvmChain extends AbstractChain {
 
     // Check the balance in the lock address
     const gasPrice = await this.network.getMaxFeePerGas();
-    const gasRequired = this.getGasRequired(order[0]);
+    const gasRequired = this.getGasRequired(singleOrder);
     const fee = gasRequired * gasPrice;
-    const requiredAssets = ChainUtils.sumAssetBalance(order[0].assets, {
+    const requiredAssets = ChainUtils.sumAssetBalance(singleOrder.assets, {
       nativeToken: fee,
       tokens: [],
     });
@@ -91,23 +107,23 @@ abstract class EvmChain extends AbstractChain {
     );
     const maxPriorityFeePerGas = await this.network.getMaxPriorityFeePerGas();
 
-    if (order[0].assets.nativeToken !== 0n) {
+    if (singleOrder.assets.nativeToken !== 0n) {
       trx = Transaction.from({
         type: 2,
-        to: order[0].address,
+        to: singleOrder.address,
         nonce: nonce,
         gasLimit: gasRequired,
         maxPriorityFeePerGas: maxPriorityFeePerGas,
         maxFeePerGas: gasPrice,
         data: '0x' + eventId,
-        value: order[0].assets.nativeToken,
+        value: singleOrder.assets.nativeToken,
         chainId: this.CHAIN_ID,
       });
     } else {
-      const token = order[0].assets.tokens[0];
+      const token = singleOrder.assets.tokens[0];
       const data = EvmUtils.encodeTransferCallData(
         token.id,
-        order[0].address,
+        singleOrder.address,
         token.value
       );
       trx = Transaction.from({

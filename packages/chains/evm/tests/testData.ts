@@ -5,6 +5,7 @@ import {
 import { PaymentOrder, AssetBalance } from '@rosen-chains/abstract-chain';
 
 export const lockAddress = '0xedee4752e5a2f595151c94762fb38e5730357785';
+export const supportedTokens = ['0xedee4752e5a2f595151c94762fb38e5730357785'];
 
 export const nativePaymentOrder: PaymentOrder = [
   {

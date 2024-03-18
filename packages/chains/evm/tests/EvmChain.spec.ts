@@ -3,6 +3,7 @@ import TestEvmNetwork from './network/TestEvmNetwork';
 import * as TestData from './testData';
 
 import {
+  AssetNotSupportedError,
   MaxParallelTxError,
   NotEnoughAssetsError,
   PaymentTransaction,
@@ -22,7 +23,13 @@ describe('EvmChain', () => {
     network: TestEvmNetwork,
     signFn: (txHash: Uint8Array) => Promise<string> = testUtils.mockedSignFn
   ) => {
-    return new TestChain(network, testUtils.configs, feeRatioDivisor, signFn);
+    return new TestChain(
+      network,
+      testUtils.configs,
+      feeRatioDivisor,
+      TestData.supportedTokens,
+      signFn
+    );
   };
   const evmChain = generateChainObject(network);
 
@@ -152,6 +159,42 @@ describe('EvmChain', () => {
 
       // check there is no more data
       expect(Serializer.deserialize(evmTx.txBytes).data.length).toEqual(34);
+    });
+
+    /**
+     * @target EvmChain.generateTransaction should throw error
+     * when token id is not supported
+     * @dependencies
+     * @scenario
+     * - mock PaymentOrder
+     * - call the function
+     * @expected
+     * - throw AssetNotSupportedError
+     */
+    it('should throw error when when token id is not supported', async () => {
+      const token = { ...TestData.erc20PaymentOrder[0].assets.tokens[0] };
+      token.id = '0x12345672e5a2f595151c94762fb38e5730357785';
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = 'payment' as TransactionType;
+      console.log(TestData.erc20PaymentOrder[0].assets);
+      // run test and expect error
+      await expect(async () => {
+        await evmChain.generateTransaction(
+          eventId,
+          txType,
+          [
+            {
+              address: '0xcfb01d43cb1299024171141d449bb9cd08f4c075',
+              assets: {
+                nativeToken: 0n,
+                tokens: [token],
+              },
+            },
+          ],
+          [],
+          []
+        );
+      }).rejects.toThrow(AssetNotSupportedError);
     });
 
     /**

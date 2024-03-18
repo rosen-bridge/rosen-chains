@@ -61,6 +61,11 @@ class DeserializationError extends Error {
     super('DeserializationError: ' + msg);
   }
 }
+class AssetNotSupportedError extends Error {
+  constructor(msg: string) {
+    super('AssetNotSupportedError: ' + msg);
+  }
+}
 
 export {
   FailedError,
@@ -74,4 +79,5 @@ export {
   MaxParallelTxError,
   SerializationError,
   DeserializationError,
+  AssetNotSupportedError,
 };
