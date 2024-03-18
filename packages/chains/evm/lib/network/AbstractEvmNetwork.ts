@@ -3,7 +3,6 @@ import { AssetBalance } from '../../../../abstract-chain';
 import { TransactionResponse } from 'ethers';
 
 abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionResponse> {
-  // TODO evm extractor is missing for now
   /**
    * gets the amount of the input ERC20 asset in an address
    * @param address the address
@@ -12,7 +11,7 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
    */
   abstract getAddressBalanceForERC20Asset: (
     address: string,
-    tokenId: string
+    tokenId: string,
   ) => Promise<AssetBalance>;
 
   /**
@@ -21,7 +20,7 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
    * @returns a bigint inidcating the amount of native token
    */
   abstract getAddressBalanceForNativeToken: (
-    address: string
+    address: string,
   ) => Promise<bigint>;
 
   /**
@@ -48,7 +47,7 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
   abstract getGasRequiredERC20Transfer: (
     contract: string,
     to: string,
-    amount: bigint
+    amount: bigint,
   ) => bigint;
 
   /**

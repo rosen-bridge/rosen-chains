@@ -1,16 +1,14 @@
 import {
   AbstractChain,
-  ConfirmationStatus,
-  EventTrigger,
   PaymentOrder,
   PaymentTransaction,
   SigningStatus,
   TransactionAssetBalance,
   TransactionType,
 } from '@rosen-chains/abstract-chain';
-import { Fee } from '@rosen-bridge/minimum-fee';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
-class EvmChain extends AbstractChain {
+import { TransactionResponse } from 'ethers';
+abstract class EvmChain extends AbstractChain<TransactionResponse> {
   declare network: AbstractEvmNetwork;
   constructor(network: AbstractEvmNetwork, configs: any, logger?: any) {
     super(network, configs, logger);
@@ -30,8 +28,27 @@ class EvmChain extends AbstractChain {
     txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
-    serializedSignedTransactions: string[]
+    serializedSignedTransactions: string[],
   ): Promise<PaymentTransaction> => {
+    throw new Error('Not implemented yet.');
+  };
+
+  /**
+   * generates single or multiple unsigned PaymentTransactions for a payment order
+   * @param eventId the id of event
+   * @param txType transaction type
+   * @param order the payment order (list of single payments)
+   * @param unsignedTransactions ongoing unsigned PaymentTransactions (used for preventing double spend)
+   * @param serializedSignedTransactions the serialized string of ongoing signed transactions (used for chaining transaction)
+   * @returns the generated PaymentTransaction
+   */
+  generateMultipleTransactions = async (
+    eventId: string,
+    txType: TransactionType,
+    order: PaymentOrder,
+    unsignedTransactions: PaymentTransaction[],
+    serializedSignedTransactions: string[],
+  ): Promise<PaymentTransaction[]> => {
     throw new Error('Not implemented yet.');
   };
 
@@ -41,7 +58,7 @@ class EvmChain extends AbstractChain {
    * @returns an object containing the amount of input and output assets
    */
   getTransactionAssets = async (
-    transaction: PaymentTransaction
+    transaction: PaymentTransaction,
   ): Promise<TransactionAssetBalance> => {
     throw new Error('Not implemented yet.');
   };
@@ -61,20 +78,7 @@ class EvmChain extends AbstractChain {
    * @returns true if the transaction fee is verified
    */
   verifyTransactionFee = (
-    transaction: PaymentTransaction
-  ): Promise<boolean> => {
-    throw new Error('Not implemented yet.');
-  };
-
-  /**
-   * verifies an event data with its corresponding lock transaction
-   * @param event the event trigger model
-   * @param feeConfig minimum fee and rsn ratio config for the event
-   * @returns true if the event is verified
-   */
-  verifyEvent = async (
-    event: EventTrigger,
-    feeConfig: Fee
+    transaction: PaymentTransaction,
   ): Promise<boolean> => {
     throw new Error('Not implemented yet.');
   };
@@ -87,7 +91,7 @@ class EvmChain extends AbstractChain {
    */
   isTxValid = async (
     transaction: PaymentTransaction,
-    signingStatus: SigningStatus
+    signingStatus: SigningStatus,
   ): Promise<boolean> => {
     throw new Error('Not implemented yet.');
   };
@@ -100,7 +104,7 @@ class EvmChain extends AbstractChain {
    */
   signTransaction = async (
     transaction: PaymentTransaction,
-    requiredSign: number
+    requiredSign: number,
   ): Promise<PaymentTransaction> => {
     throw new Error('Not implemented yet.');
   };
@@ -110,7 +114,7 @@ class EvmChain extends AbstractChain {
    * @param transaction the transaction
    */
   submitTransaction = async (
-    transaction: PaymentTransaction
+    transaction: PaymentTransaction,
   ): Promise<void> => {
     throw new Error('Not implemented yet.');
   };
@@ -147,7 +151,7 @@ class EvmChain extends AbstractChain {
    * @returns PaymentTransaction object
    */
   rawTxToPaymentTransaction = async (
-    rawTxJsonString: string
+    rawTxJsonString: string,
   ): Promise<PaymentTransaction> => {
     throw new Error('Not implemented yet.');
   };
@@ -158,10 +162,15 @@ class EvmChain extends AbstractChain {
    * @returns true if the transaction is verified
    */
   verifyTransactionExtraConditions = (
-    transaction: PaymentTransaction
+    transaction: PaymentTransaction,
   ): boolean => {
     throw new Error('Not implemented yet.');
   };
+
+  /**
+   * serializes the transaction of this chain into string
+   */
+  protected serializeTx = (tx: TransactionResponse): string => tx.toJSON();
 }
 
 export default EvmChain;

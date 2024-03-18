@@ -12,33 +12,7 @@ describe('BitcoinEsploraNetwork', () => {
 
   beforeEach(() => {
     resetAxiosMock();
-    network = new BitcoinEsploraNetwork('esplora-url', testData.lockAddress, {
-      idKeys: {},
-      tokens: [],
-    });
-  });
-
-  describe('constructor', () => {
-    /**
-     * @target constructor of `BitcoinEsploraNetwork` should set extractor
-     * @dependencies
-     * @scenario
-     * - construct an `BitcoinEsploraNetwork`
-     * @expected
-     * - extractor of network should be defined
-     */
-    it('should set extractor', () => {
-      const network = new BitcoinEsploraNetwork(
-        'esplora-url',
-        testData.lockAddress,
-        {
-          idKeys: {},
-          tokens: [],
-        }
-      );
-
-      expect(network.extractor).toBeDefined();
-    });
+    network = new BitcoinEsploraNetwork('esplora-url');
   });
 
   describe('getHeight', () => {
@@ -247,7 +221,7 @@ describe('BitcoinEsploraNetwork', () => {
 
       const result = await network.getTransaction(
         testData.txId,
-        testData.txBlockHash
+        testData.txBlockHash,
       );
 
       expect(result).toEqual(testData.bitcoinTx);
@@ -289,7 +263,7 @@ describe('BitcoinEsploraNetwork', () => {
       const result = await network.getAddressBoxes(
         testData.lockAddress,
         0,
-        100
+        100,
       );
 
       expect(result).toEqual(testData.addressUtxos);
@@ -312,7 +286,7 @@ describe('BitcoinEsploraNetwork', () => {
       const result = await network.getAddressBoxes(
         testData.lockAddress,
         0,
-        100
+        100,
       );
 
       expect(result).toEqual([]);

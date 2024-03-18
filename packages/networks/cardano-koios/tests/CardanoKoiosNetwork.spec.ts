@@ -23,27 +23,7 @@ import JsonBigInt from '@rosen-bridge/json-bigint';
 jest.mock('@rosen-clients/cardano-koios');
 
 describe('CardanoKoiosNetwork', () => {
-  const mockNetwork = () =>
-    new CardanoKoiosNetwork('https://test.url', 'lockAddress', {
-      idKeys: {},
-      tokens: [],
-    });
-
-  describe('constructor', () => {
-    /**
-     * @target constructor of `CardanoKoiosNetwork` should set extractor
-     * @dependencies
-     * @scenario
-     * - construct an `CardanoKoiosNetwork`
-     * @expected
-     * - extractor of network should be defined
-     */
-    it('should set extractor', () => {
-      const network = mockNetwork();
-
-      expect(network.extractor).toBeDefined();
-    });
-  });
+  const mockNetwork = () => new CardanoKoiosNetwork('https://test.url');
 
   describe('getHeight', () => {
     /**

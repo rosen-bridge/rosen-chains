@@ -1,4 +1,16 @@
+import { RosenTokens } from '@rosen-bridge/tokens';
 import { EventTrigger, PaymentOrder } from '@rosen-chains/abstract-chain';
+
+export const testTokenMap: RosenTokens = JSON.parse(`
+{
+  "idKeys" : {
+    "ergo" : "tokenId",
+    "cardano" : "tokenId",
+    "bitcoin" : "tokenId"
+  },
+  "tokens" : []
+}
+`);
 
 export const transaction0PaymentTransaction = `{
   "network": "bitcoin",

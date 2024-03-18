@@ -1,41 +1,38 @@
 import { AbstractLogger } from '@rosen-bridge/abstract-logger';
-import { Fee } from '@rosen-bridge/minimum-fee';
 import {
   AbstractUtxoChain,
   AssetBalance,
+  BlockInfo,
   BoxInfo,
   ChainUtils,
   CoveringBoxes,
-  EventTrigger,
-  FailedError,
   GET_BOX_API_LIMIT,
-  NetworkError,
   NotEnoughAssetsError,
   NotEnoughValidBoxesError,
-  NotFoundError,
   PaymentOrder,
   PaymentTransaction,
   SigningStatus,
   SinglePayment,
   TransactionAssetBalance,
   TransactionType,
-  UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
 import AbstractBitcoinNetwork from './network/AbstractBitcoinNetwork';
 import BitcoinTransaction from './BitcoinTransaction';
-import { BitcoinConfigs, BitcoinUtxo } from './types';
+import { BitcoinConfigs, BitcoinTx, BitcoinUtxo } from './types';
 import Serializer from './Serializer';
 import { Psbt, Transaction, address, payments, script } from 'bitcoinjs-lib';
 import JsonBigInt from '@rosen-bridge/json-bigint';
 import { estimateTxFee, getPsbtTxInputBoxId } from './bitcoinUtils';
 import { BITCOIN_CHAIN, SEGWIT_INPUT_WEIGHT_UNIT } from './constants';
-import { blake2b } from 'blakejs';
 import { selectBitcoinUtxos } from '@rosen-bridge/bitcoin-utxo-selection';
+import { BitcoinRosenExtractor } from '@rosen-bridge/rosen-extractor';
+import { RosenTokens } from '@rosen-bridge/tokens';
 
-class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
+class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
   declare network: AbstractBitcoinNetwork;
   declare configs: BitcoinConfigs;
-  feeRatioDivisor: bigint;
+  CHAIN = BITCOIN_CHAIN;
+  extractor: BitcoinRosenExtractor;
   protected signFunction: (txHash: Uint8Array) => Promise<string>;
   protected lockScript: string;
   protected signingScript: Buffer;
@@ -44,11 +41,16 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     network: AbstractBitcoinNetwork,
     configs: BitcoinConfigs,
     feeRatioDivisor: bigint,
+    tokens: RosenTokens,
     signFunction: (txHash: Uint8Array) => Promise<string>,
-    logger?: AbstractLogger
+    logger?: AbstractLogger,
   ) {
-    super(network, configs, logger);
-    this.feeRatioDivisor = feeRatioDivisor;
+    super(network, configs, feeRatioDivisor, logger);
+    this.extractor = new BitcoinRosenExtractor(
+      configs.addresses.lock,
+      tokens,
+      logger,
+    );
     this.signFunction = signFunction;
     this.lockScript = address
       .toOutputScript(this.configs.addresses.lock)
@@ -67,15 +69,15 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * @param serializedSignedTransactions the serialized string of ongoing signed transactions (used for chaining transaction)
    * @returns the generated PaymentTransaction
    */
-  generateTransaction = async (
+  generateMultipleTransactions = async (
     eventId: string,
     txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
-    serializedSignedTransactions: string[]
-  ): Promise<BitcoinTransaction> => {
+    serializedSignedTransactions: string[],
+  ): Promise<BitcoinTransaction[]> => {
     this.logger.debug(
-      `Generating Bitcoin transaction for Order: ${JsonBigInt.stringify(order)}`
+      `Generating Bitcoin transaction for Order: ${JsonBigInt.stringify(order)}`,
     );
     const feeRatio = await this.network.getFeeRatio();
 
@@ -87,13 +89,13 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
         tokens: [],
       });
     this.logger.debug(
-      `Required assets: ${JsonBigInt.stringify(requiredAssets)}`
+      `Required assets: ${JsonBigInt.stringify(requiredAssets)}`,
     );
 
     if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
       const neededBtc = requiredAssets.nativeToken.toString();
       throw new NotEnoughAssetsError(
-        `Locked assets cannot cover required assets. BTC: ${neededBtc}`
+        `Locked assets cannot cover required assets. BTC: ${neededBtc}`,
       );
     }
 
@@ -107,9 +109,9 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     });
     const trackMap = this.getTransactionsBoxMapping(
       serializedSignedTransactions.map((serializedTx) =>
-        Psbt.fromHex(serializedTx)
+        Psbt.fromHex(serializedTx),
       ),
-      this.configs.addresses.lock
+      this.configs.addresses.lock,
     );
 
     // fetch input boxes
@@ -117,12 +119,12 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
       this.configs.addresses.lock,
       requiredAssets,
       forbiddenBoxIds,
-      trackMap
+      trackMap,
     );
     if (!coveredBoxes.covered) {
       const neededBtc = requiredAssets.nativeToken.toString();
       throw new NotEnoughValidBoxesError(
-        `Available boxes didn't cover required assets. BTC: ${neededBtc}`
+        `Available boxes didn't cover required assets. BTC: ${neededBtc}`,
       );
     }
 
@@ -169,7 +171,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     const estimatedFee = estimateTxFee(
       psbt.txInputs.length,
       psbt.txOutputs.length + 1,
-      feeRatio
+      feeRatio,
     );
     this.logger.debug(`Estimated Fee: ${estimatedFee}`);
     remainingBtc -= estimatedFee;
@@ -187,13 +189,13 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
       eventId,
       txBytes,
       txType,
-      coveredBoxes.boxes.map((box) => JsonBigInt.stringify(box))
+      coveredBoxes.boxes.map((box) => JsonBigInt.stringify(box)),
     );
 
     this.logger.info(
-      `Bitcoin transaction [${txId}] as type [${txType}] generated for event [${eventId}]`
+      `Bitcoin transaction [${txId}] as type [${txType}] generated for event [${eventId}]`,
     );
-    return bitcoinTx;
+    return [bitcoinTx];
   };
 
   /**
@@ -202,7 +204,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * @returns an object containing the amount of input and output assets
    */
   getTransactionAssets = async (
-    transaction: PaymentTransaction
+    transaction: PaymentTransaction,
   ): Promise<TransactionAssetBalance> => {
     const bitcoinTx = transaction as BitcoinTransaction;
 
@@ -263,7 +265,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * @returns true if the transaction fee is verified
    */
   verifyTransactionFee = async (
-    transaction: PaymentTransaction
+    transaction: PaymentTransaction,
   ): Promise<boolean> => {
     const tx = Serializer.deserialize(transaction.txBytes);
     const bitcoinTx = transaction as BitcoinTransaction;
@@ -285,15 +287,15 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     const estimatedFee = estimateTxFee(
       tx.txInputs.length,
       tx.txOutputs.length,
-      await this.network.getFeeRatio()
+      await this.network.getFeeRatio(),
     );
 
     const feeDifferencePercent = Math.abs(
-      (Number(fee - estimatedFee) * 100) / Number(fee)
+      (Number(fee - estimatedFee) * 100) / Number(fee),
     );
     if (feeDifferencePercent > this.configs.txFeeSlippage) {
       this.logger.warn(
-        `Fee difference is high. Slippage is higher than allowed value [${feeDifferencePercent} > ${this.configs.txFeeSlippage}]. fee: ${fee}, estimated fee: ${estimatedFee}`
+        `Fee difference is high. Slippage is higher than allowed value [${feeDifferencePercent} > ${this.configs.txFeeSlippage}]. fee: ${fee}, estimated fee: ${estimatedFee}`,
       );
       return false;
     }
@@ -306,7 +308,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * @returns true if no token burned
    */
   verifyNoTokenBurned = async (
-    transaction: PaymentTransaction
+    transaction: PaymentTransaction,
   ): Promise<boolean> => {
     // Bitcoin has no token and BTC cannot be burned
     return true;
@@ -319,7 +321,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * @returns true if the transaction is verified
    */
   verifyTransactionExtraConditions = (
-    transaction: PaymentTransaction
+    transaction: PaymentTransaction,
   ): boolean => {
     const tx = Serializer.deserialize(transaction.txBytes);
 
@@ -328,7 +330,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     const changeBox = tx.txOutputs[changeBoxIndex];
     if (changeBox.script.toString('hex') !== this.lockScript) {
       this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Change box address is wrong`
+        `Tx [${transaction.txId}] invalid: Change box address is wrong`,
       );
       return false;
     }
@@ -337,112 +339,16 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
   };
 
   /**
-   * verifies an event data with its corresponding lock transaction
-   * @param event the event trigger model
-   * @param feeConfig minimum fee and rsn ratio config for the event
-   * @returns true if the event is verified
+   * verifies additional conditions for a event lock transaction
+   * @param transaction the lock transaction
+   * @param blockInfo
+   * @returns true if the transaction is verified
    */
-  verifyEvent = async (
-    event: EventTrigger,
-    feeConfig: Fee
-  ): Promise<boolean> => {
-    const eventId = Buffer.from(
-      blake2b(event.sourceTxId, undefined, 32)
-    ).toString('hex');
-    const baseError = `Event [${eventId}] is not valid, `;
-
-    try {
-      const blockTxs = await this.network.getBlockTransactionIds(
-        event.sourceBlockId
-      );
-      if (!blockTxs.includes(event.sourceTxId)) {
-        this.logger.info(
-          baseError +
-            `block [${event.sourceBlockId}] does not contain tx [${event.sourceTxId}]`
-        );
-        return false;
-      }
-      const tx = await this.network.getTransaction(
-        event.sourceTxId,
-        event.sourceBlockId
-      );
-      const blockHeight = (await this.network.getBlockInfo(event.sourceBlockId))
-        .height;
-      const data = this.network.extractor.get(JsonBigInt.stringify(tx));
-      if (!data) {
-        this.logger.info(
-          baseError + `failed to extract rosen data from lock transaction`
-        );
-        return false;
-      }
-      if (
-        event.fromChain === BITCOIN_CHAIN &&
-        event.toChain === data.toChain &&
-        event.networkFee === data.networkFee &&
-        event.bridgeFee === data.bridgeFee &&
-        event.amount === data.amount &&
-        event.sourceChainTokenId === data.sourceChainTokenId &&
-        event.targetChainTokenId === data.targetChainTokenId &&
-        event.toAddress === data.toAddress &&
-        event.fromAddress === data.fromAddress &&
-        event.sourceChainHeight === blockHeight
-      ) {
-        try {
-          // check if amount is more than fees
-          const eventAmount = BigInt(event.amount);
-          const clampedBridgeFee =
-            BigInt(event.bridgeFee) > feeConfig.bridgeFee
-              ? BigInt(event.bridgeFee)
-              : feeConfig.bridgeFee;
-          const calculatedRatioDivisorFee =
-            (eventAmount * feeConfig.feeRatio) / this.feeRatioDivisor;
-          const bridgeFee =
-            clampedBridgeFee > calculatedRatioDivisorFee
-              ? clampedBridgeFee
-              : calculatedRatioDivisorFee;
-          const networkFee =
-            BigInt(event.networkFee) > feeConfig.networkFee
-              ? BigInt(event.networkFee)
-              : feeConfig.networkFee;
-          if (eventAmount < bridgeFee + networkFee) {
-            this.logger.info(
-              baseError +
-                `event amount [${eventAmount}] is less than sum of bridgeFee [${bridgeFee}] and networkFee [${networkFee}]`
-            );
-            return false;
-          }
-        } catch (e) {
-          throw new UnexpectedApiError(
-            `Failed in comparing event amount to fees: ${e}`
-          );
-        }
-        this.logger.info(`Event [${eventId}] has been successfully validated`);
-        return true;
-      } else {
-        this.logger.info(
-          baseError +
-            `event data does not match with lock tx [${event.sourceTxId}]`
-        );
-        return false;
-      }
-    } catch (e) {
-      if (e instanceof NotFoundError) {
-        this.logger.info(
-          baseError +
-            `lock tx [${event.sourceTxId}] is not available in network`
-        );
-        return false;
-      } else if (
-        e instanceof FailedError ||
-        e instanceof NetworkError ||
-        e instanceof UnexpectedApiError
-      ) {
-        throw Error(`Skipping event [${eventId}] validation: ${e}`);
-      } else {
-        this.logger.warn(`Event [${eventId}] validation failed: ${e}`);
-        return false;
-      }
-    }
+  verifyLockTransactionExtraConditions = (
+    transaction: BitcoinTx,
+    blockInfo: BlockInfo,
+  ): boolean => {
+    return true;
   };
 
   /**
@@ -453,14 +359,14 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    */
   isTxValid = async (
     transaction: PaymentTransaction,
-    signingStatus: SigningStatus = SigningStatus.Signed
+    signingStatus: SigningStatus = SigningStatus.Signed,
   ): Promise<boolean> => {
     const tx = Serializer.deserialize(transaction.txBytes);
     for (let i = 0; i < tx.txInputs.length; i++) {
       const boxId = getPsbtTxInputBoxId(tx.txInputs[i]);
       if (!(await this.network.isBoxUnspentAndValid(boxId))) {
         this.logger.debug(
-          `Tx [${transaction.txId}] is invalid due to spending invalid input box [${boxId}] at index [${i}]`
+          `Tx [${transaction.txId}] is invalid due to spending invalid input box [${boxId}] at index [${i}]`,
         );
         return false;
       }
@@ -476,7 +382,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    */
   signTransaction = (
     transaction: PaymentTransaction,
-    requiredSign: number
+    requiredSign: number,
   ): Promise<PaymentTransaction> => {
     const psbt = Serializer.deserialize(transaction.txBytes);
     const tx = Transaction.fromBuffer(psbt.data.getTransaction());
@@ -489,16 +395,16 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
         i,
         this.signingScript,
         Number(input.value),
-        Transaction.SIGHASH_ALL
+        Transaction.SIGHASH_ALL,
       );
 
       const signatureHex = this.signFunction(signMessage).then(
         (signatureHex: string) => {
           this.logger.debug(
-            `Input [${i}] of tx [${bitcoinTx.txId}] is signed. signature: ${signatureHex}`
+            `Input [${i}] of tx [${bitcoinTx.txId}] is signed. signature: ${signatureHex}`,
           );
           return signatureHex;
-        }
+        },
       );
       signaturePromises.push(signatureHex);
     }
@@ -506,7 +412,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     return Promise.all(signaturePromises).then((signatures) => {
       const signedPsbt = this.buildSignedTransaction(
         bitcoinTx.txBytes,
-        signatures
+        signatures,
       );
       // check if transaction can be finalized
       signedPsbt.finalizeAllInputs().extractTransaction();
@@ -517,7 +423,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
         bitcoinTx.eventId,
         Serializer.serialize(signedPsbt),
         bitcoinTx.txType,
-        bitcoinTx.inputUtxos
+        bitcoinTx.inputUtxos,
       );
     });
   };
@@ -527,7 +433,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * @param transaction the transaction
    */
   submitTransaction = async (
-    transaction: PaymentTransaction
+    transaction: PaymentTransaction,
   ): Promise<void> => {
     // deserialize transaction
     const tx = Serializer.deserialize(transaction.txBytes);
@@ -536,11 +442,11 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     try {
       const response = await this.network.submitTransaction(tx);
       this.logger.info(
-        `Bitcoin Transaction [${transaction.txId}] submitted. Response: ${response}`
+        `Bitcoin Transaction [${transaction.txId}] submitted. Response: ${response}`,
       );
     } catch (e) {
       this.logger.warn(
-        `An error occurred while submitting Bitcoin transaction [${transaction.txId}]: ${e}`
+        `An error occurred while submitting Bitcoin transaction [${transaction.txId}]: ${e}`,
       );
       if (e instanceof Error && e.stack) {
         this.logger.warn(e.stack);
@@ -579,7 +485,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    * @returns PaymentTransaction object
    */
   rawTxToPaymentTransaction = async (
-    psbtHex: string
+    psbtHex: string,
   ): Promise<PaymentTransaction> => {
     const tx = Psbt.fromHex(psbtHex);
     const txBytes = Serializer.serialize(tx);
@@ -597,7 +503,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
       '',
       txBytes,
       TransactionType.manual,
-      inputBoxes.map((box) => JsonBigInt.stringify(box))
+      inputBoxes.map((box) => JsonBigInt.stringify(box)),
     );
 
     this.logger.info(`Parsed Bitcoin transaction [${txId}] successfully`);
@@ -612,7 +518,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    */
   getMempoolBoxMapping = async (
     address: string,
-    tokenId?: string
+    tokenId?: string,
   ): Promise<Map<string, BitcoinUtxo | undefined>> => {
     // chaining transaction won't be done in BitcoinChain
     // due to heavy size of transactions in mempool
@@ -642,7 +548,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    */
   protected getTransactionsBoxMapping = (
     txs: Psbt[],
-    address: string
+    address: string,
   ): Map<string, BitcoinUtxo | undefined> => {
     const trackMap = new Map<string, BitcoinUtxo | undefined>();
 
@@ -690,7 +596,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
    */
   protected buildSignedTransaction = (
     txBytes: Uint8Array,
-    signatures: string[]
+    signatures: string[],
   ): Psbt => {
     const psbt = Serializer.deserialize(txBytes);
     for (let i = 0; i < signatures.length; i++) {
@@ -715,8 +621,8 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
   minimumMeaningfulSatoshi = (feeRatio: number): bigint => {
     return BigInt(
       Math.ceil(
-        (feeRatio * SEGWIT_INPUT_WEIGHT_UNIT) / 4 // estimate fee per weight and convert to virtual size
-      )
+        (feeRatio * SEGWIT_INPUT_WEIGHT_UNIT) / 4, // estimate fee per weight and convert to virtual size
+      ),
     );
   };
 
@@ -732,7 +638,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
     address: string,
     requiredAssets: AssetBalance,
     forbiddenBoxIds: Array<string>,
-    trackMap: Map<string, BitcoinUtxo | undefined>
+    trackMap: Map<string, BitcoinUtxo | undefined>,
   ): Promise<CoveringBoxes<BitcoinUtxo>> => {
     const getAddressBoxes = this.network.getAddressBoxes;
     async function* generator() {
@@ -762,9 +668,14 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinUtxo> {
       SEGWIT_INPUT_WEIGHT_UNIT,
       estimatedTxWeight,
       feeRatio,
-      this.logger
+      this.logger,
     );
   };
+
+  /**
+   * serializes the transaction of this chain into string
+   */
+  protected serializeTx = (tx: BitcoinTx): string => JsonBigInt.stringify(tx);
 }
 
 export default BitcoinChain;

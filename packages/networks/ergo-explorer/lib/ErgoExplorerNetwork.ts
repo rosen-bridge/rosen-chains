@@ -1,6 +1,4 @@
 import { AbstractLogger } from '@rosen-bridge/abstract-logger';
-import { ErgoRosenExtractor } from '@rosen-bridge/rosen-extractor';
-import { RosenTokens } from '@rosen-bridge/tokens';
 import {
   FailedError,
   TokenDetail,
@@ -28,10 +26,6 @@ const errorCause = {
 interface ErgoExplorerNetworkOptions {
   logger?: AbstractLogger;
   explorerBaseUrl: string;
-  extractorOptions: {
-    lockAddress: string;
-    tokens: RosenTokens;
-  };
 }
 
 interface ErgoLibSerializableObject {
@@ -40,19 +34,9 @@ interface ErgoLibSerializableObject {
 
 class ErgoExplorerNetwork extends AbstractErgoNetwork {
   private client: ReturnType<typeof ergoExplorerClientFactory>;
-  extractor: ErgoRosenExtractor;
 
-  constructor({
-    extractorOptions,
-    logger,
-    explorerBaseUrl,
-  }: ErgoExplorerNetworkOptions) {
+  constructor({ logger, explorerBaseUrl }: ErgoExplorerNetworkOptions) {
     super(logger);
-    this.extractor = new ErgoRosenExtractor(
-      extractorOptions.lockAddress,
-      extractorOptions.tokens,
-      logger
-    );
     this.client = ergoExplorerClientFactory(explorerBaseUrl);
   }
 
