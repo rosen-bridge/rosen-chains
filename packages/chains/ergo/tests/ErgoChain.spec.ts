@@ -1,12 +1,11 @@
 import * as boxTestData from './boxTestData';
 import * as transactionTestData from './transactionTestData';
 import * as ergoTestUtils from './ergoTestUtils';
-import { ErgoChain, NUMBER_OF_BLOCKS_PER_YEAR } from '../lib';
+import { ErgoChain } from '../lib';
 import {
   AssetBalance,
   BlockInfo,
   BoxInfo,
-  ConfirmationStatus,
   NotEnoughAssetsError,
   NotEnoughValidBoxesError,
   TransactionType,
@@ -16,65 +15,39 @@ import { ErgoConfigs } from '../lib';
 import { when } from 'jest-when';
 import * as wasm from 'ergo-lib-wasm-nodejs';
 import ErgoTransaction from '../lib/ErgoTransaction';
-import { RosenData } from '@rosen-bridge/rosen-extractor';
-import { Fee } from '@rosen-bridge/minimum-fee';
-import JsonBigInt from '@rosen-bridge/json-bigint';
 
 const spyOn = jest.spyOn;
 
-const signFunction = async (
-  tx: wasm.ReducedTransaction,
-  requiredSign: number,
-  boxes: Array<wasm.ErgoBox>,
-  dataBoxes?: Array<wasm.ErgoBox>
-): Promise<wasm.Transaction> =>
-  ergoTestUtils.deserializeTransaction(
-    transactionTestData.transaction2SignedSerialized
-  );
-
 describe('ErgoChain', () => {
-  const observationTxConfirmation = 5;
-  const paymentTxConfirmation = 9;
-  const coldTxConfirmation = 10;
-  const manualTxConfirmation = 11;
-  const rwtId =
-    '9410db5b39388c6b515160e7248346d7ec63d5457292326da12a26cc02efb526';
-  const feeRatioDivisor = 10000n;
-  const generateChainObject = (
-    network: TestErgoNetwork,
-    rwt = rwtId,
-    signFn: (
-      tx: wasm.ReducedTransaction,
-      requiredSign: number,
-      boxes: Array<wasm.ErgoBox>,
-      dataBoxes?: Array<wasm.ErgoBox>
-    ) => Promise<wasm.Transaction> = signFunction
-  ) => {
-    const config: ErgoConfigs = {
-      fee: 100n,
-      confirmations: {
-        observation: observationTxConfirmation,
-        payment: paymentTxConfirmation,
-        cold: coldTxConfirmation,
-        manual: manualTxConfirmation,
-      },
-      addresses: {
-        lock: 'lock_addr',
-        cold: 'cold_addr',
-        permit: 'permit_addr',
-        fraud: 'fraud_addr',
-      },
-      rwtId: rwt,
-      minBoxValue: 1000000n,
-      eventTxConfirmation: 18,
-    };
-    // mock a sign function to return signed transaction
-    return new ErgoChain(network, config, feeRatioDivisor, signFn);
-  };
-
   describe('generateTransaction', () => {
     /**
-     * @target ErgoChain.getTransactionAssets should generate payment
+     * @target ErgoChain.generateTransaction should throw error when
+     * last item on order is to lock address
+     * @dependencies
+     * @scenario
+     * - run test and expect exception thrown
+     * @expected
+     * - it should throw Error
+     */
+    it('should throw error when last item on order is to lock address', async () => {
+      const ergoChain = ergoTestUtils.generateChainObject(
+        new TestErgoNetwork()
+      );
+      await expect(async () => {
+        await ergoChain.generateTransaction(
+          '',
+          TransactionType.manual,
+          transactionTestData.invalidOrder,
+          [],
+          [],
+          [],
+          []
+        );
+      }).rejects.toThrow(Error);
+    });
+
+    /**
+     * @target ErgoChain.generateTransaction should generate payment
      * transaction successfully
      * @dependencies
      * @scenario
@@ -96,6 +69,7 @@ describe('ErgoChain', () => {
      * - extracted order of generated transaction should be the same as input
      *   order
      * - transaction fee should be the same as config fee
+     * - two change boxes should be as expected
      */
     it('should generate payment transaction successfully', async () => {
       // mock transaction order, input and data input boxes
@@ -147,10 +121,10 @@ describe('ErgoChain', () => {
       const config: ErgoConfigs = {
         fee: 1100000n,
         confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
         },
         addresses: {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
@@ -158,7 +132,7 @@ describe('ErgoChain', () => {
           permit: 'permit_addr',
           fraud: 'fraud_addr',
         },
-        rwtId: rwtId,
+        rwtId: ergoTestUtils.rwtId,
         minBoxValue: 300000n,
         eventTxConfirmation: 18,
       };
@@ -167,8 +141,9 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        feeRatioDivisor,
-        signFunction
+        ergoTestUtils.feeRatioDivisor,
+        ergoTestUtils.testTokenMap,
+        ergoTestUtils.defaultSignFunction
       );
       const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
       getCoveringBoxesSpy.mockResolvedValue({
@@ -227,10 +202,50 @@ describe('ErgoChain', () => {
         }
       }
       expect(boxChecked).toEqual(true);
+      // two change boxes should be as expected
+      const outputsLength = tx.output_candidates().len();
+      const changeBox1 = tx.output_candidates().get(outputsLength - 3);
+      expect(changeBox1.value().as_i64().to_str()).toEqual(
+        transactionTestData.transaction3ChangeBox1Assets.nativeToken.toString()
+      );
+      const changeBox1Tokens = changeBox1.tokens();
+      expect(changeBox1Tokens.len()).toEqual(
+        transactionTestData.transaction3ChangeBox1Assets.tokens.length
+      );
+      for (let i = 0; i < changeBox1Tokens.len(); i++) {
+        const token = changeBox1Tokens.get(i);
+        expect(token.id().to_str()).toEqual(
+          transactionTestData.transaction3ChangeBox1Assets.tokens[i].id
+        );
+        expect(token.amount().as_i64().to_str()).toEqual(
+          transactionTestData.transaction3ChangeBox1Assets.tokens[
+            i
+          ].value.toString()
+        );
+      }
+      const changeBox2 = tx.output_candidates().get(outputsLength - 2);
+      expect(changeBox2.value().as_i64().to_str()).toEqual(
+        transactionTestData.transaction3ChangeBox2Assets.nativeToken.toString()
+      );
+      const changeBox2Tokens = changeBox2.tokens();
+      expect(changeBox2Tokens.len()).toEqual(
+        transactionTestData.transaction3ChangeBox2Assets.tokens.length
+      );
+      for (let i = 0; i < changeBox2Tokens.len(); i++) {
+        const token = changeBox2Tokens.get(i);
+        expect(token.id().to_str()).toEqual(
+          transactionTestData.transaction3ChangeBox2Assets.tokens[i].id
+        );
+        expect(token.amount().as_i64().to_str()).toEqual(
+          transactionTestData.transaction3ChangeBox2Assets.tokens[
+            i
+          ].value.toString()
+        );
+      }
     });
 
     /**
-     * @target ErgoChain.getTransactionAssets should throw appropriate
+     * @target ErgoChain.generateTransaction should throw appropriate
      * error when locked assets are not enough to generate transaction
      * @dependencies
      * @scenario
@@ -280,10 +295,10 @@ describe('ErgoChain', () => {
       const config: ErgoConfigs = {
         fee: 1100000n,
         confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
         },
         addresses: {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
@@ -291,7 +306,7 @@ describe('ErgoChain', () => {
           permit: 'permit_addr',
           fraud: 'fraud_addr',
         },
-        rwtId: rwtId,
+        rwtId: ergoTestUtils.rwtId,
         minBoxValue: 300000n,
         eventTxConfirmation: 18,
       };
@@ -300,8 +315,9 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        feeRatioDivisor,
-        signFunction
+        ergoTestUtils.feeRatioDivisor,
+        ergoTestUtils.testTokenMap,
+        ergoTestUtils.defaultSignFunction
       );
       await expect(async () => {
         await ergoChain.generateTransaction(
@@ -317,7 +333,7 @@ describe('ErgoChain', () => {
     });
 
     /**
-     * @target ErgoChain.getTransactionAssets should throw appropriate
+     * @target ErgoChain.generateTransaction should throw appropriate
      * error when available boxes cannot cover required assets to generate
      * transaction
      * @dependencies
@@ -385,10 +401,10 @@ describe('ErgoChain', () => {
       const config: ErgoConfigs = {
         fee: 1100000n,
         confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
         },
         addresses: {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
@@ -396,7 +412,7 @@ describe('ErgoChain', () => {
           permit: 'permit_addr',
           fraud: 'fraud_addr',
         },
-        rwtId: rwtId,
+        rwtId: ergoTestUtils.rwtId,
         minBoxValue: 300000n,
         eventTxConfirmation: 18,
       };
@@ -405,8 +421,9 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        feeRatioDivisor,
-        signFunction
+        ergoTestUtils.feeRatioDivisor,
+        ergoTestUtils.testTokenMap,
+        ergoTestUtils.defaultSignFunction
       );
       const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
       getCoveringBoxesSpy.mockResolvedValue({
@@ -433,7 +450,7 @@ describe('ErgoChain', () => {
     });
 
     /**
-     * @target ErgoChain.getTransactionAssets should filter boxes that
+     * @target ErgoChain.generateTransaction should filter boxes that
      * are used in unsigned transactions successfully
      * @dependencies
      * @scenario
@@ -510,10 +527,10 @@ describe('ErgoChain', () => {
       const config: ErgoConfigs = {
         fee: 1100000n,
         confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
         },
         addresses: {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
@@ -521,7 +538,7 @@ describe('ErgoChain', () => {
           permit: 'permit_addr',
           fraud: 'fraud_addr',
         },
-        rwtId: rwtId,
+        rwtId: ergoTestUtils.rwtId,
         minBoxValue: 300000n,
         eventTxConfirmation: 18,
       };
@@ -530,8 +547,9 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        feeRatioDivisor,
-        signFunction
+        ergoTestUtils.feeRatioDivisor,
+        ergoTestUtils.testTokenMap,
+        ergoTestUtils.defaultSignFunction
       );
       const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
       getCoveringBoxesSpy.mockImplementation(
@@ -600,7 +618,7 @@ describe('ErgoChain', () => {
       const expectedAssets = transactionTestData.transaction3Assets;
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = await ergoChain.getTransactionAssets(paymentTx);
 
       // check returned value
@@ -625,24 +643,24 @@ describe('ErgoChain', () => {
     it('should extract transaction order successfully', () => {
       // mock PaymentTransaction
       const paymentTx = ErgoTransaction.fromJson(
-        transactionTestData.transaction3PaymentTransaction
+        transactionTestData.transaction6PaymentTransaction
       );
-      const expectedOrder = transactionTestData.transaction3Order;
+      const expectedOrder = transactionTestData.transaction6Order;
       const config: ErgoConfigs = {
         fee: 1100000n,
         confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
         },
         addresses: {
-          lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+          lock: transactionTestData.transaction6InAddress,
           cold: 'cold_addr',
           permit: 'permit_addr',
-          fraud: 'fraud_addr',
+          fraud: 'fraud',
         },
-        rwtId: rwtId,
+        rwtId: ergoTestUtils.rwtId,
         minBoxValue: 1000000n,
         eventTxConfirmation: 18,
       };
@@ -651,8 +669,9 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        feeRatioDivisor,
-        signFunction
+        ergoTestUtils.feeRatioDivisor,
+        ergoTestUtils.testTokenMap,
+        ergoTestUtils.defaultSignFunction
       );
       const result = ergoChain.extractTransactionOrder(paymentTx);
 
@@ -693,18 +712,18 @@ describe('ErgoChain', () => {
       const config: ErgoConfigs = {
         fee: 1200000n,
         confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
         },
         addresses: {
-          lock: 'lock_addr',
+          lock: ergoTestUtils.testLockAddress,
           cold: 'cold_addr',
           permit: 'permit_addr',
           fraud: 'fraud_addr',
         },
-        rwtId: rwtId,
+        rwtId: ergoTestUtils.rwtId,
         minBoxValue: 1000000n,
         eventTxConfirmation: 18,
       };
@@ -713,8 +732,9 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        feeRatioDivisor,
-        signFunction
+        ergoTestUtils.feeRatioDivisor,
+        ergoTestUtils.testTokenMap,
+        ergoTestUtils.defaultSignFunction
       );
       const result = await ergoChain.verifyTransactionFee(paymentTx);
 
@@ -751,18 +771,18 @@ describe('ErgoChain', () => {
       const config: ErgoConfigs = {
         fee: 100n,
         confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
         },
         addresses: {
-          lock: 'lock_addr',
+          lock: ergoTestUtils.testLockAddress,
           cold: 'cold_addr',
           permit: 'permit_addr',
           fraud: 'fraud_addr',
         },
-        rwtId: rwtId,
+        rwtId: ergoTestUtils.rwtId,
         minBoxValue: 1000000n,
         eventTxConfirmation: 18,
       };
@@ -771,8 +791,9 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        feeRatioDivisor,
-        signFunction
+        ergoTestUtils.feeRatioDivisor,
+        ergoTestUtils.testTokenMap,
+        ergoTestUtils.defaultSignFunction
       );
       const result = await ergoChain.verifyTransactionFee(paymentTx);
 
@@ -781,534 +802,67 @@ describe('ErgoChain', () => {
     });
   });
 
-  describe('verifyEvent', () => {
-    const feeConfig: Fee = {
-      bridgeFee: 0n,
-      networkFee: 0n,
-      rsnRatio: 0n,
-      feeRatio: 0n,
-    };
+  describe('verifyLockTransactionExtraConditions', () => {
+    const network = new TestErgoNetwork();
 
     /**
-     * @target ErgoChain.verifyEvent should return true when event is valid
+     * @target ErgoChain.verifyLockTransactionExtraConditions should return false when
+     * output box creation height is more than a year ago
      * @dependencies
      * @scenario
-     * - mock an event
-     * - mock a network object
-     *   - mock 'getBlockTransactionIds'
-     *   - mock 'getBlockInfo'
-     *   - mock 'getTransaction'
-     * - mock network extractor to return event data
+     * - mock a tx with block info
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when output box creation height is more than a year ago', () => {
+      const blockInfo: BlockInfo = {
+        hash: ergoTestUtils.generateRandomId(),
+        parentHash: ergoTestUtils.generateRandomId(),
+        height: 2000000,
+      };
+      const mockedTx = ergoTestUtils.deserializeTransaction(
+        transactionTestData.transaction2SignedSerialized
+      );
+
+      const ergoChain = ergoTestUtils.generateChainObject(network);
+      const result = ergoChain.verifyLockTransactionExtraConditions(
+        mockedTx,
+        blockInfo
+      );
+
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target ErgoChain.verifyLockTransactionExtraConditions should return true when
+     * all output boxes creation heights are fresh
+     * @dependencies
+     * @scenario
+     * - mock a tx with block info
      * - run test
      * - check returned value
      * @expected
      * - it should return true
      */
-    it('should return true when event is valid', async () => {
-      // mock an event
-      const event = boxTestData.validEvent;
-
-      // mock a network object
-      const network = new TestErgoNetwork();
-      // mock 'getBlockTransactionIds'
-      const getBlockTransactionIdsSpy = spyOn(
-        network,
-        'getBlockTransactionIds'
-      );
-      when(getBlockTransactionIdsSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce([
-          ergoTestUtils.generateRandomId(),
-          event.sourceTxId,
-          ergoTestUtils.generateRandomId(),
-        ]);
-      // mock 'getBlockInfo'
+    it('should return true when all output boxes creation heights are fresh', () => {
       const blockInfo: BlockInfo = {
-        hash: event.sourceBlockId,
+        hash: ergoTestUtils.generateRandomId(),
         parentHash: ergoTestUtils.generateRandomId(),
-        height: event.sourceChainHeight,
+        height: 100000,
       };
-      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
-      when(getBlockInfoSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction' (the tx itself doesn't matter)
       const mockedTx = ergoTestUtils.deserializeTransaction(
         transactionTestData.transaction2SignedSerialized
       );
-      const getTransactionSpy = spyOn(network, 'getTransaction');
-      when(getTransactionSpy)
-        .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(mockedTx);
 
-      // mock network extractor to return event data
-      const extractorSpy = spyOn(network.extractor, 'get');
-      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
+      const result = ergoChain.verifyLockTransactionExtraConditions(
+        mockedTx,
+        blockInfo
+      );
 
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, feeConfig);
-
-      // check returned value
       expect(result).toEqual(true);
-    });
-
-    /**
-     * @target ErgoChain.verifyEvent should return false when event transaction
-     * is not in event block
-     * @dependencies
-     * @scenario
-     * - mock an event
-     * - mock a network object with mocked 'getBlockTransactionIds'
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when event transaction is not in event block', async () => {
-      // mock an event
-      const event = boxTestData.validEvent;
-
-      // mock a network object
-      const network = new TestErgoNetwork();
-      // mock 'getBlockTransactionIds'
-      const getBlockTransactionIdsSpy = spyOn(
-        network,
-        'getBlockTransactionIds'
-      );
-      when(getBlockTransactionIdsSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce([
-          ergoTestUtils.generateRandomId(),
-          ergoTestUtils.generateRandomId(),
-        ]);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, feeConfig);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
-     * @target ErgoChain.verifyEvent should return false when a field of event
-     * is wrong
-     * @dependencies
-     * @scenario
-     * - mock an event
-     * - mock a network object
-     *   - mock 'getBlockTransactionIds'
-     *   - mock 'getBlockInfo'
-     *   - mock 'getTransaction'
-     * - mock network extractor to return event data (expect for a key which
-     *   should be wrong)
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it.each([
-      'fromChain',
-      'toChain',
-      'networkFee',
-      'bridgeFee',
-      'amount',
-      'sourceChainTokenId',
-      'targetChainTokenId',
-      'toAddress',
-      'fromAddress',
-    ])('should return false when event %p is wrong', async (key: string) => {
-      // mock an event
-      const event = boxTestData.validEvent;
-
-      // mock a network object
-      const network = new TestErgoNetwork();
-      // mock 'getBlockTransactionIds'
-      const getBlockTransactionIdsSpy = spyOn(
-        network,
-        'getBlockTransactionIds'
-      );
-      when(getBlockTransactionIdsSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce([
-          ergoTestUtils.generateRandomId(),
-          ergoTestUtils.generateRandomId(),
-        ]);
-      // mock 'getBlockInfo'
-      const blockInfo: BlockInfo = {
-        hash: event.sourceBlockId,
-        parentHash: ergoTestUtils.generateRandomId(),
-        height: event.sourceChainHeight,
-      };
-      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
-      when(getBlockInfoSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction' (the tx itself doesn't matter)
-      const mockedTx = ergoTestUtils.deserializeTransaction(
-        transactionTestData.transaction2SignedSerialized
-      );
-      const getTransactionSpy = spyOn(network, 'getTransaction');
-      when(getTransactionSpy)
-        .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(mockedTx);
-
-      // mock network extractor to return event data (expect for a key which should be wrong)
-      const invalidData = event as unknown as RosenData;
-      invalidData[key as keyof RosenData] = `fake_${key}`;
-      const extractorSpy = spyOn(network.extractor, 'get');
-      extractorSpy.mockReturnValueOnce(invalidData);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, feeConfig);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
-     * @target ErgoChain.verifyEvent should return false when a field of event
-     * is wrong
-     * @dependencies
-     * @scenario
-     * - mock an event
-     * - mock a network object
-     *   - mock 'getBlockTransactionIds'
-     *   - mock 'getBlockInfo' to return wrong block height
-     *   - mock 'getTransaction'
-     * - mock network extractor to return event data
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when event sourceChainHeight is wrong', async () => {
-      // mock an event
-      const event = boxTestData.invalidEvent;
-
-      // mock a network object
-      const network = new TestErgoNetwork();
-      // mock 'getBlockTransactionIds'
-      const getBlockTransactionIdsSpy = spyOn(
-        network,
-        'getBlockTransactionIds'
-      );
-      when(getBlockTransactionIdsSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce([
-          ergoTestUtils.generateRandomId(),
-          event.sourceTxId,
-          ergoTestUtils.generateRandomId(),
-        ]);
-      // mock 'getBlockInfo' to return wrong block height
-      const blockInfo: BlockInfo = {
-        hash: event.sourceBlockId,
-        parentHash: ergoTestUtils.generateRandomId(),
-        height: event.sourceChainHeight + 100,
-      };
-      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
-      when(getBlockInfoSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction' (the tx itself doesn't matter)
-      const mockedTx = ergoTestUtils.deserializeTransaction(
-        transactionTestData.transaction2SignedSerialized
-      );
-      const getTransactionSpy = spyOn(network, 'getTransaction');
-      when(getTransactionSpy)
-        .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(mockedTx);
-
-      // mock network extractor to return event data
-      const extractorSpy = spyOn(network.extractor, 'get');
-      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, feeConfig);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
-     * @target ErgoChain.verifyEvent should return false when event amount
-     * is less than sum of event fees
-     * @dependencies
-     * @scenario
-     * - mock an event
-     * - mock a network object
-     *   - mock 'getBlockTransactionIds'
-     *   - mock 'getBlockInfo'
-     *   - mock 'getTransaction'
-     * - mock network extractor to return event data
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when event amount is less than sum of event fees', async () => {
-      // mock an event
-      const event = boxTestData.invalidEvent;
-
-      // mock a network object
-      const network = new TestErgoNetwork();
-      // mock 'getBlockTransactionIds'
-      const getBlockTransactionIdsSpy = spyOn(
-        network,
-        'getBlockTransactionIds'
-      );
-      when(getBlockTransactionIdsSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce([
-          ergoTestUtils.generateRandomId(),
-          event.sourceTxId,
-          ergoTestUtils.generateRandomId(),
-        ]);
-      // mock 'getBlockInfo'
-      const blockInfo: BlockInfo = {
-        hash: event.sourceBlockId,
-        parentHash: ergoTestUtils.generateRandomId(),
-        height: event.sourceChainHeight,
-      };
-      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
-      when(getBlockInfoSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction' (the tx itself doesn't matter)
-      const mockedTx = ergoTestUtils.deserializeTransaction(
-        transactionTestData.transaction2SignedSerialized
-      );
-      const getTransactionSpy = spyOn(network, 'getTransaction');
-      when(getTransactionSpy)
-        .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(mockedTx);
-
-      // mock network extractor to return event data
-      const extractorSpy = spyOn(network.extractor, 'get');
-      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, feeConfig);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
-     * @target ErgoChain.verifyEvent should return false when event amount
-     * is less than sum of event fees while bridgeFee is less than minimum-fee
-     * @dependencies
-     * @scenario
-     * - mock feeConfig
-     * - mock an event
-     * - mock a network object
-     *   - mock 'getBlockTransactionIds'
-     *   - mock 'getBlockInfo'
-     *   - mock 'getTransaction'
-     * - mock network extractor to return event data
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when event amount is less than sum of event fees while bridgeFee is less than minimum-fee', async () => {
-      // mock feeConfig
-      const fee: Fee = {
-        bridgeFee: 1200000n,
-        networkFee: 0n,
-        rsnRatio: 0n,
-        feeRatio: 0n,
-      };
-
-      // mock an event
-      const event = boxTestData.validEventWithHighFee;
-
-      // mock a network object
-      const network = new TestErgoNetwork();
-      // mock 'getBlockTransactionIds'
-      const getBlockTransactionIdsSpy = spyOn(
-        network,
-        'getBlockTransactionIds'
-      );
-      when(getBlockTransactionIdsSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce([
-          ergoTestUtils.generateRandomId(),
-          event.sourceTxId,
-          ergoTestUtils.generateRandomId(),
-        ]);
-      // mock 'getBlockInfo'
-      const blockInfo: BlockInfo = {
-        hash: event.sourceBlockId,
-        parentHash: ergoTestUtils.generateRandomId(),
-        height: event.sourceChainHeight,
-      };
-      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
-      when(getBlockInfoSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction' (the tx itself doesn't matter)
-      const mockedTx = ergoTestUtils.deserializeTransaction(
-        transactionTestData.transaction2SignedSerialized
-      );
-      const getTransactionSpy = spyOn(network, 'getTransaction');
-      when(getTransactionSpy)
-        .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(mockedTx);
-
-      // mock network extractor to return event data
-      const extractorSpy = spyOn(network.extractor, 'get');
-      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, fee);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
-     * @target ErgoChain.verifyEvent should return false when event amount
-     * is less than sum of event fees while bridgeFee is less than expected value
-     * @dependencies
-     * @scenario
-     * - mock feeConfig
-     * - mock an event
-     * - mock a network object
-     *   - mock 'getBlockTransactionIds'
-     *   - mock 'getBlockInfo'
-     *   - mock 'getTransaction'
-     * - mock network extractor to return event data
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when event amount is less than sum of event fees while bridgeFee is less than expected value', async () => {
-      // mock feeConfig
-      const fee: Fee = {
-        bridgeFee: 0n,
-        networkFee: 0n,
-        rsnRatio: 0n,
-        feeRatio: 1200n,
-      };
-
-      // mock an event
-      const event = boxTestData.validEventWithHighFee;
-
-      // mock a network object
-      const network = new TestErgoNetwork();
-      // mock 'getBlockTransactionIds'
-      const getBlockTransactionIdsSpy = spyOn(
-        network,
-        'getBlockTransactionIds'
-      );
-      when(getBlockTransactionIdsSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce([
-          ergoTestUtils.generateRandomId(),
-          event.sourceTxId,
-          ergoTestUtils.generateRandomId(),
-        ]);
-      // mock 'getBlockInfo'
-      const blockInfo: BlockInfo = {
-        hash: event.sourceBlockId,
-        parentHash: ergoTestUtils.generateRandomId(),
-        height: event.sourceChainHeight,
-      };
-      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
-      when(getBlockInfoSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction' (the tx itself doesn't matter)
-      const mockedTx = ergoTestUtils.deserializeTransaction(
-        transactionTestData.transaction2SignedSerialized
-      );
-      const getTransactionSpy = spyOn(network, 'getTransaction');
-      when(getTransactionSpy)
-        .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(mockedTx);
-
-      // mock network extractor to return event data
-      const extractorSpy = spyOn(network.extractor, 'get');
-      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, fee);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
-     * @target ErgoChain.verifyEvent should return false when
-     * output box creation height is more than a year ago
-     * @dependencies
-     * @scenario
-     * - mock an event
-     * - mock a network object
-     *   - mock 'getBlockTransactionIds'
-     *   - mock 'getBlockInfo'
-     *   - mock 'getTransaction'
-     * - mock network extractor to return event data
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when output box creation height is more than a year ago', async () => {
-      // mock an event
-      const event = boxTestData.validEvent;
-
-      // mock a network object
-      const network = new TestErgoNetwork();
-      // mock 'getBlockTransactionIds'
-      const getBlockTransactionIdsSpy = spyOn(
-        network,
-        'getBlockTransactionIds'
-      );
-      when(getBlockTransactionIdsSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce([
-          ergoTestUtils.generateRandomId(),
-          event.sourceTxId,
-          ergoTestUtils.generateRandomId(),
-        ]);
-      // mock 'getBlockInfo'
-      const blockInfo: BlockInfo = {
-        hash: event.sourceBlockId,
-        parentHash: ergoTestUtils.generateRandomId(),
-        height: 2000000,
-      };
-      const getBlockInfoSpy = spyOn(network, 'getBlockInfo');
-      when(getBlockInfoSpy)
-        .calledWith(event.sourceBlockId)
-        .mockResolvedValueOnce(blockInfo);
-      // mock 'getTransaction' (the tx itself doesn't matter)
-      const mockedTx = ergoTestUtils.deserializeTransaction(
-        transactionTestData.transaction2SignedSerialized
-      );
-      const getTransactionSpy = spyOn(network, 'getTransaction');
-      when(getTransactionSpy)
-        .calledWith(event.sourceTxId, event.sourceBlockId)
-        .mockResolvedValueOnce(mockedTx);
-
-      // mock network extractor to return event data
-      const extractorSpy = spyOn(network.extractor, 'get');
-      extractorSpy.mockReturnValueOnce(event as unknown as RosenData);
-
-      // run test
-      const ergoChain = generateChainObject(network);
-      const result = await ergoChain.verifyEvent(event, feeConfig);
-
-      // check returned value
-      expect(result).toEqual(false);
     });
   });
 
@@ -1337,10 +891,10 @@ describe('ErgoChain', () => {
       const config: ErgoConfigs = {
         fee: 1200000n,
         confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
         },
         addresses: {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
@@ -1348,7 +902,7 @@ describe('ErgoChain', () => {
           permit: 'permit_addr',
           fraud: 'fraud_addr',
         },
-        rwtId: rwtId,
+        rwtId: ergoTestUtils.rwtId,
         minBoxValue: 1000000n,
         eventTxConfirmation: 18,
       };
@@ -1357,8 +911,9 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        feeRatioDivisor,
-        signFunction
+        ergoTestUtils.feeRatioDivisor,
+        ergoTestUtils.testTokenMap,
+        ergoTestUtils.defaultSignFunction
       );
       const result = await ergoChain.verifyTransactionExtraConditions(
         paymentTx
@@ -1366,59 +921,6 @@ describe('ErgoChain', () => {
 
       // check returned value
       expect(result).toEqual(true);
-    });
-
-    /**
-     * @target ErgoChain.verifyTransactionExtraConditions should return false
-     * when change box address is wrong
-     * @dependencies
-     * @scenario
-     * - mock PaymentTransaction
-     * - mock a config with different lockAddress
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when change box address is wrong', async () => {
-      // mock PaymentTransaction
-      const paymentTx = ErgoTransaction.fromJson(
-        transactionTestData.transaction4PaymentTransaction
-      );
-
-      // mock a config with different lockAddress
-      const config: ErgoConfigs = {
-        fee: 1200000n,
-        confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
-        },
-        addresses: {
-          lock: '9i1rTxaZpLprUkVHpY4YNyooksLuouiKqZ2v1J5nf8xFTXBCVcB',
-          cold: 'cold_addr',
-          permit: 'permit_addr',
-          fraud: 'fraud_addr',
-        },
-        rwtId: rwtId,
-        minBoxValue: 1000000n,
-        eventTxConfirmation: 18,
-      };
-
-      // run test
-      const ergoChain = new ErgoChain(
-        network,
-        config,
-        feeRatioDivisor,
-        signFunction
-      );
-      const result = await ergoChain.verifyTransactionExtraConditions(
-        paymentTx
-      );
-
-      // check returned value
-      expect(result).toEqual(false);
     });
 
     /**
@@ -1443,10 +945,10 @@ describe('ErgoChain', () => {
       const config: ErgoConfigs = {
         fee: 1200000n,
         confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
         },
         addresses: {
           lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
@@ -1454,7 +956,7 @@ describe('ErgoChain', () => {
           permit: 'permit_addr',
           fraud: 'fraud_addr',
         },
-        rwtId: rwtId,
+        rwtId: ergoTestUtils.rwtId,
         minBoxValue: 1000000n,
         eventTxConfirmation: 18,
       };
@@ -1463,8 +965,9 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        feeRatioDivisor,
-        signFunction
+        ergoTestUtils.feeRatioDivisor,
+        ergoTestUtils.testTokenMap,
+        ergoTestUtils.defaultSignFunction
       );
       const result = await ergoChain.verifyTransactionExtraConditions(
         paymentTx
@@ -1511,7 +1014,7 @@ describe('ErgoChain', () => {
       );
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = await ergoChain.isTxValid(paymentTx);
 
       // check returned value
@@ -1556,7 +1059,7 @@ describe('ErgoChain', () => {
       );
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = await ergoChain.isTxValid(paymentTx);
 
       // check returned value
@@ -1565,7 +1068,7 @@ describe('ErgoChain', () => {
   });
 
   describe('signTransaction', () => {
-    const ergoChain = generateChainObject(new TestErgoNetwork());
+    const ergoChain = ergoTestUtils.generateChainObject(new TestErgoNetwork());
 
     /**
      * @target ErgoChain.signTransaction should return PaymentTransaction of the
@@ -1634,9 +1137,9 @@ describe('ErgoChain', () => {
       ): Promise<wasm.Transaction> => {
         throw Error(`TestError: sign failed`);
       };
-      const ergoChain = generateChainObject(
+      const ergoChain = ergoTestUtils.generateChainObject(
         new TestErgoNetwork(),
-        rwtId,
+        ergoTestUtils.rwtId,
         signFunction
       );
       // mock PaymentTransaction of unsigned transaction
@@ -1688,7 +1191,7 @@ describe('ErgoChain', () => {
       const txId = transactions[0].id().to_str();
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = await ergoChain.isTxInMempool(txId);
 
       // check returned value
@@ -1724,7 +1227,7 @@ describe('ErgoChain', () => {
       const txId = ergoTestUtils.generateRandomId();
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = await ergoChain.isTxInMempool(txId);
 
       // check returned value
@@ -1769,7 +1272,7 @@ describe('ErgoChain', () => {
       );
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = await ergoChain.getMempoolBoxMapping(trackingAddress);
 
       // check returned value
@@ -1820,7 +1323,7 @@ describe('ErgoChain', () => {
       );
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = await ergoChain.getMempoolBoxMapping(
         trackingAddress,
         trackingTokenId
@@ -1873,7 +1376,7 @@ describe('ErgoChain', () => {
       boxMapping.forEach((mapping) => trackMap.set(mapping.inputId, undefined));
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = await ergoChain.getMempoolBoxMapping(
         trackingAddress,
         trackingTokenId
@@ -1907,7 +1410,7 @@ describe('ErgoChain', () => {
       };
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = ergoChain.getBoxInfo(box);
 
       // check returned value
@@ -1936,7 +1439,7 @@ describe('ErgoChain', () => {
       );
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = ergoChain.getBoxHeight(serializedBox);
 
       // check returned value
@@ -1967,7 +1470,7 @@ describe('ErgoChain', () => {
         '97a2dabcd974d69a07c3a03e20d05a36d13b986ffca5670302997484dd87e247';
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = ergoChain.getBoxWID(serializedBox);
 
       // check returned value
@@ -1991,7 +1494,7 @@ describe('ErgoChain', () => {
       );
 
       // run test and expect exception thrown
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       expect(() => {
         ergoChain.getBoxWID(serializedBox);
       }).toThrow(Error);
@@ -2018,7 +1521,7 @@ describe('ErgoChain', () => {
       ).toString('hex');
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = ergoChain.getBoxRWT(serializedBox);
 
       // check returned value
@@ -2041,7 +1544,7 @@ describe('ErgoChain', () => {
       ).toString('hex');
 
       // run test and expect exception thrown
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       expect(() => {
         ergoChain.getBoxRWT(serializedBox);
       }).toThrow(Error);
@@ -2074,7 +1577,7 @@ describe('ErgoChain', () => {
       };
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = ergoChain.getSerializedBoxInfo(serializedBox);
 
       // check returned value
@@ -2111,7 +1614,7 @@ describe('ErgoChain', () => {
         .mockResolvedValue([box]);
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = await ergoChain.getGuardsConfigBox(
         guardNFT,
         ergoTestUtils.testLockAddress
@@ -2145,7 +1648,7 @@ describe('ErgoChain', () => {
         .mockResolvedValue([]);
 
       // run test and expect exception thrown
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       await expect(async () => {
         await ergoChain.getGuardsConfigBox(
           guardNFT,
@@ -2183,7 +1686,7 @@ describe('ErgoChain', () => {
         .mockResolvedValue(serializedBoxes);
 
       // run test and expect exception thrown
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       await expect(async () => {
         await ergoChain.getGuardsConfigBox(
           guardNFT,
@@ -2213,7 +1716,7 @@ describe('ErgoChain', () => {
      */
     it('should return true when RWT token is correct', async () => {
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = ergoChain.verifyEventRWT(serializedEventBox, eventRwtId);
 
       // check returned value
@@ -2238,7 +1741,7 @@ describe('ErgoChain', () => {
       ).toString('hex');
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = ergoChain.verifyEventRWT(serializedBox, eventRwtId);
 
       // check returned value
@@ -2257,7 +1760,7 @@ describe('ErgoChain', () => {
      */
     it('should return false when rwt token id is wrong', async () => {
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = ergoChain.verifyEventRWT(
         serializedEventBox,
         'fake_rwt_id'
@@ -2294,7 +1797,7 @@ describe('ErgoChain', () => {
         .mockResolvedValue([box]);
 
       // run test
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = await ergoChain.getGuardsPkConfig(
         guardNFT,
         ergoTestUtils.testLockAddress
@@ -2329,7 +1832,7 @@ describe('ErgoChain', () => {
         .mockResolvedValue([box]);
 
       // run test and expect exception thrown
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       await expect(async () => {
         await ergoChain.getGuardsPkConfig(
           guardNFT,
@@ -2365,18 +1868,18 @@ describe('ErgoChain', () => {
       const config: ErgoConfigs = {
         fee: 1100000n,
         confirmations: {
-          observation: observationTxConfirmation,
-          payment: paymentTxConfirmation,
-          cold: coldTxConfirmation,
-          manual: manualTxConfirmation,
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
         },
         addresses: {
-          lock: '9hcBZ7khJGepr2ZXz4ZktxAa1bTmnRSmjTNb9vhsi2EwGprGE6Q',
+          lock: transactionTestData.transaction6InAddress,
           cold: 'cold_addr',
           permit: 'permit_addr',
           fraud: 'fraud',
         },
-        rwtId: rwtId,
+        rwtId: ergoTestUtils.rwtId,
         minBoxValue: 1000000n,
         eventTxConfirmation: 18,
       };
@@ -2385,8 +1888,9 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        feeRatioDivisor,
-        signFunction
+        ergoTestUtils.feeRatioDivisor,
+        ergoTestUtils.testTokenMap,
+        ergoTestUtils.defaultSignFunction
       );
       const result = ergoChain.extractSignedTransactionOrder(serializedTx);
 
@@ -2432,7 +1936,7 @@ describe('ErgoChain', () => {
       );
 
       // call the function
-      const ergoChain = generateChainObject(network);
+      const ergoChain = ergoTestUtils.generateChainObject(network);
       const result = await ergoChain.rawTxToPaymentTransaction(rawTxJsonString);
 
       // check returned value

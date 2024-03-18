@@ -33,10 +33,10 @@ describe('EvmChain', () => {
   };
   const evmChain = generateChainObject(network);
 
-  describe('generateTransaction', () => {
+  describe('generateMultipleTransactions', () => {
     /**
-     * @target EvmChain.generateTransaction should generate payment
-     * transaction successfully for ERC-20 token transfer
+     * @target EvmChain.generateMultipleTransactions should generate payment transactions
+     * successfully for multiple orders
      * @dependencies
      * @scenario
      * - mock hasLockAddressEnoughAssets, getMaxFeePerGas
@@ -45,16 +45,16 @@ describe('EvmChain', () => {
      * - call the function
      * - check returned value
      * @expected
-     * - PaymentTransaction txType, eventId and network should be as
+     * - PaymentTransactions txType, eventId and network should be as
      *   expected
-     * - extracted order of generated transaction should be the same as input
-     *   order
-     * - eventId should be properly encoded at the end of the transaction data
-     * - no extra data should be found in the transaction data
-     * - transaction must be of type 2 and has no blobs
+     * - extracted order of generated transactions should be the same as input
+     *   orders
+     * - eventId should be properly encoded at the end of the transactions' data
+     * - no extra data should be found in the transactions' data
+     * - transactions must be of type 2 and has no blobs
      */
-    it('should generate payment transaction successfully for ERC-20 token transfer', async () => {
-      const order = TestData.erc20PaymentOrder;
+    it('should generate payment transactions successfully for multiple orders', async () => {
+      const orders = TestData.multipleOrders;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
 
@@ -62,50 +62,59 @@ describe('EvmChain', () => {
       // getGasRequiredERC20Transfer, getAddressNextNonce, getMaxPriorityFeePerGas
       testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
       testUtils.mockGetMaxFeePerGas(network, BigInt(10));
+      testUtils.mockGetGasRequiredNativeTransfer(network, BigInt(5));
       testUtils.mockGetGasRequiredERC20Transfer(network, BigInt(10));
       testUtils.mockGetAddressNextAvailableNonce(network, 24);
       testUtils.mockGetMaxPriorityFeePerGas(network, BigInt(10));
 
       // run test
-      const evmTx = await evmChain.generateTransaction(
+      const evmTxs = await evmChain.generateMultipleTransactions(
         eventId,
         txType,
-        order,
+        orders,
         [],
         []
       );
 
       // check returned value
-      expect(evmTx.txType).toEqual(txType);
-      expect(evmTx.eventId).toEqual(eventId);
-      expect(evmTx.network).toEqual(evmChain.CHAIN_NAME);
+      const splittedOrders = TestData.splittedOrders;
+      for (let index = 0; index < evmTxs.length; index++) {
+        const evmTx = evmTxs[index];
+        const order = splittedOrders[index];
 
-      // extracted order of generated transaction should be the same as input order
-      const extractedOrder = evmChain.extractTransactionOrder(evmTx);
-      expect(extractedOrder).toEqual(order);
+        expect(evmTx.txType).toEqual(txType);
+        expect(evmTx.eventId).toEqual(eventId);
+        expect(evmTx.network).toEqual(evmChain.CHAIN);
 
-      // check eventId encoded at the end of the data
-      expect(
-        Serializer.deserialize(evmTx.txBytes).data.substring(138, 138 + 32)
-      ).toEqual(eventId);
+        // extracted order of generated transaction should be the same as input order
+        const extractedOrder = evmChain.extractTransactionOrder(evmTx);
+        expect(extractedOrder).toEqual(order);
 
-      // check there is no more data
-      expect(Serializer.deserialize(evmTx.txBytes).data.length).toEqual(
-        138 + 32
-      );
+        // check eventId encoded at the end of the data
+        const txData = Serializer.deserialize(evmTx.txBytes).data;
+        expect(txData.substring(txData.length - 32)).toEqual(eventId);
 
-      // check transaction type
-      expect(Serializer.deserialize(evmTx.txBytes).type).toEqual(2);
+        // check there is no more data
+        if (order[0].assets.nativeToken != 0n)
+          expect(Serializer.deserialize(evmTx.txBytes).data.length).toEqual(34);
+        else
+          expect(Serializer.deserialize(evmTx.txBytes).data.length).toEqual(
+            170
+          );
 
-      // check blobs zero
-      expect(Serializer.deserialize(evmTx.txBytes).maxFeePerBlobGas).toEqual(
-        null
-      );
+        // check transaction type
+        expect(Serializer.deserialize(evmTx.txBytes).type).toEqual(2);
+
+        // check blobs zero
+        expect(Serializer.deserialize(evmTx.txBytes).maxFeePerBlobGas).toEqual(
+          null
+        );
+      }
     });
 
     /**
-     * @target EvmChain.generateTransaction should generate payment
-     * transaction successfully for the native-token transfer
+     * @target EvmChain.generateMultipleTransactions should generate payment
+     * transaction successfully for single order
      * @dependencies
      * @scenario
      * - mock hasLockAddressEnoughAssets, getMaxFeePerGas
@@ -121,7 +130,7 @@ describe('EvmChain', () => {
      * - eventId should be properly in the transaction data
      * - no extra data should be found in the transaction data
      */
-    it('should generate payment transaction successfully for the native-token transfer', async () => {
+    it('should generate payment transaction successfully successfully for single order', async () => {
       const order = TestData.nativePaymentOrder;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
@@ -135,7 +144,7 @@ describe('EvmChain', () => {
       testUtils.mockGetMaxPriorityFeePerGas(network, BigInt(10));
 
       // run test
-      const evmTx = await evmChain.generateTransaction(
+      const evmTx = await evmChain.generateMultipleTransactions(
         eventId,
         txType,
         order,
@@ -144,25 +153,25 @@ describe('EvmChain', () => {
       );
 
       // check returned value
-      expect(evmTx.txType).toEqual(txType);
-      expect(evmTx.eventId).toEqual(eventId);
-      expect(evmTx.network).toEqual(evmChain.CHAIN_NAME);
+      expect(evmTx[0].txType).toEqual(txType);
+      expect(evmTx[0].eventId).toEqual(eventId);
+      expect(evmTx[0].network).toEqual(evmChain.CHAIN);
 
       // extracted order of generated transaction should be the same as input order
-      const extractedOrder = evmChain.extractTransactionOrder(evmTx);
+      const extractedOrder = evmChain.extractTransactionOrder(evmTx[0]);
       expect(extractedOrder).toEqual(order);
 
       // check eventId encoded at the end of the data
       expect(
-        Serializer.deserialize(evmTx.txBytes).data.substring(2, 34)
+        Serializer.deserialize(evmTx[0].txBytes).data.substring(2, 34)
       ).toEqual(eventId);
 
       // check there is no more data
-      expect(Serializer.deserialize(evmTx.txBytes).data.length).toEqual(34);
+      expect(Serializer.deserialize(evmTx[0].txBytes).data.length).toEqual(34);
     });
 
     /**
-     * @target EvmChain.generateTransaction should throw error
+     * @target EvmChain.generateMultipleTransactions should throw error
      * when token id is not supported
      * @dependencies
      * @scenario
@@ -172,25 +181,17 @@ describe('EvmChain', () => {
      * - throw AssetNotSupportedError
      */
     it('should throw error when when token id is not supported', async () => {
-      const token = { ...TestData.erc20PaymentOrder[0].assets.tokens[0] };
-      token.id = '0x12345672e5a2f595151c94762fb38e5730357785';
+      const orders = structuredClone(TestData.multipleOrders);
+      orders[0].assets.tokens[0].id =
+        '0x12345672e5a2f595151c94762fb38e5730357785';
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
-      console.log(TestData.erc20PaymentOrder[0].assets);
       // run test and expect error
       await expect(async () => {
-        await evmChain.generateTransaction(
+        await evmChain.generateMultipleTransactions(
           eventId,
           txType,
-          [
-            {
-              address: '0xcfb01d43cb1299024171141d449bb9cd08f4c075',
-              assets: {
-                nativeToken: 0n,
-                tokens: [token],
-              },
-            },
-          ],
+          orders,
           [],
           []
         );
@@ -198,7 +199,7 @@ describe('EvmChain', () => {
     });
 
     /**
-     * @target EvmChain.generateTransaction should throw error
+     * @target EvmChain.generateMultipleTransactions should throw error
      * when lock address does not have enough assets
      * @dependencies
      * @scenario
@@ -208,7 +209,7 @@ describe('EvmChain', () => {
      * - throw NotEnoughAssetsError
      */
     it('should throw error when lock address does not have enough assets', async () => {
-      const order = TestData.nativePaymentOrder;
+      const order = TestData.multipleOrders;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
 
@@ -217,12 +218,18 @@ describe('EvmChain', () => {
 
       // run test and expect error
       await expect(async () => {
-        await evmChain.generateTransaction(eventId, txType, order, [], []);
+        await evmChain.generateMultipleTransactions(
+          eventId,
+          txType,
+          order,
+          [],
+          []
+        );
       }).rejects.toThrow(NotEnoughAssetsError);
     });
 
     /**
-     * @target EvmChain.generateTransaction should throw error
+     * @target EvmChain.generateMultipleTransactions should throw error
      * when there is no slot for generating new transactions
      * @dependencies
      * @scenario
@@ -232,7 +239,7 @@ describe('EvmChain', () => {
      * - throw MaxParallelTxError
      */
     it('should throw error when there is no slot for generating new transactions', async () => {
-      const order = TestData.nativePaymentOrder;
+      const order = TestData.multipleOrders;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
       const unsigned = [...Array(5).keys()].map(
@@ -243,7 +250,7 @@ describe('EvmChain', () => {
 
       // run test and expect error
       await expect(async () => {
-        await evmChain.generateTransaction(
+        await evmChain.generateMultipleTransactions(
           eventId,
           txType,
           order,
@@ -298,7 +305,7 @@ describe('EvmChain', () => {
       // mock PaymentTransaction
       const tx = Transaction.from(TestData.transaction1JsonString);
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -335,7 +342,7 @@ describe('EvmChain', () => {
       const assets = { ...TestData.transaction1Assets };
       assets.tokens = [];
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -370,7 +377,7 @@ describe('EvmChain', () => {
       assets.tokens = [];
       tx.to = null;
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -405,7 +412,7 @@ describe('EvmChain', () => {
       assets.tokens = [];
       tx.type = 3;
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -451,7 +458,7 @@ describe('EvmChain', () => {
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -493,7 +500,7 @@ describe('EvmChain', () => {
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -535,7 +542,7 @@ describe('EvmChain', () => {
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -579,7 +586,7 @@ describe('EvmChain', () => {
       tx.value = 0n;
 
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -624,7 +631,7 @@ describe('EvmChain', () => {
       tx.data = '0x';
 
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -667,7 +674,7 @@ describe('EvmChain', () => {
       tx.value = 10n;
 
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -710,7 +717,7 @@ describe('EvmChain', () => {
       tx.value = 10n;
 
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -743,7 +750,7 @@ describe('EvmChain', () => {
       const txType = 'payment' as TransactionType;
       const tx = Transaction.from(TestData.erc20transaction as TransactionLike);
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -754,7 +761,7 @@ describe('EvmChain', () => {
       const result = evmChain.extractTransactionOrder(paymentTx);
 
       // check returned value
-      expect(result).toEqual(TestData.erc20PaymentOrder);
+      expect(result).toEqual(TestData.splittedOrders[1]);
     });
 
     /**
@@ -774,7 +781,7 @@ describe('EvmChain', () => {
       trx.to = null;
       const tx = Transaction.from(trx);
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -809,7 +816,7 @@ describe('EvmChain', () => {
       const tx = Transaction.from(TestData.erc20transaction as TransactionLike);
       tx.maxFeePerBlobGas = 0;
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -843,7 +850,7 @@ describe('EvmChain', () => {
       const tx = Transaction.from(trx);
       tx.maxFeePerBlobGas = 0;
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -877,7 +884,7 @@ describe('EvmChain', () => {
       const tx = Transaction.from(trx);
       tx.maxFeePerBlobGas = 0;
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -911,7 +918,7 @@ describe('EvmChain', () => {
       const tx = Transaction.from(trx);
       tx.maxFeePerBlobGas = 0;
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -944,7 +951,7 @@ describe('EvmChain', () => {
       tx.maxFeePerBlobGas = 0;
       tx.value = 10000n;
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -979,7 +986,7 @@ describe('EvmChain', () => {
         tx.data.substring(0, 138) + 'eeeeeeeeee' + tx.data.substring(138);
 
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -1013,7 +1020,7 @@ describe('EvmChain', () => {
       tx.data = '0x343' + tx.data.substring(5);
 
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -1047,7 +1054,7 @@ describe('EvmChain', () => {
       tx.data = tx.data.substring(0, 30) + 'e43ba' + tx.data.substring(35);
 
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -1080,7 +1087,7 @@ describe('EvmChain', () => {
       tx.type = 3;
 
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -1115,7 +1122,7 @@ describe('EvmChain', () => {
       const tx = Transaction.from(TestData.erc20transaction as TransactionLike);
 
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),
@@ -1151,7 +1158,7 @@ describe('EvmChain', () => {
       const tx = Transaction.from(TestData.erc20transaction as TransactionLike);
 
       const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
+        evmChain.CHAIN,
         tx.unsignedHash,
         eventId,
         Serializer.serialize(tx),

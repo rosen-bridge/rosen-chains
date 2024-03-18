@@ -5,7 +5,10 @@ import {
 import { PaymentOrder, AssetBalance } from '@rosen-chains/abstract-chain';
 
 export const lockAddress = '0xedee4752e5a2f595151c94762fb38e5730357785';
-export const supportedTokens = ['0xedee4752e5a2f595151c94762fb38e5730357785'];
+export const supportedTokens = [
+  '0xedee4752e5a2f595151c94762fb38e5730357785',
+  '0x12345752e5a2f595151c94762fb38e5730357785',
+];
 
 export const nativePaymentOrder: PaymentOrder = [
   {
@@ -79,14 +82,101 @@ export const erc20transaction = {
   },
 };
 
-export const erc20PaymentOrder: PaymentOrder = [
+export const splittedOrders: Array<PaymentOrder> = [
+  [
+    {
+      address: '0xcfb01d43cb1299024171141d449bb9cd08f4c075',
+      assets: {
+        nativeToken: 10000n,
+        tokens: [],
+      },
+    },
+  ],
+  [
+    {
+      address: '0xcfb01d43cb1299024171141d449bb9cd08f4c075',
+      assets: {
+        nativeToken: 0n,
+        tokens: [
+          {
+            id: '0xedee4752e5a2f595151c94762fb38e5730357785',
+            value: 3305307248n,
+          },
+        ],
+      },
+    },
+  ],
+  [
+    {
+      address: '0x12345d45cb1299024171141d449bb9cd08f4c075',
+      assets: {
+        nativeToken: 10000n,
+        tokens: [],
+      },
+    },
+  ],
+  [
+    {
+      address: '0x12345d45cb1299024171141d449bb9cd08f4c075',
+      assets: {
+        nativeToken: 0n,
+        tokens: [
+          {
+            id: '0xedee4752e5a2f595151c94762fb38e5730357785',
+            value: 3305307248n,
+          },
+        ],
+      },
+    },
+  ],
+  [
+    {
+      address: '0x12345d45cb1299024171141d449bb9cd08f4c789',
+      assets: {
+        nativeToken: 0n,
+        tokens: [
+          {
+            id: '0x12345752e5a2f595151c94762fb38e5730357785',
+            value: 3305307248n,
+          },
+        ],
+      },
+    },
+  ],
+];
+
+export const multipleOrders: PaymentOrder = [
   {
     address: '0xcfb01d43cb1299024171141d449bb9cd08f4c075',
+    assets: {
+      nativeToken: 10000n,
+      tokens: [
+        {
+          id: '0xedee4752e5a2f595151c94762fb38e5730357785',
+          value: 3305307248n,
+        },
+      ],
+    },
+  },
+  {
+    address: '0x12345d45cb1299024171141d449bb9cd08f4c075',
+    assets: {
+      nativeToken: 10000n,
+      tokens: [
+        {
+          id: '0xedee4752e5a2f595151c94762fb38e5730357785',
+          value: 3305307248n,
+        },
+      ],
+    },
+  },
+  {
+    address: '0x12345d45cb1299024171141d449bb9cd08f4c789',
     assets: {
       nativeToken: 0n,
       tokens: [
         {
-          id: '0xedee4752e5a2f595151c94762fb38e5730357785',
+          id: '0x12345752e5a2f595151c94762fb38e5730357785',
           value: 3305307248n,
         },
       ],

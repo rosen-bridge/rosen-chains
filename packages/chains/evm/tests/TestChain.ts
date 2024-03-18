@@ -1,7 +1,7 @@
 import { EvmChain } from '../lib';
 
 class TestChain extends EvmChain {
-  CHAIN_NAME = 'test';
+  CHAIN = 'test';
   CHAIN_ID = 1n;
 }
 

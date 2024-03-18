@@ -4,29 +4,22 @@ import {
   hash_transaction,
 } from '@emurgo/cardano-serialization-lib-nodejs';
 import { AbstractLogger } from '@rosen-bridge/abstract-logger';
-import { Fee } from '@rosen-bridge/minimum-fee';
-import { TokenMap } from '@rosen-bridge/tokens';
+import { RosenTokens } from '@rosen-bridge/tokens';
 import {
   AbstractUtxoChain,
   AssetBalance,
+  BlockInfo,
   BoxInfo,
   ChainUtils,
-  ConfirmationStatus,
-  EventTrigger,
-  FailedError,
-  NetworkError,
   NotEnoughAssetsError,
   NotEnoughValidBoxesError,
-  NotFoundError,
   PaymentOrder,
   PaymentTransaction,
   SigningStatus,
   SinglePayment,
   TransactionAssetBalance,
   TransactionType,
-  UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
-import { blake2b } from 'blakejs';
 import JSONBigInt from '@rosen-bridge/json-bigint';
 import CardanoTransaction from './CardanoTransaction';
 import CardanoUtils from './CardanoUtils';
@@ -38,27 +31,34 @@ import {
   CardanoAsset,
   CardanoBoxCandidate,
   CardanoConfigs,
+  CardanoTx,
   CardanoUtxo,
 } from './types';
 import JsonBigInt from '@rosen-bridge/json-bigint';
+import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
-class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
+class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
   declare network: AbstractCardanoNetwork;
   declare configs: CardanoConfigs;
-  tokenMap: TokenMap;
+  CHAIN = CARDANO_CHAIN;
+  extractor: CardanoRosenExtractor;
   feeRatioDivisor: bigint;
   protected signFunction: (txHash: Uint8Array) => Promise<string>;
 
   constructor(
     network: AbstractCardanoNetwork,
     configs: CardanoConfigs,
-    tokenMap: TokenMap,
     feeRatioDivisor: bigint,
+    tokens: RosenTokens,
     signFunction: (txHash: Uint8Array) => Promise<string>,
     logger?: AbstractLogger
   ) {
-    super(network, configs, logger);
-    this.tokenMap = tokenMap;
+    super(network, configs, feeRatioDivisor, logger);
+    this.extractor = new CardanoRosenExtractor(
+      configs.addresses.lock,
+      tokens,
+      logger
+    );
     this.feeRatioDivisor = feeRatioDivisor;
     this.signFunction = signFunction;
   }
@@ -100,13 +100,13 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
    * @param serializedSignedTransactions the serialized string of ongoing signed transactions in Cardano Wasm format (used for chaining transactions)
    * @returns the generated payment transaction
    */
-  generateTransaction = async (
+  generateMultipleTransactions = async (
     eventId: string,
     txType: TransactionType,
     order: PaymentOrder,
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[]
-  ): Promise<PaymentTransaction> => {
+  ): Promise<PaymentTransaction[]> => {
     this.logger.debug(
       `Generating Cardano transaction for Order: ${JsonBigInt.stringify(order)}`
     );
@@ -259,7 +259,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     this.logger.info(
       `Cardano transaction [${txId}] as type [${txType}] generated for event [${eventId}]`
     );
-    return cardanoTx;
+    return [cardanoTx];
   };
 
   /**
@@ -477,102 +477,16 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
   };
 
   /**
-   * verifies an event data with its corresponding lock transaction
-   * @param event the event trigger model
-   * @param feeConfig minimum fee and rsn ratio config for the event
-   * @returns true if the event verified
+   * verifies additional conditions for a event lock transaction
+   * @param transaction the lock transaction
+   * @param blockInfo
+   * @returns true if the transaction is verified
    */
-  verifyEvent = async (
-    event: EventTrigger,
-    feeConfig: Fee
-  ): Promise<boolean> => {
-    const eventId = Buffer.from(
-      blake2b(event.sourceTxId, undefined, 32)
-    ).toString('hex');
-
-    try {
-      const blockTxs = await this.network.getBlockTransactionIds(
-        event.sourceBlockId
-      );
-      if (!blockTxs.includes(event.sourceTxId)) return false;
-      const tx = await this.network.getTransaction(
-        event.sourceTxId,
-        event.sourceBlockId
-      );
-      const blockHeight = (await this.network.getBlockInfo(event.sourceBlockId))
-        .height;
-      const data = this.network.extractor.get(JSONBigInt.stringify(tx));
-      if (!data) {
-        this.logger.info(
-          `Event [${eventId}] is not valid, failed to extract rosen data from lock transaction`
-        );
-        return false;
-      }
-      if (
-        event.fromChain == CARDANO_CHAIN &&
-        event.toChain == data.toChain &&
-        event.networkFee == data.networkFee &&
-        event.bridgeFee == data.bridgeFee &&
-        event.amount == data.amount &&
-        event.sourceChainTokenId == data.sourceChainTokenId &&
-        event.targetChainTokenId == data.targetChainTokenId &&
-        event.toAddress == data.toAddress &&
-        event.fromAddress == data.fromAddress &&
-        event.sourceChainHeight == blockHeight
-      ) {
-        try {
-          // check if amount is more than fees
-          const eventAmount = BigInt(event.amount);
-          const clampedBridgeFee =
-            BigInt(event.bridgeFee) > feeConfig.bridgeFee
-              ? BigInt(event.bridgeFee)
-              : feeConfig.bridgeFee;
-          const calculatedRatioDivisorFee =
-            (eventAmount * feeConfig.feeRatio) / this.feeRatioDivisor;
-          const bridgeFee =
-            clampedBridgeFee > calculatedRatioDivisorFee
-              ? clampedBridgeFee
-              : calculatedRatioDivisorFee;
-          const networkFee =
-            BigInt(event.networkFee) > feeConfig.networkFee
-              ? BigInt(event.networkFee)
-              : feeConfig.networkFee;
-          if (eventAmount < bridgeFee + networkFee) {
-            this.logger.info(
-              `Event [${eventId}] is not valid, event amount [${eventAmount}] is less than sum of bridgeFee [${bridgeFee}] and networkFee [${networkFee}]`
-            );
-            return false;
-          }
-        } catch (e) {
-          throw new UnexpectedApiError(
-            `Failed in comparing event amount to fees: ${e}`
-          );
-        }
-        this.logger.info(`Event [${eventId}] has been successfully validated`);
-        return true;
-      } else {
-        this.logger.info(
-          `Event [${eventId}] is not valid, event data does not match with lock tx [${event.sourceTxId}]`
-        );
-        return false;
-      }
-    } catch (e) {
-      if (e instanceof NotFoundError) {
-        this.logger.info(
-          `Event [${eventId}] is not valid, lock tx [${event.sourceTxId}] is not available in network`
-        );
-        return false;
-      } else if (
-        e instanceof FailedError ||
-        e instanceof NetworkError ||
-        e instanceof UnexpectedApiError
-      ) {
-        throw Error(`Skipping event [${eventId}] validation: ${e}`);
-      } else {
-        this.logger.warn(`Event [${eventId}] validation failed: ${e}`);
-        return false;
-      }
-    }
+  verifyLockTransactionExtraConditions = (
+    transaction: CardanoTx,
+    blockInfo: BlockInfo
+  ): boolean => {
+    return true;
   };
 
   /**
@@ -793,6 +707,11 @@ class CardanoChain extends AbstractUtxoChain<CardanoUtxo> {
     this.logger.info(`Parsed Cardano transaction [${txId}] successfully`);
     return cardanoTx;
   };
+
+  /**
+   * serializes the transaction of this chain into string
+   */
+  protected serializeTx = (tx: CardanoTx): string => JsonBigInt.stringify(tx);
 }
 
 export default CardanoChain;

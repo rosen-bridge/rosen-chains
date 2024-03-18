@@ -1,15 +1,16 @@
-import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
+import {
+  AbstractRosenDataExtractor,
+  RosenData,
+} from '@rosen-bridge/rosen-extractor';
 
 class TestRosenDataExtractor extends AbstractRosenDataExtractor<string> {
   constructor() {
     super('', { idKeys: {}, tokens: [] });
   }
 
-  notImplemented = () => {
-    throw Error('Not implemented');
+  get = (tx: string): RosenData | undefined => {
+    throw Error(`not mocked`);
   };
-
-  get = this.notImplemented;
 }
 
 export default TestRosenDataExtractor;

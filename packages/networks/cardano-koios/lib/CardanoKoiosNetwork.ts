@@ -1,5 +1,4 @@
 import { AbstractLogger } from '@rosen-bridge/abstract-logger';
-import { CardanoRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import cardanoKoiosClientFactory, {
   AddressAssets,
   AddressInfo,
@@ -14,7 +13,6 @@ import {
   CardanoProtocolParameters,
   CardanoUtils,
 } from '@rosen-chains/cardano';
-import { RosenTokens } from '@rosen-bridge/tokens';
 import {
   AssetBalance,
   BlockInfo,
@@ -34,17 +32,9 @@ import JsonBigInt from '@rosen-bridge/json-bigint';
 
 class CardanoKoiosNetwork extends AbstractCardanoNetwork {
   private client: ReturnType<typeof cardanoKoiosClientFactory>;
-  extractor: CardanoRosenExtractor;
 
-  constructor(
-    koiosUrl: string,
-    lockAddress: string,
-    tokens: RosenTokens,
-    authToken?: string,
-    logger?: AbstractLogger
-  ) {
+  constructor(koiosUrl: string, authToken?: string, logger?: AbstractLogger) {
     super(logger);
-    this.extractor = new CardanoRosenExtractor(lockAddress, tokens, logger);
     this.client = cardanoKoiosClientFactory(koiosUrl, authToken);
   }
 
