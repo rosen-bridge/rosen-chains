@@ -27,7 +27,7 @@ export const configs: EvmConfigs = {
     cold: coldTxConfirmation,
     manual: manualTxConfirmation,
   },
-  slippage: 15,
+  feeSlippage: 15,
 };
 
 export const mockedSignFn = () => Promise.resolve('');

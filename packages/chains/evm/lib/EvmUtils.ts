@@ -1,6 +1,6 @@
 import { transferABI } from './constants';
 import { PaymentOrder, SinglePayment } from '@rosen-chains/abstract-chain';
-import { Contract, Result } from 'ethers';
+import { Contract } from 'ethers';
 
 /**
  * extracts every SinglePayment from PaymentOrder
@@ -8,32 +8,29 @@ import { Contract, Result } from 'ethers';
  * @returns the splitted PaymentOrder
  */
 export const splitPaymentOrders = (orders: PaymentOrder): PaymentOrder => {
-  return orders.reduce<PaymentOrder>(
-    (sum: PaymentOrder, order: SinglePayment) => {
-      if (order.assets.nativeToken != BigInt(0)) {
-        sum.push({
-          address: order.address,
-          assets: {
-            nativeToken: order.assets.nativeToken,
-            tokens: [],
-          },
-          extra: order.extra,
-        });
-      }
-      order.assets.tokens.forEach((token) => {
-        sum.push({
-          address: order.address,
-          assets: {
-            nativeToken: BigInt(0),
-            tokens: [token],
-          },
-          extra: order.extra,
-        });
+  return orders.reduce((sum: PaymentOrder, order: SinglePayment) => {
+    if (order.assets.nativeToken !== 0n) {
+      sum.push({
+        address: order.address,
+        assets: {
+          nativeToken: order.assets.nativeToken,
+          tokens: [],
+        },
+        extra: order.extra,
       });
-      return sum;
-    },
-    []
-  );
+    }
+    order.assets.tokens.forEach((token) => {
+      sum.push({
+        address: order.address,
+        assets: {
+          nativeToken: 0n,
+          tokens: [token],
+        },
+        extra: order.extra,
+      });
+    });
+    return sum;
+  }, []);
 };
 
 /**
@@ -63,7 +60,7 @@ export const isTransfer = (contractAddress: string, data: string): boolean => {
   const description = contract.interface.parseTransaction({ data: data });
 
   if (description == null) return false;
-  if (description.name != 'transfer') return false;
+  if (description.name !== 'transfer') return false;
   try {
     description.args[0];
   } catch {
@@ -77,7 +74,7 @@ export const isTransfer = (contractAddress: string, data: string): boolean => {
  * @param contractAddress the address of the contract
  * @param to the recipient's address
  * @param amount the amount to be transfered
- * @returns the array of [`to`, `amount`], if can't decode, puts error inside the array!
+ * @returns the array of [`to`, `amount`], if can't decode, puts error inside the array
  */
 export const decodeTransferCallData = (
   contractAddress: string,

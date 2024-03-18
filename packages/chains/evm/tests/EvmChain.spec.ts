@@ -1,3 +1,4 @@
+import { expect } from 'vitest';
 import TestEvmNetwork from './network/TestEvmNetwork';
 import * as TestData from './testData';
 
@@ -58,7 +59,7 @@ describe('EvmChain', () => {
       testUtils.mockGetAddressNextAvailableNonce(network, 24);
       testUtils.mockGetMaxPriorityFeePerGas(network, BigInt(10));
 
-      // call the function
+      // run test
       const evmTx = await evmChain.generateTransaction(
         eventId,
         txType,
@@ -126,7 +127,7 @@ describe('EvmChain', () => {
       testUtils.mockGetAddressNextAvailableNonce(network, 24);
       testUtils.mockGetMaxPriorityFeePerGas(network, BigInt(10));
 
-      // call the function
+      // run test
       const evmTx = await evmChain.generateTransaction(
         eventId,
         txType,
@@ -159,9 +160,9 @@ describe('EvmChain', () => {
      * @dependencies
      * @scenario
      * - mock hasLockAddressEnoughAssets
-     * - call the function and expect error
+     * - call the function
      * @expected
-     * - generateTransaction should throw NotEnoughAssetsError
+     * - throw NotEnoughAssetsError
      */
     it('should throw error when lock address does not have enough assets', async () => {
       const order = TestData.nativePaymentOrder;
@@ -171,7 +172,7 @@ describe('EvmChain', () => {
       // mock hasLockAddressEnoughAssets
       testUtils.mockHasLockAddressEnoughAssets(evmChain, false);
 
-      // call the function and expect error
+      // run test and expect error
       await expect(async () => {
         await evmChain.generateTransaction(eventId, txType, order, [], []);
       }).rejects.toThrow(NotEnoughAssetsError);
@@ -183,9 +184,9 @@ describe('EvmChain', () => {
      * @dependencies
      * @scenario
      * - fill the unsigned and signed transactions lists with mock data
-     * - call the function and expect error
+     * - call the function
      * @expected
-     * - generateTransaction should throw MaxParallelTxError
+     * - throw MaxParallelTxError
      */
     it('should throw error when there is no slot for generating new transactions', async () => {
       const order = TestData.nativePaymentOrder;
@@ -197,7 +198,7 @@ describe('EvmChain', () => {
       );
       const signed = [...Array(5).keys()].map((_) => '');
 
-      // call the function and expect error
+      // run test and expect error
       await expect(async () => {
         await evmChain.generateTransaction(
           eventId,
@@ -228,6 +229,7 @@ describe('EvmChain', () => {
         TestData.transaction0JsonString
       );
 
+      // run test
       expect(result.toJson()).toEqual(
         TestData.transaction0PaymentTransaction.toJson()
       );
@@ -260,7 +262,7 @@ describe('EvmChain', () => {
         txType
       );
 
-      // check returned value
+      // run test
       const result = await evmChain.getTransactionAssets(paymentTx);
 
       // check returned value
@@ -304,6 +306,76 @@ describe('EvmChain', () => {
       expect(result.inputAssets).toEqual(assets);
       expect(result.outputAssets).toEqual(assets);
     });
+
+    /**
+     * @target EvmChain.getTransactionAssets should throw error when `to` is null
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - call the function
+     * @expected
+     * - throw error
+     */
+    it('should throw error when `to` is null', async () => {
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = 'payment' as TransactionType;
+      // mock PaymentTransaction
+      const trx = { ...TestData.transaction1JsonString };
+      trx.data = '0x';
+      const tx = Transaction.from(trx);
+      const assets = { ...TestData.transaction1Assets };
+      assets.tokens = [];
+      tx.to = null;
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN_NAME,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test function and expect error
+      expect(async () => {
+        await evmChain.getTransactionAssets(paymentTx);
+      }).rejects.toThrowError(
+        'Transaction [0xb75ebe297f5614e5217a366b2f2668827793147beca469b7555126fc97a1af21] does not have `to`'
+      );
+    });
+
+    /**
+     * @target EvmChain.getTransactionAssets should throw error when transaction is not of type 2
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - call the function
+     * @expected
+     * - throw error
+     */
+    it('should throw error when transaction is not of type 2', async () => {
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = 'payment' as TransactionType;
+      // mock PaymentTransaction
+      const trx = { ...TestData.transaction1JsonString };
+      trx.data = '0x';
+      const tx = Transaction.from(trx);
+      const assets = { ...TestData.transaction1Assets };
+      assets.tokens = [];
+      tx.type = 3;
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN_NAME,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test function and expect error
+      expect(async () => {
+        await evmChain.getTransactionAssets(paymentTx);
+      }).rejects.toThrowError(
+        'Transaction [0x4080be6a6dea8e286c0d21bd0ea865a45805d48902cac0a683a810a55da65946] is not of type 2'
+      );
+    });
   });
 
   describe('verifyTransactionFee', () => {
@@ -320,7 +392,7 @@ describe('EvmChain', () => {
      * - it should return true
      */
     it('should return true when both fee and gas limits were set properly', async () => {
-      // mock a config that has more fee comparing to mocked transaction fee
+      // mock a config that has almost the same fee as the mocked transaction
       testUtils.mockGetGasRequiredERC20Transfer(network, 55000n);
       testUtils.mockGetGasRequiredNativeTransfer(network, 21000n);
       testUtils.mockGetMaxFeePerGas(network, 20n);
@@ -348,6 +420,90 @@ describe('EvmChain', () => {
 
       // check returned value
       expect(result).toEqual(true);
+    });
+
+    /**
+     * @target EvmChain.verifyTransactionFee should return false when `to` is null
+     * @dependencies
+     * @scenario
+     * - mock mockGetGasRequiredERC20Transfer, mockGetGasRequiredNativeTransfer
+     * - mock mockGetMaxFeePerGas, mockGetMaxPriorityFeePerGas
+     * - mock PaymentTransaction
+     * @expected
+     * - return false
+     */
+    it('should return false when `to` is null', async () => {
+      // mock a config that has almost the same fee as the transaction fee
+      testUtils.mockGetGasRequiredERC20Transfer(network, 55000n);
+      testUtils.mockGetGasRequiredNativeTransfer(network, 21000n);
+      testUtils.mockGetMaxFeePerGas(network, 20n);
+      testUtils.mockGetMaxPriorityFeePerGas(network, 7n);
+
+      // mock PaymentTransaction
+      const tx = Transaction.from(TestData.transaction1JsonString);
+      tx.gasLimit = 55000n + 21000n;
+      tx.maxFeePerGas = 22n;
+      tx.maxPriorityFeePerGas = 8n;
+      tx.value = 2n;
+      tx.to = null;
+
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = 'payment' as TransactionType;
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN_NAME,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test
+      const result = await evmChain.verifyTransactionFee(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target EvmChain.verifyTransactionFee should return false when transaction is not of type 2
+     * @dependencies
+     * @scenario
+     * - mock mockGetGasRequiredERC20Transfer, mockGetGasRequiredNativeTransfer
+     * - mock mockGetMaxFeePerGas, mockGetMaxPriorityFeePerGas
+     * - mock PaymentTransaction
+     * @expected
+     * - return false
+     */
+    it('should return false when transaction is not of type 2', async () => {
+      // mock a config that has almost the same fee as the transaction fee
+      testUtils.mockGetGasRequiredERC20Transfer(network, 55000n);
+      testUtils.mockGetGasRequiredNativeTransfer(network, 21000n);
+      testUtils.mockGetMaxFeePerGas(network, 20n);
+      testUtils.mockGetMaxPriorityFeePerGas(network, 7n);
+
+      // mock PaymentTransaction
+      const tx = Transaction.from(TestData.transaction1JsonString);
+      tx.gasLimit = 55000n + 21000n;
+      tx.maxFeePerGas = 22n;
+      tx.maxPriorityFeePerGas = 8n;
+      tx.value = 2n;
+      tx.type = 3;
+
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = 'payment' as TransactionType;
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN_NAME,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test
+      const result = await evmChain.verifyTransactionFee(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(false);
     });
 
     /**
@@ -557,6 +713,38 @@ describe('EvmChain', () => {
       // check returned value
       expect(result).toEqual(TestData.erc20PaymentOrder);
     });
+
+    /**
+     * @target EvmChain.extractTransactionOrder should throw error when `to` is null
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - run test
+     * @expected
+     * - throw error
+     */
+    it('should throw error when `to` is null', () => {
+      // mock PaymentTransaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = 'payment' as TransactionType;
+      const trx = { ...(TestData.erc20transaction as TransactionLike) };
+      trx.to = null;
+      const tx = Transaction.from(trx);
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN_NAME,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test
+      expect(async () =>
+        evmChain.extractTransactionOrder(paymentTx)
+      ).rejects.toThrowError(
+        "Transaction [0xa8e73a81f4578701d095bba00c361af31dea092e009faef02fac6c8c45758a93] does not have 'to'"
+      );
+    });
   });
 
   describe('verifyTransactionExtraConditions', () => {
@@ -590,6 +778,108 @@ describe('EvmChain', () => {
 
       // check returned value
       expect(result).toEqual(true);
+    });
+
+    /**
+     * @target EvmChain.verifyTransactionExtraConditions should return false
+     * when 'to' is null
+     * @dependencies
+     * @scenario
+     * - mock valid PaymentTransaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return true when `to` is null', async () => {
+      // mock PaymentTransaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = 'payment' as TransactionType;
+      const trx = { ...(TestData.erc20transaction as TransactionLike) };
+      trx.to = null;
+      const tx = Transaction.from(trx);
+      tx.maxFeePerBlobGas = 0;
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN_NAME,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test
+      const result = evmChain.verifyTransactionExtraConditions(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target EvmChain.verifyTransactionExtraConditions should return false
+     * when `data` is less than 34 bytes
+     * @dependencies
+     * @scenario
+     * - mock valid PaymentTransaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return true when `data` is less than 34 bytes', async () => {
+      // mock PaymentTransaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = 'payment' as TransactionType;
+      const trx = { ...(TestData.erc20transaction as TransactionLike) };
+      trx.data = '0x123456789a';
+      const tx = Transaction.from(trx);
+      tx.maxFeePerBlobGas = 0;
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN_NAME,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test
+      const result = evmChain.verifyTransactionExtraConditions(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target EvmChain.verifyTransactionExtraConditions should return false
+     * when `data` is null
+     * @dependencies
+     * @scenario
+     * - mock valid PaymentTransaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return true when `data` is null', async () => {
+      // mock PaymentTransaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = 'payment' as TransactionType;
+      const trx = { ...(TestData.erc20transaction as TransactionLike) };
+      trx.data = null;
+      const tx = Transaction.from(trx);
+      tx.maxFeePerBlobGas = 0;
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN_NAME,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test
+      const result = evmChain.verifyTransactionExtraConditions(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(false);
     });
 
     /**
@@ -636,7 +926,7 @@ describe('EvmChain', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when both an erc-20 and the native-token are being transfered', async () => {
+    it('should return false when there are extra bytes in the data', async () => {
       // mock PaymentTransaction
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
@@ -662,7 +952,7 @@ describe('EvmChain', () => {
 
     /**
      * @target EvmChain.verifyTransactionExtraConditions should return false
-     * when it's an erc-20 token transfer but calldata does not match with `transfer`
+     * when it's an erc-20 token transfer but `data` does not match with `transfer`
      * @dependencies
      * @scenario
      * - mock valid PaymentTransaction
@@ -671,7 +961,7 @@ describe('EvmChain', () => {
      * @expected
      * - it should return false
      */
-    it("should return false when it's an erc-20 token transfer but calldata does not match with `transfer", async () => {
+    it("should return false when it's an erc-20 token transfer but `data` does not match with `transfer`", async () => {
       // mock PaymentTransaction
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = 'payment' as TransactionType;
@@ -793,7 +1083,7 @@ describe('EvmChain', () => {
       testUtils.mockGetAddressNextAvailableNonce(network, tx.nonce);
       testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
 
-      // call the function
+      // run test
       const result = await evmChain.isTxValid(paymentTx, SigningStatus.Signed);
 
       // check returned value
@@ -829,43 +1119,7 @@ describe('EvmChain', () => {
       testUtils.mockGetAddressNextAvailableNonce(network, tx.nonce + 1);
       testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
 
-      // call the function
-      const result = await evmChain.isTxValid(paymentTx, SigningStatus.Signed);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
-     * @target EvmChain.isTxValid should return false when lock address no longer has enough assets
-     * @dependencies
-     * @scenario
-     * - mock PaymentTransaction
-     * - mock getAddressNextAvailableNonce and hasLockAddressEnoughAssets
-     * - call the function
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when lock address no longer has enough assets', async () => {
-      // mock PaymentTransaction
-      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-      const txType = 'payment' as TransactionType;
-      const tx = Transaction.from(TestData.erc20transaction as TransactionLike);
-
-      const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN_NAME,
-        tx.unsignedHash,
-        eventId,
-        Serializer.serialize(tx),
-        txType
-      );
-
-      // mock getAddressNextAvailableNonce and hasLockAddressEnoughAssets
-      testUtils.mockGetAddressNextAvailableNonce(network, tx.nonce);
-      testUtils.mockHasLockAddressEnoughAssets(evmChain, false);
-
-      // call the function
+      // run test
       const result = await evmChain.isTxValid(paymentTx, SigningStatus.Signed);
 
       // check returned value

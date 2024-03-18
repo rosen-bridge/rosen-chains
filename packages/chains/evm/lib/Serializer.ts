@@ -1,3 +1,4 @@
+import { SerializationError } from '@rosen-chains/abstract-chain';
 import { Transaction } from 'ethers';
 
 class Serializer {
@@ -7,7 +8,11 @@ class Serializer {
    * @returns bytearray representation of the transaction
    */
   static serialize = (tx: Transaction): Uint8Array => {
-    return Buffer.from(tx.unsignedSerialized.substring(2), 'hex');
+    try {
+      return Buffer.from(tx.unsignedSerialized.substring(2), 'hex');
+    } catch (error) {
+      throw new SerializationError(`${error}`);
+    }
   };
 
   /**
@@ -16,7 +21,11 @@ class Serializer {
    * @returns the transaction model in the chain library
    */
   static deserialize = (txBytes: Uint8Array): Transaction => {
-    return Transaction.from('0x' + (txBytes as Buffer).toString('hex'));
+    try {
+      return Transaction.from('0x' + Buffer.from(txBytes).toString('hex'));
+    } catch (error) {
+      throw new SerializationError(`${error}`);
+    }
   };
 
   /**
@@ -25,7 +34,11 @@ class Serializer {
    * @returns bytearray representation of the transaction
    */
   static signedSerialize = (tx: Transaction): Uint8Array => {
-    return Buffer.from(tx.serialized.substring(2), 'hex');
+    try {
+      return Buffer.from(tx.serialized.substring(2), 'hex');
+    } catch (error) {
+      throw new SerializationError(`${error}`);
+    }
   };
 
   /**
@@ -34,7 +47,11 @@ class Serializer {
    * @returns the transaction model in the chain library
    */
   static signedDeserialize = (txBytes: Uint8Array): Transaction => {
-    return Transaction.from('0x' + (txBytes as Buffer).toString('hex'));
+    try {
+      return Transaction.from('0x' + Buffer.from(txBytes).toString('hex'));
+    } catch (error) {
+      throw new SerializationError(`${error}`);
+    }
   };
 }
 

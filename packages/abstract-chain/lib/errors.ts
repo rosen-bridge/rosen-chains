@@ -51,6 +51,16 @@ class MaxParallelTxError extends Error {
     super('MaxParallelTxError: ' + msg);
   }
 }
+class SerializationError extends Error {
+  constructor(msg: string) {
+    super('SerializationError: ' + msg);
+  }
+}
+class DeserializationError extends Error {
+  constructor(msg: string) {
+    super('DeserializationError: ' + msg);
+  }
+}
 
 export {
   FailedError,
@@ -62,4 +72,6 @@ export {
   UnexpectedApiError,
   ValueError,
   MaxParallelTxError,
+  SerializationError,
+  DeserializationError,
 };
