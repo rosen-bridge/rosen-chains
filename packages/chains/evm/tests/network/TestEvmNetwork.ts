@@ -8,12 +8,10 @@ import {
 import { BlockHeader } from '../../lib';
 
 class TestEvmNetwork extends AbstractEvmNetwork {
-  extractor = undefined as any; // TODO: fix this!
-
-  notImplemented = () => {
-    throw Error('Not implemented');
+  submitTransaction = async (): Promise<void> => {
+    console.log('done?');
+    throw Error('Not mocked');
   };
-  submitTransaction = this.notImplemented;
 
   getAddressAssets = (): Promise<AssetBalance> => {
     throw Error('Not mocked');

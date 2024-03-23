@@ -66,6 +66,11 @@ class AssetNotSupportedError extends Error {
     super('AssetNotSupportedError: ' + msg);
   }
 }
+class TransactionFormatError extends Error {
+  constructor(msg: string) {
+    super('TransactionFormatError: ' + msg);
+  }
+}
 
 export {
   FailedError,
@@ -80,4 +85,5 @@ export {
   SerializationError,
   DeserializationError,
   AssetNotSupportedError,
+  TransactionFormatError,
 };
