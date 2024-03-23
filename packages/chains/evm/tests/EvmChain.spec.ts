@@ -1239,6 +1239,39 @@ describe('EvmChain', () => {
     });
 
     /**
+     * @target EvmChain.verifyTransactionExtraConditions should return false
+     * when transaction is not of type 2
+     * @dependencies
+     * @scenario
+     * - mock valid PaymentTransaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when transaction is not of type 2', async () => {
+      // mock PaymentTransaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const tx = Transaction.from(TestData.erc20transaction as TransactionLike);
+      tx.type = 3;
+
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test
+      const result = evmChain.verifyTransactionExtraConditions(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
      * @target EvmChain.verifyTransactionExtraConditions should return true
      * for erc-20 transfer when extra conditions are met and eventId is empty
      * @dependencies
@@ -1390,40 +1423,6 @@ describe('EvmChain', () => {
       const txType = TransactionType.payment;
       const trx = { ...(TestData.erc20transaction as TransactionLike) };
       trx.data = null;
-      const tx = Transaction.from(trx);
-      tx.maxFeePerBlobGas = 0;
-      const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN,
-        tx.unsignedHash,
-        eventId,
-        Serializer.serialize(tx),
-        txType
-      );
-
-      // run test
-      const result = evmChain.verifyTransactionExtraConditions(paymentTx);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
-     * @target EvmChain.verifyTransactionExtraConditions should return false
-     * when `data` is less than 34 bytes
-     * @dependencies
-     * @scenario
-     * - mock invalid PaymentTransaction
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when `data` is less than 34 bytes', async () => {
-      // mock PaymentTransaction
-      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-      const txType = TransactionType.payment;
-      const trx = { ...(TestData.erc20transaction as TransactionLike) };
-      trx.data = '0x123456789a';
       const tx = Transaction.from(trx);
       tx.maxFeePerBlobGas = 0;
       const paymentTx = new PaymentTransaction(
@@ -1597,39 +1596,6 @@ describe('EvmChain', () => {
       const tx = Transaction.from(TestData.erc20transaction as TransactionLike);
       tx.maxFeePerBlobGas = 0;
       tx.data = tx.data.substring(0, 30) + 'e43ba' + tx.data.substring(35);
-
-      const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN,
-        tx.unsignedHash,
-        eventId,
-        Serializer.serialize(tx),
-        txType
-      );
-
-      // run test
-      const result = evmChain.verifyTransactionExtraConditions(paymentTx);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
-     * @target EvmChain.verifyTransactionExtraConditions should return false
-     * when transaction is not of type 2
-     * @dependencies
-     * @scenario
-     * - mock valid PaymentTransaction
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when transaction is not of type 2', async () => {
-      // mock PaymentTransaction
-      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-      const txType = TransactionType.payment;
-      const tx = Transaction.from(TestData.erc20transaction as TransactionLike);
-      tx.type = 3;
 
       const paymentTx = new PaymentTransaction(
         evmChain.CHAIN,

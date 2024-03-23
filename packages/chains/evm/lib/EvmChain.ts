@@ -341,6 +341,12 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       return false;
     }
 
+    if (tx.maxFeePerGas === null) {
+      throw new ImpossibleBehavior(
+        "Type 2 transaction can't have null maxFeePerGas"
+      );
+    }
+
     if (tx.maxPriorityFeePerGas === null) {
       throw new ImpossibleBehavior(
         "Type 2 transaction can't have null maxPriorityFeePerGas"
@@ -369,8 +375,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     const feeSlippage =
       (networkMaxFee * BigInt(this.configs.feeSlippage)) / 100n;
     if (
-      tx.maxFeePerGas! - networkMaxFee > feeSlippage ||
-      networkMaxFee - tx.maxFeePerGas! > feeSlippage
+      tx.maxFeePerGas - networkMaxFee > feeSlippage ||
+      networkMaxFee - tx.maxFeePerGas > feeSlippage
     ) {
       this.logger.debug(
         `Tx [${
@@ -613,7 +619,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       return false;
     }
 
-    // tx must have appropriate length
+    // tx data must have correct length
     if (![eidlen + 2, eidlen + 2 + 136].includes(tx.data.length)) {
       this.logger.debug(
         `Tx [${transaction.txId}] is invalid. \`data\` must be either 34 or 170 bytes length.`
