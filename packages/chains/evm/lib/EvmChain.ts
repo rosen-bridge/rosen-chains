@@ -30,7 +30,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
   declare configs: EvmConfigs;
   abstract CHAIN: string;
   abstract CHAIN_ID: bigint;
-  abstract extractor: EvmRosenExtractor;
+  extractor: EvmRosenExtractor | undefined;
 
   feeRatioDivisor: bigint;
   supportedTokens: Array<string>;
@@ -50,7 +50,28 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     this.feeRatioDivisor = feeRatioDivisor;
     this.supportedTokens = supportedTokens;
     this.signFunction = signFunction;
+    this.initExtractor(tokens, nativeToken, logger);
   }
+
+  /**
+   * initializes rosen extractor
+   * @param tokens
+   * @param nativeToken
+   * @param logger
+   */
+  protected initExtractor = (
+    tokens: RosenTokens,
+    nativeToken: string,
+    logger?: any
+  ) => {
+    this.extractor = new EvmRosenExtractor(
+      this.configs.addresses.lock,
+      tokens,
+      this.CHAIN,
+      nativeToken,
+      logger
+    );
+  };
 
   /**
    * generates single or multiple unsigned PaymentTransactions for a payment order
