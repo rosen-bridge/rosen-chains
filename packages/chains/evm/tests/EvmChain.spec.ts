@@ -65,7 +65,7 @@ describe('EvmChain', () => {
       const orders = TestData.multipleOrders;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
-      let nonce = 53;
+      const nonce = 53;
 
       // mock hasLockAddressEnoughAssets, getMaxFeePerGas,
       // getGasRequiredERC20Transfer, getAddressNextNonce, getMaxPriorityFeePerGas
@@ -115,8 +115,7 @@ describe('EvmChain', () => {
         expect(tx.maxFeePerBlobGas).toEqual(null);
 
         // check nonce
-        expect(tx.nonce).toEqual(nonce);
-        nonce += 1;
+        expect(tx.nonce).toEqual(nonce + index);
       }
     });
 
@@ -1043,7 +1042,7 @@ describe('EvmChain', () => {
   describe('submitTransaction', () => {
     /**
      * @target EvmChain.submitTransaction should submit the transaction
-     * when fees are set properly and lock address has enough assets
+     * when transaction is of type 2, fees are set properly and lock address has enough assets
      * @dependencies
      * @scenario
      * - mock valid PaymentTransaction
@@ -1054,7 +1053,7 @@ describe('EvmChain', () => {
      * @expected
      * - it should call the function
      */
-    it('should submit the transaction when fees are set properly and lock address has enough assets', async () => {
+    it('should submit the transaction when transaction is of type 2, fees are set properly and lock address has enough assets', async () => {
       // mock getMaxFeePerGas, getMaxPriorityFeePerGas, and hasLockAddressEnoughAssets
       testUtils.mockGetMaxFeePerGas(network, 20n);
       testUtils.mockGetMaxPriorityFeePerGas(network, 7n);
@@ -1084,6 +1083,38 @@ describe('EvmChain', () => {
 
     /**
      * @target EvmChain.submitTransaction should not submit the transaction
+     * when transaction is not of type 2
+     * @dependencies
+     * @scenario
+     * - mock invalid PaymentTransaction
+     * - run test
+     * - check function is not called
+     * @expected
+     * - it should not call the function
+     */
+    it('should submit the transaction when transaction is not of type 2', async () => {
+      // mock PaymentTransaction
+      const tx = Transaction.from(TestData.transaction1Json);
+      tx.gasLimit = 55000n + 21000n;
+      tx.type = 3;
+
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+      const submitTransactionSpy = vi.spyOn(network, 'submitTransaction');
+      submitTransactionSpy.mockImplementation(async () => undefined);
+      await evmChain.submitTransaction(paymentTx);
+      expect(submitTransactionSpy).not.toHaveBeenCalled();
+    });
+
+    /**
+     * @target EvmChain.submitTransaction should not submit the transaction
      * when max fee per gas is wrong
      * @dependencies
      * @scenario
@@ -1105,7 +1136,7 @@ describe('EvmChain', () => {
       const tx = Transaction.from(TestData.transaction1Json);
       tx.gasLimit = 55000n + 21000n;
       tx.maxFeePerGas = 21n;
-      tx.maxPriorityFeePerGas = 7n;
+      tx.maxPriorityFeePerGas = 6n;
       tx.value = 2n;
 
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';

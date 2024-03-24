@@ -246,7 +246,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
     if (tx.maxFeePerGas === null) {
       throw new ImpossibleBehavior(
-        'Type 2 transaction can not have null maxPriorityFeePerGas'
+        'Type 2 transaction can not have null maxFeePerGas'
       );
     }
 
@@ -480,6 +480,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
   /**
    * submits a transaction to the blockchain
    * checks the following conditions before:
+   * - transaction must of of type 2
    * - fees are set appropriately according to the current network's condition
    * - lock address stil have enough funds
    * @param transaction the transaction
@@ -496,22 +497,43 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       return;
     }
 
+    // check type
+    if (tx.type !== 2) {
+      this.logger.warn(
+        `Cannot submit transaction [${transaction.txId}]: Transaction is not of type 2`
+      );
+      return;
+    }
+
+    if (tx.maxFeePerGas === null) {
+      throw new ImpossibleBehavior(
+        'Type 2 transaction can not have null maxFeePerGas'
+      );
+    }
+
+    if (tx.maxPriorityFeePerGas === null) {
+      throw new ImpossibleBehavior(
+        'Type 2 transaction can not have null maxPriorityFeePerGas'
+      );
+    }
+
     // check fees
     const networkMaxFee = await this.network.getMaxFeePerGas();
-    if (tx.maxFeePerGas !== networkMaxFee) {
+    if (tx.maxFeePerGas < networkMaxFee) {
       this.logger.warn(
-        `Cannot submit transaction [${transaction.txId}]: Transaction max fee per gas [${tx.maxFeePerGas}]
-        is too far from network's max fee per gas [${networkMaxFee}]`
+        `Cannot submit transaction [${transaction.txId}]: 
+        Transaction max fee per gas [${tx.maxFeePerGas}]
+        is less than network's max fee per gas [${networkMaxFee}]`
       );
       return;
     }
 
     const networkMaxPriorityFee = await this.network.getMaxPriorityFeePerGas();
-    if (tx.maxPriorityFeePerGas !== networkMaxPriorityFee) {
+    if (tx.maxPriorityFeePerGas < networkMaxPriorityFee) {
       this.logger.warn(
         `Cannot submit transaction [${transaction.txId}]:: 
         Transaction max priority fee per gas [${tx.maxPriorityFeePerGas}]
-        is too far from network's max priority fee per gas [${networkMaxPriorityFee!}]`
+        is less than network's max priority fee per gas [${networkMaxPriorityFee!}]`
       );
       return;
     }
@@ -624,10 +646,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     }
 
     if (tx.data === null) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] is invalid. \`data\` is null`
-      );
-      return false;
+      throw new ImpossibleBehavior('Transaction `data` can not be null');
     }
 
     const eidlen = transaction.eventId.length;
@@ -643,7 +662,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     // tx data must have correct length
     if (![eidlen + 2, eidlen + 2 + 136].includes(tx.data.length)) {
       this.logger.debug(
-        `Tx [${transaction.txId}] is invalid. \`data\` must be either 34 or 170 bytes length.`
+        `Tx [${transaction.txId}] is invalid. Unexpected \`data\` bytes length [${tx.data.length}]`
       );
       return false;
     }
