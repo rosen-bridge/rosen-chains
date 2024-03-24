@@ -303,6 +303,24 @@ describe('EvmChain', () => {
         TestData.transaction0PaymentTransaction.toJson()
       );
     });
+
+    /**
+     * @target EvmChain.rawTxToPaymentTransaction should throw error when transaction
+     * is not of type 2
+     * @dependencies
+     * @scenario
+     * - mock invalid transaction
+     * - run test
+     * @expected
+     * - throw TransactionFormatError
+     */
+    it('should throw error when transaction is not of type 2', async () => {
+      expect(async () => {
+        await evmChain.rawTxToPaymentTransaction(
+          TestData.transaction1JsonString
+        );
+      }).rejects.toThrow(TransactionFormatError);
+    });
   });
 
   describe('getTransactionAssets', () => {

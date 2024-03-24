@@ -49,6 +49,21 @@ export const transaction0JsonString = `{
   "accessList": []
 }
 `;
+export const transaction1JsonString = `{
+  "type": 3,
+  "to": "0x4606d11ff65B17d29e8C5E4085f9a868A8E5E4f2",
+  "data": "0x",
+  "nonce": 10,
+  "gasLimit": "21000",
+  "gasPrice": null,
+  "maxPriorityFeePerGas": "500000000",
+  "maxFeePerGas": "48978500000",
+  "value": "92850988521632054",
+  "chainId": "1",
+  "sig": null,
+  "accessList": []
+}
+`;
 
 export const transaction1Json = {
   type: 2,
