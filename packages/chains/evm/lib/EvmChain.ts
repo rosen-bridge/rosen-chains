@@ -600,6 +600,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
   /**
    * generates PaymentTransaction object from raw tx json string
+   * checks the transaction is of type 2
    * @param rawTxJsonString
    * @returns PaymentTransaction object
    */
