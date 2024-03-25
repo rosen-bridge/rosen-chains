@@ -46,6 +46,32 @@ class ValueError extends Error {
   }
 }
 
+class MaxParallelTxError extends Error {
+  constructor(msg: string) {
+    super('MaxParallelTxError: ' + msg);
+  }
+}
+class SerializationError extends Error {
+  constructor(msg: string) {
+    super('SerializationError: ' + msg);
+  }
+}
+class DeserializationError extends Error {
+  constructor(msg: string) {
+    super('DeserializationError: ' + msg);
+  }
+}
+class AssetNotSupportedError extends Error {
+  constructor(msg: string) {
+    super('AssetNotSupportedError: ' + msg);
+  }
+}
+class TransactionFormatError extends Error {
+  constructor(msg: string) {
+    super('TransactionFormatError: ' + msg);
+  }
+}
+
 export {
   FailedError,
   ImpossibleBehavior,
@@ -55,4 +81,9 @@ export {
   NotFoundError,
   UnexpectedApiError,
   ValueError,
+  MaxParallelTxError,
+  SerializationError,
+  DeserializationError,
+  AssetNotSupportedError,
+  TransactionFormatError,
 };

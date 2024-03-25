@@ -5,6 +5,7 @@ import { blake2b } from 'blakejs';
 import ChainUtils from './ChainUtils';
 import {
   FailedError,
+  ImpossibleBehavior,
   NetworkError,
   NotFoundError,
   UnexpectedApiError,
@@ -27,7 +28,7 @@ import PaymentTransaction from './PaymentTransaction';
 
 abstract class AbstractChain<TxType> {
   protected abstract CHAIN: string;
-  protected abstract extractor: AbstractRosenDataExtractor<string>;
+  protected abstract extractor: AbstractRosenDataExtractor<string> | undefined;
   protected network: AbstractChainNetwork<TxType>;
   protected configs: ChainConfigs;
   feeRatioDivisor: bigint;
@@ -157,6 +158,11 @@ abstract class AbstractChain<TxType> {
     event: EventTrigger,
     feeConfig: Fee
   ): Promise<boolean> => {
+    if (!this.extractor)
+      throw new ImpossibleBehavior(
+        `rosen-extractor is not defined for chain [${this.CHAIN}]`
+      );
+
     const eventId = Buffer.from(
       blake2b(event.sourceTxId, undefined, 32)
     ).toString('hex');
@@ -175,7 +181,7 @@ abstract class AbstractChain<TxType> {
         event.sourceTxId,
         event.sourceBlockId
       );
-      const blockInfo = await this.network.getBlockInfo(event.sourceBlockId)
+      const blockInfo = await this.network.getBlockInfo(event.sourceBlockId);
       const data = this.extractor.get(this.serializeTx(tx));
       if (!data) {
         this.logger.info(
@@ -261,7 +267,10 @@ abstract class AbstractChain<TxType> {
    * @param blockInfo
    * @returns true if the transaction is verified
    */
-  verifyLockTransactionExtraConditions = (transaction: TxType, blockInfo: BlockInfo): boolean => {
+  verifyLockTransactionExtraConditions = (
+    transaction: TxType,
+    blockInfo: BlockInfo
+  ): boolean => {
     throw Error(
       `You must implement 'verifyLockTransactionExtraConditions' or override 'verifyEvent' implementation`
     );

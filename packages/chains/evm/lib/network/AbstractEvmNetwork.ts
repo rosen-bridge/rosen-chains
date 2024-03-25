@@ -1,8 +1,11 @@
-import { AbstractChainNetwork } from '@rosen-chains/abstract-chain';
-import { AssetBalance } from '../../../../abstract-chain';
-import { TransactionResponse } from 'ethers';
+import {
+  AbstractChainNetwork,
+  AssetBalance,
+} from '@rosen-chains/abstract-chain';
+import { BlockHeader } from '../types';
+import { Transaction } from 'ethers';
 
-abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionResponse> {
+abstract class AbstractEvmNetwork extends AbstractChainNetwork<Transaction> {
   /**
    * gets the amount of the input ERC20 asset in an address
    * @param address the address
@@ -11,7 +14,7 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
    */
   abstract getAddressBalanceForERC20Asset: (
     address: string,
-    tokenId: string,
+    tokenId: string
   ) => Promise<AssetBalance>;
 
   /**
@@ -20,7 +23,7 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
    * @returns a bigint inidcating the amount of native token
    */
   abstract getAddressBalanceForNativeToken: (
-    address: string,
+    address: string
   ) => Promise<bigint>;
 
   /**
@@ -35,7 +38,7 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
    * @param address the address
    * @returns an integer indicating next nonce
    */
-  abstract getAddressNextNonce: (address: string) => Promise<number>;
+  abstract getAddressNextAvailableNonce: (address: string) => Promise<number>;
 
   /**
    * gets the gas required to call `transfer` function in the given contract
@@ -47,7 +50,7 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
   abstract getGasRequiredERC20Transfer: (
     contract: string,
     to: string,
-    amount: bigint,
+    amount: bigint
   ) => bigint;
 
   /**
@@ -56,6 +59,32 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<TransactionRespon
    * @returns required gas as a bigint
    */
   abstract getGasRequiredNativeTransfer: (to: string) => bigint;
+
+  /**
+   * gets the maximum wei we would pay to the miner according
+   * to the network's current condition
+   * @returns gas price as a bigint
+   */
+  abstract getMaxPriorityFeePerGas: () => Promise<bigint>;
+
+  /**
+   * gets the maximum wei we would pay (miner + base fee) according
+   * to the network's current condition
+   * @returns gas price as a bigint
+   */
+  abstract getMaxFeePerGas: () => Promise<bigint>;
+
+  /**
+   * gets the transaction with the specefic nonce and address
+   * if there is not such a mined transaction, it returns null
+   * @param address the input address in string
+   * @param nonce the input nonce in bigint
+   * @returns a transaction of type Transaction or null
+   */
+  abstract getTransactionViaAddressNonce: (
+    address: string,
+    nonce: bigint
+  ) => Promise<Transaction | null>;
 }
 
 export default AbstractEvmNetwork;

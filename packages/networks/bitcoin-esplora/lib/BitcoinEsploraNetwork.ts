@@ -68,8 +68,8 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       ).data;
       this.logger.debug(
         `requested 'tx' for txId [${transactionId}]. res: ${JsonBigInt.stringify(
-          txInfo,
-        )}`,
+          txInfo
+        )}`
       );
       if (txInfo.status.confirmed && txInfo.status.block_height)
         txHeight = txInfo.status.block_height;
@@ -104,12 +104,12 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       .then((res) => {
         this.logger.debug(
           `requested 'address' for address [${address}]. res: ${JsonBigInt.stringify(
-            res.data,
-          )}`,
+            res.data
+          )}`
         );
         const chainStat = res.data.chain_stats;
         nativeToken = BigInt(
-          chainStat.funded_txo_sum - chainStat.spent_txo_sum,
+          chainStat.funded_txo_sum - chainStat.spent_txo_sum
         );
         return { nativeToken, tokens };
       })
@@ -136,8 +136,8 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       .then((res) => {
         this.logger.debug(
           `requested 'block/:hash/txids' for blockId [${blockId}]. received: ${JsonBigInt.stringify(
-            res.data,
-          )}`,
+            res.data
+          )}`
         );
         return res.data;
       })
@@ -164,8 +164,8 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       .then((res) => {
         this.logger.debug(
           `requested 'block' for blockId [${blockId}]. res: ${JsonBigInt.stringify(
-            res.data,
-          )}`,
+            res.data
+          )}`
         );
         const block = res.data;
         return {
@@ -194,7 +194,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
    */
   getTransaction = async (
     transactionId: string,
-    blockId: string,
+    blockId: string
   ): Promise<BitcoinTx> => {
     let txInfo: EsploraTx;
     try {
@@ -202,8 +202,8 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
         .data;
       this.logger.debug(
         `requested 'tx' for txId [${transactionId}]. res: ${JsonBigInt.stringify(
-          txInfo,
-        )}`,
+          txInfo
+        )}`
       );
     } catch (e: any) {
       const baseError = `Failed to get transaction [${transactionId}] from Esplora: `;
@@ -218,7 +218,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
 
     if (txInfo.status.block_hash !== blockId)
       throw new FailedError(
-        `Tx [${transactionId}] doesn't belong to block [${blockId}]`,
+        `Tx [${transactionId}] doesn't belong to block [${blockId}]`
       );
 
     const tx: BitcoinTx = {
@@ -255,15 +255,15 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
   getAddressBoxes = async (
     address: string,
     offset: number,
-    limit: number,
+    limit: number
   ): Promise<Array<BitcoinUtxo>> => {
     const boxes = await this.client
       .get<Array<EsploraUtxo>>(`/api/address/${address}/utxo`)
       .then((res) => {
         this.logger.debug(
           `requested 'address/:address/utxo' for address [${address}]. res: ${JsonBigInt.stringify(
-            res.data,
-          )}`,
+            res.data
+          )}`
         );
         return res.data.map((utxo) => ({
           txId: utxo.txid,
@@ -303,13 +303,13 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
     try {
       utxosInfo = (
         await this.client.get<Array<EsploraUtxoInfo>>(
-          `/api/tx/${txId}/outspends`,
+          `/api/tx/${txId}/outspends`
         )
       ).data;
       this.logger.debug(
         `requested 'tx/:txid/outspends' for tx [${txId}]. res: ${JsonBigInt.stringify(
-          utxosInfo,
-        )}`,
+          utxosInfo
+        )}`
       );
     } catch (e: any) {
       const baseError = `Failed to get tx [${txId}] Utxos status from Esplora: `;
@@ -327,7 +327,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
 
     if (utxosInfo.length <= Number(index)) {
       this.logger.debug(
-        `Utxo [${boxId}] is invalid: Transaction [${txId}] doesn't have index [${index}]`,
+        `Utxo [${boxId}] is invalid: Transaction [${txId}] doesn't have index [${index}]`
       );
       return false;
     }
@@ -350,7 +350,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
     try {
       txInfo = (await this.client.get<EsploraTx>(`/api/tx/${txId}`)).data;
       this.logger.debug(
-        `requested 'tx' for tx [${txId}]. res: ${JsonBigInt.stringify(txInfo)}`,
+        `requested 'tx' for tx [${txId}]. res: ${JsonBigInt.stringify(txInfo)}`
       );
     } catch (e: any) {
       const baseError = `Failed to get tx [${txId}] Utxos status from Esplora: `;
@@ -365,7 +365,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
 
     if (txInfo.vout.length <= Number(index)) {
       throw new FailedError(
-        `Transaction [${txId}] doesn't have index [${index}]`,
+        `Transaction [${txId}] doesn't have index [${index}]`
       );
     }
 
@@ -384,14 +384,14 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
     const target: number = CONFIRMATION_TARGET;
     if (target > 25 && target !== 144 && target !== 504 && target !== 1008)
       throw new UnexpectedApiError(
-        `Esplora does not support target [${CONFIRMATION_TARGET}] for fee estimation`,
+        `Esplora does not support target [${CONFIRMATION_TARGET}] for fee estimation`
       );
 
     return this.client
       .get<Record<string, number>>(`/api/fee-estimates`)
       .then((res) => {
         this.logger.debug(
-          `requested 'fee-estimates'. res: ${JsonBigInt.stringify(res.data)}`,
+          `requested 'fee-estimates'. res: ${JsonBigInt.stringify(res.data)}`
         );
         return res.data[CONFIRMATION_TARGET];
       })
@@ -417,8 +417,8 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       .then((res) => {
         this.logger.debug(
           `requested 'mempool/txids'. received: ${JsonBigInt.stringify(
-            res.data,
-          )}`,
+            res.data
+          )}`
         );
         return res.data;
       })
