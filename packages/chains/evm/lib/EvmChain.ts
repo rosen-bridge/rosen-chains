@@ -610,7 +610,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     const trx = Transaction.from(JSON.parse(rawTxJsonString));
     if (trx.type !== 2) {
       throw new TransactionFormatError(
-        `Tx [${trx.unsignedHash}] is invalid. It is not of type 2`
+        `Only transaction of type 2 is supported while parsing raw transaction`
       );
     }
     const evmTx = new PaymentTransaction(
