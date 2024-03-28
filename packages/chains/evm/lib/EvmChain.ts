@@ -164,8 +164,13 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       if (singleOrder.assets.nativeToken !== 0n) {
         // appending any data consumes an extra 160 gas (it's not accurate so we use 200 to make sure it's enough)
         // and any non-zero byte requires 16 gas
-        const gasLimit =
-          gasRequiredForTransfer + 200n + BigInt((16 * eventId.length) / 2);
+        let gasLimit;
+        if (eventId.length !== 0) {
+          gasLimit =
+            gasRequiredForTransfer + 200n + BigInt((16 * eventId.length) / 2);
+        } else {
+          gasLimit = gasRequiredForTransfer;
+        }
         trx = Transaction.from({
           type: 2,
           to: singleOrder.address,
@@ -392,13 +397,24 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     }
 
     // check gas limit
-    let gasRequired = 0n;
+    let gasRequired;
     if (EvmUtils.isTransfer(tx.to, tx.data)) {
       const [to, amount] = EvmUtils.decodeTransferCallData(tx.to, tx.data);
       gasRequired = this.network.getGasRequiredERC20Transfer(tx.to, to, amount);
-    }
-    if (tx.value !== 0n) {
-      gasRequired += this.network.getGasRequiredNativeTransfer(tx.to);
+      if (tx.value !== 0n) {
+        gasRequired += this.network.getGasRequiredNativeTransfer(tx.to);
+      }
+      gasRequired += BigInt((16 * transaction.eventId.length) / 2);
+    } else if (tx.value !== 0n) {
+      gasRequired = this.network.getGasRequiredNativeTransfer(tx.to);
+      // appending any data consumes an extra 160 gas (it's not accurate so we use 200 to make sure it's enough)
+      // and any non-zero byte requires 16 gas
+      if (transaction.eventId.length !== 0) {
+        gasRequired += 200n + BigInt((16 * transaction.eventId.length) / 2);
+      }
+    } else {
+      this.logger.debug(`Tx [${transaction.txId}] invalid: does nothing`);
+      return false;
     }
 
     if (tx.gasLimit !== gasRequired) {

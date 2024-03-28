@@ -542,7 +542,7 @@ describe('EvmChain', () => {
 
       // mock PaymentTransaction
       const tx = Transaction.from(TestData.transaction1Json);
-      tx.gasLimit = 55000n + 21000n;
+      tx.gasLimit = 55000n + 21000n + 256n;
       tx.maxFeePerGas = 22n;
       tx.maxPriorityFeePerGas = 8n;
       tx.value = 2n;
@@ -720,6 +720,51 @@ describe('EvmChain', () => {
       tx.maxFeePerGas = 22n;
       tx.maxPriorityFeePerGas = 8n;
       tx.value = 10n;
+      tx.data = '0x';
+
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test
+      const result = await evmChain.verifyTransactionFee(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target EvmChain.verifyTransactionFee should return false when transaction
+     * does not transfer native-token nor erc-20
+     * @dependencies
+     * @scenario
+     * - mock mockGetGasRequiredERC20Transfer, mockGetGasRequiredNativeTransfer
+     * - mock mockGetMaxFeePerGas, mockGetMaxPriorityFeePerGas
+     * - mock PaymentTransaction
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when ransaction does not transfer native-token nor erc-20', async () => {
+      // mock a config that has more fee and wrong required gas
+      // comparing to the mocked transaction
+      testUtils.mockGetGasRequiredERC20Transfer(network, 55000n);
+      testUtils.mockGetGasRequiredNativeTransfer(network, 21000n);
+      testUtils.mockGetMaxFeePerGas(network, 20n);
+      testUtils.mockGetMaxPriorityFeePerGas(network, 7n);
+
+      // mock PaymentTransaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const tx = Transaction.from(TestData.transaction1Json);
+      tx.gasLimit = 21000n + 200n + 256n;
+      tx.maxFeePerGas = 20n;
+      tx.maxPriorityFeePerGas = 7n;
+      tx.value = 0n;
       tx.data = '0x';
 
       const paymentTx = new PaymentTransaction(
