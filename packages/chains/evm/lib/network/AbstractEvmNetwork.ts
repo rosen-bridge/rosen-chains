@@ -41,25 +41,11 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<Transaction> {
   abstract getAddressNextAvailableNonce: (address: string) => Promise<number>;
 
   /**
-   * gets the gas required to call `transfer` function in the given contract
-   * @param contract the contract address
-   * @param to the recipient address
-   * @param amount the amount to be transfered
-   * @returns required gas as a bigint
+   * gets gas required to execute the transaction
+   * @param transaction the transaction to be run
+   * @returns gas required in bigint
    */
-  abstract getGasRequiredERC20Transfer: (
-    contract: string,
-    to: string,
-    amount: bigint
-  ) => bigint;
-
-  /**
-   * gets the gas required to transfer native token
-   * @param to the recipient address
-   * @returns required gas as a bigint
-   */
-  abstract getGasRequiredNativeTransfer: (to: string) => bigint;
-
+  abstract getGasRequired: (transaction: Transaction) => bigint;
   /**
    * gets the maximum wei we would pay to the miner according
    * to the network's current condition

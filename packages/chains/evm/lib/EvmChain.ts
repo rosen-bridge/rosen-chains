@@ -10,7 +10,6 @@ import {
   SigningStatus,
   TransactionAssetBalance,
   TransactionType,
-  SinglePayment,
   PaymentTransactionJsonModel,
   AssetBalance,
   AssetNotSupportedError,
@@ -94,6 +93,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[]
   ): Promise<PaymentTransaction[]> => {
+    // split orders
     const orders = EvmUtils.splitPaymentOrders(order);
     orders.forEach((singleOrder) => {
       if (singleOrder.assets.tokens.length === 1) {
@@ -105,7 +105,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         }
       }
     });
-    // Check the number of parallel transactions won't be exceeded
+
+    // check the number of parallel transactions won't be exceeded
     let nextNonce = await this.network.getAddressNextAvailableNonce(
       this.configs.addresses.lock
     );
@@ -123,59 +124,19 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       There are [${waiting}] transactions already in the process`);
     }
 
-    // Check the balance in the lock address
     const gasPrice = await this.network.getMaxFeePerGas();
-    let gasRequired = 0n;
-    let requiredAssets: AssetBalance = {
-      nativeToken: 0n,
-      tokens: [],
-    };
-    orders.forEach((singleOrder) => {
-      gasRequired += this.getGasRequired(singleOrder);
-      requiredAssets = ChainUtils.sumAssetBalance(
-        singleOrder.assets,
-        requiredAssets
-      );
-    });
-    // add fee
-    requiredAssets = ChainUtils.sumAssetBalance(
-      {
-        nativeToken: gasRequired * gasPrice,
-        tokens: [],
-      },
-      requiredAssets
-    );
+    let totalGas = 0n;
 
-    if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
-      const neededETH = requiredAssets.nativeToken.toString();
-      const neededTokens = JSONBigInt.stringify(requiredAssets.tokens);
-      throw new NotEnoughAssetsError(
-        `Locked assets cannot cover required assets. native: ${neededETH}, erc-20: ${neededTokens}`
-      );
-    }
-
-    // Generate transactions
+    // try to generate transactions
     const maxPriorityFeePerGas = await this.network.getMaxPriorityFeePerGas();
     const evmTrxs: Array<PaymentTransaction> = [];
     orders.forEach((singleOrder) => {
       let trx;
-      const gasRequiredForTransfer = this.getGasRequired(singleOrder);
-
       if (singleOrder.assets.nativeToken !== 0n) {
-        // appending any data consumes an extra 160 gas (it's not accurate so we use 200 to make sure it's enough)
-        // and any non-zero byte requires 16 gas
-        let gasLimit;
-        if (eventId.length !== 0) {
-          gasLimit =
-            gasRequiredForTransfer + 200n + BigInt((16 * eventId.length) / 2);
-        } else {
-          gasLimit = gasRequiredForTransfer;
-        }
         trx = Transaction.from({
           type: 2,
           to: singleOrder.address,
           nonce: nextNonce,
-          gasLimit: gasLimit,
           maxPriorityFeePerGas: maxPriorityFeePerGas,
           maxFeePerGas: gasPrice,
           data: '0x' + eventId,
@@ -189,15 +150,11 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           singleOrder.address,
           token.value
         );
-        // any non-zero byte requires 16 gas
-        const gasLimit =
-          gasRequiredForTransfer + BigInt((16 * eventId.length) / 2);
 
         trx = Transaction.from({
           type: 2,
           to: token.id,
           nonce: nextNonce,
-          gasLimit: gasLimit,
           maxPriorityFeePerGas: maxPriorityFeePerGas,
           maxFeePerGas: gasPrice,
           data: data + eventId,
@@ -205,6 +162,9 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           chainId: this.CHAIN_ID,
         });
       }
+      trx.gasLimit = this.network.getGasRequired(trx);
+      totalGas += trx.gasLimit;
+
       evmTrxs.push(
         new PaymentTransaction(
           this.CHAIN,
@@ -214,34 +174,45 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           txType
         )
       );
-      this.logger.info(
-        `${this.CHAIN} transaction [${trx.hash}] as type [${txType}] generated for event [${eventId}]`
-      );
       nextNonce += 1;
     });
 
-    return evmTrxs;
-  };
-
-  /**
-   * gets gas required to do the transfer.
-   * @param payment the SinglePayment to be made
-   * @returns gas required in bigint
-   */
-  getGasRequired = (payment: SinglePayment): bigint => {
-    let res = 0n;
-    if (payment.assets.nativeToken !== 0n) {
-      res = this.network.getGasRequiredNativeTransfer(payment.address);
-    }
-
-    payment.assets.tokens.forEach((token) => {
-      res += this.network.getGasRequiredERC20Transfer(
-        token.id,
-        payment.address,
-        token.value
+    // check the balance in the lock address
+    let requiredAssets: AssetBalance = {
+      nativeToken: 0n,
+      tokens: [],
+    };
+    orders.forEach((singleOrder) => {
+      requiredAssets = ChainUtils.sumAssetBalance(
+        singleOrder.assets,
+        requiredAssets
       );
     });
-    return res;
+    // add fees
+    requiredAssets = ChainUtils.sumAssetBalance(
+      {
+        nativeToken: totalGas * gasPrice,
+        tokens: [],
+      },
+      requiredAssets
+    );
+
+    if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
+      const neededETH = requiredAssets.nativeToken.toString();
+      const neededTokens = JSONBigInt.stringify(requiredAssets.tokens);
+      throw new NotEnoughAssetsError(
+        `Locked assets cannot cover required assets. native: ${neededETH}, erc-20: ${neededTokens}`
+      );
+    }
+
+    // report result
+    evmTrxs.forEach((trx) => {
+      this.logger.info(
+        `${this.CHAIN} transaction [${trx.txId}] as type [${trx.txType}] generated for event [${trx.eventId}]`
+      );
+    });
+
+    return evmTrxs;
   };
 
   /**
@@ -397,25 +368,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     }
 
     // check gas limit
-    let gasRequired;
-    if (EvmUtils.isTransfer(tx.to, tx.data)) {
-      const [to, amount] = EvmUtils.decodeTransferCallData(tx.to, tx.data);
-      gasRequired = this.network.getGasRequiredERC20Transfer(tx.to, to, amount);
-      if (tx.value !== 0n) {
-        gasRequired += this.network.getGasRequiredNativeTransfer(tx.to);
-      }
-      gasRequired += BigInt((16 * transaction.eventId.length) / 2);
-    } else if (tx.value !== 0n) {
-      gasRequired = this.network.getGasRequiredNativeTransfer(tx.to);
-      // appending any data consumes an extra 160 gas (it's not accurate so we use 200 to make sure it's enough)
-      // and any non-zero byte requires 16 gas
-      if (transaction.eventId.length !== 0) {
-        gasRequired += 200n + BigInt((16 * transaction.eventId.length) / 2);
-      }
-    } else {
-      this.logger.debug(`Tx [${transaction.txId}] invalid: does nothing`);
-      return false;
-    }
+    const gasRequired = this.network.getGasRequired(tx);
 
     if (tx.gasLimit !== gasRequired) {
       this.logger.debug(

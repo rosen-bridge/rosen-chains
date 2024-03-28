@@ -68,15 +68,7 @@ class TestEvmNetwork extends AbstractEvmNetwork {
     throw Error('Not mocked');
   };
 
-  getGasRequiredERC20Transfer = (
-    contract: string,
-    to: string,
-    amount: bigint
-  ): bigint => {
-    throw Error('Not mocked');
-  };
-
-  getGasRequiredNativeTransfer = (to: string): bigint => {
+  getGasRequired = (transaction: Transaction): bigint => {
     throw Error('Not mocked');
   };
 

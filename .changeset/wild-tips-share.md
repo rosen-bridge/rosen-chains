@@ -2,4 +2,4 @@
 '@rosen-chains/evm': patch
 ---
 
-Fixed generatedMultipleTransactions nonce and gasLimit issues
+Fixed generatedMultipleTransactions nonce. Moved all the gas logic to network.

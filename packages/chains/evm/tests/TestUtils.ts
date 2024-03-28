@@ -46,18 +46,11 @@ export const mockGetMaxFeePerGas = (
   spyOn(network, 'getMaxFeePerGas').mockResolvedValue(value);
 };
 
-export const mockGetGasRequiredERC20Transfer = (
+export const mockGetGasRequired = (
   network: AbstractEvmNetwork,
   value: bigint
 ) => {
-  spyOn(network, 'getGasRequiredERC20Transfer').mockReturnValue(value);
-};
-
-export const mockGetGasRequiredNativeTransfer = (
-  network: AbstractEvmNetwork,
-  value: bigint
-) => {
-  spyOn(network, 'getGasRequiredNativeTransfer').mockReturnValue(value);
+  spyOn(network, 'getGasRequired').mockReturnValue(value);
 };
 
 export const mockGetAddressNextAvailableNonce = (
