@@ -106,9 +106,23 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       }
     });
     // Check the number of parallel transactions won't be exceeded
+    let nextNonce = await this.network.getAddressNextAvailableNonce(
+      this.configs.addresses.lock
+    );
     const waiting =
-      unsignedTransactions.length + serializedSignedTransactions.length;
-    if (waiting + order.length > this.configs.maxParallelTx) {
+      unsignedTransactions.filter(
+        (tx) => Serializer.deserialize(tx.txBytes).nonce === nextNonce
+      ).length +
+      serializedSignedTransactions.filter(
+        (tx) =>
+          Serializer.signedDeserialize(Buffer.from(tx, 'hex')).nonce ===
+          nextNonce
+      ).length;
+    console.log(waiting);
+    console.log(orders.length);
+    console.log(unsignedTransactions.length);
+    console.log(serializedSignedTransactions.length);
+    if (waiting + orders.length > this.configs.maxParallelTx) {
       throw new MaxParallelTxError(`
       There are [${waiting}] transactions already in the process`);
     }
@@ -145,9 +159,6 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     }
 
     // Generate transactions
-    let nonce = await this.network.getAddressNextAvailableNonce(
-      this.configs.addresses.lock
-    );
     const maxPriorityFeePerGas = await this.network.getMaxPriorityFeePerGas();
     const evmTrxs: Array<PaymentTransaction> = [];
     orders.forEach((singleOrder) => {
@@ -156,7 +167,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         trx = Transaction.from({
           type: 2,
           to: singleOrder.address,
-          nonce: nonce,
+          nonce: nextNonce,
           gasLimit: gasRequired,
           maxPriorityFeePerGas: maxPriorityFeePerGas,
           maxFeePerGas: gasPrice,
@@ -174,7 +185,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         trx = Transaction.from({
           type: 2,
           to: token.id,
-          nonce: nonce,
+          nonce: nextNonce,
           gasLimit: gasRequired,
           maxPriorityFeePerGas: maxPriorityFeePerGas,
           maxFeePerGas: gasPrice,
@@ -195,7 +206,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       this.logger.info(
         `${this.CHAIN} transaction [${trx.hash}] as type [${txType}] generated for event [${eventId}]`
       );
-      nonce += 1;
+      nextNonce += 1;
     });
 
     return evmTrxs;

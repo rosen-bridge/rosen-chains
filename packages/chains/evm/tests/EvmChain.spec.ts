@@ -249,23 +249,37 @@ describe('EvmChain', () => {
 
     /**
      * @target EvmChain.generateMultipleTransactions should throw error
-     * when there is no slot for generating new transactions
+     * when next available nonce was already used for maximum allowed times
      * @dependencies
      * @scenario
      * - fill the unsigned and signed transactions lists with mock data
+     * - mock hasLockAddressEnoughAssets and getAddressNextNonce
      * - call the function
      * @expected
      * - throw MaxParallelTxError
      */
-    it('should throw error when there is no slot for generating new transactions', async () => {
+    it('should throw error when next available nonce was already used for maximum allowed times', async () => {
       const order = TestData.multipleOrders;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
-      const unsigned = [...Array(5).keys()].map(
-        (elem: number) =>
-          new PaymentTransaction('', '', '', Buffer.from(''), txType)
+      const unsigned = TestData.paralelTransactions.map((elem) => {
+        elem = elem.clone();
+        elem.signature = null;
+        return new PaymentTransaction(
+          'test',
+          elem.unsignedHash,
+          eventId,
+          Serializer.serialize(elem),
+          txType
+        );
+      });
+      const signed = TestData.paralelTransactions.map((elem) =>
+        Buffer.from(Serializer.signedSerialize(elem)).toString('hex')
       );
-      const signed = [...Array(5).keys()].map((_) => '');
+
+      // mock hasLockAddressEnoughAssets, getAddressNextNonce,
+      testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
+      testUtils.mockGetAddressNextAvailableNonce(network, 53);
 
       // run test and expect error
       await expect(async () => {
@@ -277,6 +291,53 @@ describe('EvmChain', () => {
           signed
         );
       }).rejects.toThrow(MaxParallelTxError);
+    });
+
+    /**
+     * @target EvmChain.generateMultipleTransactions should not throw error
+     * when next available nonce is not yet used for maximum allowed times
+     * @dependencies
+     * @scenario
+     * - fill the unsigned and signed transactions lists with mock data
+     * - mock hasLockAddressEnoughAssets and getAddressNextNonce
+     * - call the function
+     * @expected
+     * - no error
+     */
+    it('should not throw error when next available nonce is not yet used for maximum allowed times', async () => {
+      const order = TestData.multipleOrders;
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const unsigned = TestData.paralelTransactions.map((elem) => {
+        elem = elem.clone();
+        elem.signature = null;
+        return new PaymentTransaction(
+          'test',
+          elem.unsignedHash,
+          eventId,
+          Serializer.serialize(elem),
+          txType
+        );
+      });
+      const signed = TestData.paralelTransactions.map((elem) =>
+        Buffer.from(Serializer.signedSerialize(elem)).toString('hex')
+      );
+
+      // mock hasLockAddressEnoughAssets, getAddressNextNonce,
+      testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
+      testUtils.mockGetAddressNextAvailableNonce(network, 53);
+
+      // run test and expect no error
+      evmChain.configs.maxParallelTx = 12;
+      await expect(async () => {
+        await evmChain.generateMultipleTransactions(
+          eventId,
+          txType,
+          order,
+          [unsigned[0], unsigned[1]],
+          [signed[0], signed[1]]
+        );
+      }).not.rejects;
     });
   });
 
