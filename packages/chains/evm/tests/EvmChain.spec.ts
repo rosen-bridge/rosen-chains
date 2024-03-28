@@ -71,8 +71,8 @@ describe('EvmChain', () => {
       // getGasRequiredERC20Transfer, getAddressNextNonce, getMaxPriorityFeePerGas
       testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
       testUtils.mockGetMaxFeePerGas(network, 10n);
-      testUtils.mockGetGasRequiredNativeTransfer(network, 5n);
-      testUtils.mockGetGasRequiredERC20Transfer(network, 10n);
+      testUtils.mockGetGasRequiredNativeTransfer(network, 21000n);
+      testUtils.mockGetGasRequiredERC20Transfer(network, 55000n);
       testUtils.mockGetAddressNextAvailableNonce(network, nonce);
       testUtils.mockGetMaxPriorityFeePerGas(network, 10n);
 
@@ -149,7 +149,7 @@ describe('EvmChain', () => {
       // getGasRequiredERC20Transfer, getAddressNextNonce, getMaxPriorityFeePerGas
       testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
       testUtils.mockGetMaxFeePerGas(network, 10n);
-      testUtils.mockGetGasRequiredNativeTransfer(network, 10n);
+      testUtils.mockGetGasRequiredNativeTransfer(network, 21000n);
       testUtils.mockGetAddressNextAvailableNonce(network, nonce);
       testUtils.mockGetMaxPriorityFeePerGas(network, 10n);
 

@@ -118,10 +118,6 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           Serializer.signedDeserialize(Buffer.from(tx, 'hex')).nonce ===
           nextNonce
       ).length;
-    console.log(waiting);
-    console.log(orders.length);
-    console.log(unsignedTransactions.length);
-    console.log(serializedSignedTransactions.length);
     if (waiting + orders.length > this.configs.maxParallelTx) {
       throw new MaxParallelTxError(`
       There are [${waiting}] transactions already in the process`);
@@ -163,12 +159,18 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     const evmTrxs: Array<PaymentTransaction> = [];
     orders.forEach((singleOrder) => {
       let trx;
+      const gasRequiredForTransfer = this.getGasRequired(singleOrder);
+
       if (singleOrder.assets.nativeToken !== 0n) {
+        // appending any data consumes an extra 160 gas (it's not accurate so we use 200 to make sure it's enough)
+        // and any non-zero byte requires 16 gas
+        const gasLimit =
+          gasRequiredForTransfer + 200n + BigInt((16 * eventId.length) / 2);
         trx = Transaction.from({
           type: 2,
           to: singleOrder.address,
           nonce: nextNonce,
-          gasLimit: gasRequired,
+          gasLimit: gasLimit,
           maxPriorityFeePerGas: maxPriorityFeePerGas,
           maxFeePerGas: gasPrice,
           data: '0x' + eventId,
@@ -182,11 +184,15 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           singleOrder.address,
           token.value
         );
+        // any non-zero byte requires 16 gas
+        const gasLimit =
+          gasRequiredForTransfer + BigInt((16 * eventId.length) / 2);
+
         trx = Transaction.from({
           type: 2,
           to: token.id,
           nonce: nextNonce,
-          gasLimit: gasRequired,
+          gasLimit: gasLimit,
           maxPriorityFeePerGas: maxPriorityFeePerGas,
           maxFeePerGas: gasPrice,
           data: data + eventId,
