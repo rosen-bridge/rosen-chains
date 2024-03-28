@@ -27,7 +27,9 @@ export const configs: EvmConfigs = {
     cold: coldTxConfirmation,
     manual: manualTxConfirmation,
   },
-  feeSlippage: 15,
+  gasPriceSlippage: 15,
+  gasLimitSlippage: 25,
+  gasLimitMultiplier: 3n,
 };
 
 export const mockedSignFn = () => Promise.resolve('');

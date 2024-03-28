@@ -540,7 +540,7 @@ describe('EvmChain', () => {
 
       // mock PaymentTransaction
       const tx = Transaction.from(TestData.transaction1Json);
-      tx.gasLimit = 100000n;
+      tx.gasLimit = 85000n * evmChain.configs.gasLimitMultiplier;
       tx.maxFeePerGas = 22n;
       tx.maxPriorityFeePerGas = 8n;
       tx.value = 2n;
@@ -667,7 +667,7 @@ describe('EvmChain', () => {
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
       const tx = Transaction.from(TestData.transaction1Json);
-      tx.gasLimit = 100000n;
+      tx.gasLimit = 60000n * evmChain.configs.gasLimitMultiplier;
       tx.maxFeePerGas = 22n;
       tx.maxPriorityFeePerGas = 8n;
       tx.value = 0n;
@@ -710,7 +710,7 @@ describe('EvmChain', () => {
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
       const tx = Transaction.from(TestData.transaction1Json);
-      tx.gasLimit = 23000n;
+      tx.gasLimit = 30000n * evmChain.configs.gasLimitMultiplier;
       tx.maxFeePerGas = 22n;
       tx.maxPriorityFeePerGas = 8n;
       tx.value = 10n;

@@ -162,7 +162,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           chainId: this.CHAIN_ID,
         });
       }
-      trx.gasLimit = this.network.getGasRequired(trx);
+      trx.gasLimit =
+        this.network.getGasRequired(trx) * this.configs.gasLimitMultiplier;
       totalGas += trx.gasLimit;
 
       evmTrxs.push(
@@ -368,11 +369,18 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     }
 
     // check gas limit
-    const gasRequired = this.network.getGasRequired(tx);
+    const gasRequired =
+      this.network.getGasRequired(tx) * this.configs.gasLimitMultiplier;
+    const gasLimitSlippage =
+      (gasRequired * BigInt(this.configs.gasLimitSlippage)) / 100n;
 
-    if (tx.gasLimit !== gasRequired) {
+    if (
+      tx.gasLimit - gasRequired > gasLimitSlippage ||
+      gasRequired - tx.gasLimit > gasLimitSlippage
+    ) {
       this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction gasLimit [${tx.gasLimit}] is more than maximum required [${gasRequired}]`
+        `Tx [${transaction.txId}] invalid: Transaction gas limit [${tx.gasLimit}]
+          is too far from calculated gas limit [${gasRequired}]`
       );
       return false;
     }
@@ -380,15 +388,13 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     // check fees
     const networkMaxFee = await this.network.getMaxFeePerGas();
     const feeSlippage =
-      (networkMaxFee * BigInt(this.configs.feeSlippage)) / 100n;
+      (networkMaxFee * BigInt(this.configs.gasPriceSlippage)) / 100n;
     if (
       tx.maxFeePerGas - networkMaxFee > feeSlippage ||
       networkMaxFee - tx.maxFeePerGas > feeSlippage
     ) {
       this.logger.debug(
-        `Tx [${
-          transaction.txId
-        }] invalid: Transaction max fee [${tx.maxFeePerGas!}]
+        `Tx [${transaction.txId}] invalid: Transaction max fee [${tx.maxFeePerGas}]
          is too far from network's max fee [${networkMaxFee}]`
       );
       return false;
@@ -396,7 +402,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
     const networkMaxPriorityFee = await this.network.getMaxPriorityFeePerGas();
     const priorityFeeSlippage =
-      (networkMaxPriorityFee * BigInt(this.configs.feeSlippage)) / 100n;
+      (networkMaxPriorityFee * BigInt(this.configs.gasPriceSlippage)) / 100n;
     if (
       tx.maxPriorityFeePerGas - networkMaxPriorityFee > priorityFeeSlippage ||
       networkMaxPriorityFee - tx.maxPriorityFeePerGas > priorityFeeSlippage
