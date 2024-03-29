@@ -120,7 +120,6 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           Serializer.signedDeserialize(Buffer.from(tx, 'hex')).nonce ===
           nextNonce
       ).length;
-    console.log(waiting);
     if (waiting > this.configs.maxParallelTx) {
       throw new MaxParallelTxError(
         `There are [${waiting}] transactions already in the process`
