@@ -9,7 +9,6 @@ import { BlockHeader } from '../../lib';
 
 class TestEvmNetwork extends AbstractEvmNetwork {
   submitTransaction = async (): Promise<void> => {
-    console.log('done?');
     throw Error('Not mocked');
   };
 
