@@ -65,7 +65,21 @@ describe('EvmChain', () => {
       const orders = TestData.multipleOrders;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
-      const nonce = 53;
+      const nonce = 54;
+      const unsigned = TestData.paralelTransactions.map((elem: Transaction) => {
+        elem = elem.clone();
+        elem.signature = null;
+        return new PaymentTransaction(
+          'test',
+          elem.unsignedHash,
+          eventId,
+          Serializer.serialize(elem),
+          txType
+        );
+      });
+      const signed = TestData.paralelTransactions.map((elem) =>
+        Buffer.from(Serializer.signedSerialize(elem)).toString('hex')
+      );
 
       // mock hasLockAddressEnoughAssets, getMaxFeePerGas,
       // getGasRequired, getAddressNextNonce, getMaxPriorityFeePerGas
@@ -80,8 +94,8 @@ describe('EvmChain', () => {
         eventId,
         txType,
         orders,
-        [],
-        []
+        unsigned,
+        signed
       );
 
       // check returned value
@@ -142,7 +156,7 @@ describe('EvmChain', () => {
       const order = TestData.nativePaymentOrder;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
-      const nonce = 49;
+      const nonce = 54;
 
       // mock hasLockAddressEnoughAssets, getMaxFeePerGas,
       // getGasRequired, getAddressNextNonce, getMaxPriorityFeePerGas
@@ -281,7 +295,7 @@ describe('EvmChain', () => {
       testUtils.mockGetAddressNextAvailableNonce(network, 53);
 
       // run test and expect error
-      await expect(async () => {
+      expect(async () => {
         await evmChain.generateMultipleTransactions(
           eventId,
           txType,
@@ -328,13 +342,13 @@ describe('EvmChain', () => {
 
       // run test and expect no error
       evmChain.configs.maxParallelTx = 12;
-      await expect(async () => {
+      expect(async () => {
         await evmChain.generateMultipleTransactions(
           eventId,
           txType,
           order,
-          [unsigned[0], unsigned[1]],
-          [signed[0], signed[1]]
+          unsigned,
+          signed
         );
       }).not.rejects;
     });
