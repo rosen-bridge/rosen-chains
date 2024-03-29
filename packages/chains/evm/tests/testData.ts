@@ -370,4 +370,23 @@ export const paralelTransactions = [
     },
     hash: '0xa3cd8e21a764a174f3d34eee309e7d8432f1a0f8b39ad1233f8c9d69e688f350',
   }),
+  Transaction.from({
+    type: 2,
+    to: '0xeDeE4752E5a2f595151c94762fB38E5727357791',
+    data: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbcb',
+    nonce: 53,
+    gasLimit: '21000',
+    gasPrice: null,
+    maxPriorityFeePerGas: '5000000',
+    maxFeePerGas: '489700000',
+    value: '1000',
+    chainId: '1',
+    signature: {
+      networkV: null,
+      r: '0xbd2a150372dd89dde397ac6e5fdaeea8a856315650ff57dcd5eb7f9f92b94fa4',
+      s: '0x12cddd21b99e6b2312ae00e959b60c9d9c7eb483c1a3fffc619a366fd040fb60',
+      v: 28,
+    },
+    accessList: [],
+  }),
 ];

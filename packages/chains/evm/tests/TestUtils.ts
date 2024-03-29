@@ -27,8 +27,8 @@ export const configs: EvmConfigs = {
     cold: coldTxConfirmation,
     manual: manualTxConfirmation,
   },
-  gasPriceSlippage: 15,
-  gasLimitSlippage: 25,
+  gasPriceSlippage: 15n,
+  gasLimitSlippage: 25n,
   gasLimitMultiplier: 3n,
 };
 

@@ -10,8 +10,8 @@ interface BlockHeader {
 
 interface EvmConfigs extends ChainConfigs {
   maxParallelTx: number;
-  gasPriceSlippage: number;
-  gasLimitSlippage: number;
+  gasPriceSlippage: bigint;
+  gasLimitSlippage: bigint;
   gasLimitMultiplier: bigint;
 }
 

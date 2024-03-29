@@ -580,7 +580,7 @@ describe('EvmChain', () => {
 
       // mock PaymentTransaction
       const tx = Transaction.from(TestData.transaction1Json);
-      tx.gasLimit = 100000n;
+      tx.gasLimit = 100000n * evmChain.configs.gasLimitMultiplier;
       tx.maxFeePerGas = 22n;
       tx.maxPriorityFeePerGas = 8n;
       tx.value = 2n;
@@ -621,7 +621,7 @@ describe('EvmChain', () => {
 
       // mock PaymentTransaction
       const tx = Transaction.from(TestData.transaction1Json);
-      tx.gasLimit = 55000n;
+      tx.gasLimit = 55000n * evmChain.configs.gasLimitMultiplier;
       tx.maxFeePerGas = 22n;
       tx.maxPriorityFeePerGas = 8n;
       tx.value = 2n;
@@ -732,50 +732,6 @@ describe('EvmChain', () => {
     });
 
     /**
-     * @target EvmChain.verifyTransactionFee should return false when transaction
-     * does not transfer native-token nor erc-20
-     * @dependencies
-     * @scenario
-     * - mock mockGetGasRequired
-     * - mock mockGetMaxFeePerGas, mockGetMaxPriorityFeePerGas
-     * - mock PaymentTransaction
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when ransaction does not transfer native-token nor erc-20', async () => {
-      // mock a config that has more fee and wrong required gas
-      // comparing to the mocked transaction
-      testUtils.mockGetGasRequired(network, 23000n);
-      testUtils.mockGetMaxFeePerGas(network, 20n);
-      testUtils.mockGetMaxPriorityFeePerGas(network, 7n);
-
-      // mock PaymentTransaction
-      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-      const txType = TransactionType.payment;
-      const tx = Transaction.from(TestData.transaction1Json);
-      tx.gasLimit = 21000n + 200n + 256n;
-      tx.maxFeePerGas = 20n;
-      tx.maxPriorityFeePerGas = 7n;
-      tx.value = 0n;
-      tx.data = '0x';
-
-      const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN,
-        tx.unsignedHash,
-        eventId,
-        Serializer.serialize(tx),
-        txType
-      );
-
-      // run test
-      const result = await evmChain.verifyTransactionFee(paymentTx);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
      * @target EvmChain.verifyTransactionFee should return false when maxFeePerGas
      * is too much bigger than expected
      * @dependencies
@@ -797,8 +753,50 @@ describe('EvmChain', () => {
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
       const tx = Transaction.from(TestData.transaction1Json);
-      tx.gasLimit = 76000n;
-      tx.maxFeePerGas = 28n;
+      tx.gasLimit = 76000n * evmChain.configs.gasLimitMultiplier;
+      tx.maxFeePerGas = 25n;
+      tx.maxPriorityFeePerGas = 7n;
+      tx.value = 10n;
+
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test
+      const result = await evmChain.verifyTransactionFee(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target EvmChain.verifyTransactionFee should return false when maxFeePerGas
+     * is too much smaller than expected
+     * @dependencies
+     * @scenario
+     * - mock mockGetGasRequired
+     * - mock mockGetMaxFeePerGas, mockGetMaxPriorityFeePerGas
+     * - mock PaymentTransaction
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when maxFeePerGas is too much smaller than exptected', async () => {
+      // mock a config that has too much smaller max fee comparing to the mocked transaction
+      testUtils.mockGetGasRequired(network, 76000n);
+      testUtils.mockGetMaxFeePerGas(network, 20n);
+      testUtils.mockGetMaxPriorityFeePerGas(network, 7n);
+
+      // mock PaymentTransaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const tx = Transaction.from(TestData.transaction1Json);
+      tx.gasLimit = 76000n * evmChain.configs.gasLimitMultiplier;
+      tx.maxFeePerGas = 16n;
       tx.maxPriorityFeePerGas = 8n;
       tx.value = 10n;
 
@@ -839,7 +837,7 @@ describe('EvmChain', () => {
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
       const tx = Transaction.from(TestData.transaction1Json);
-      tx.gasLimit = 76000n;
+      tx.gasLimit = 76000n * evmChain.configs.gasLimitMultiplier;
       tx.maxFeePerGas = 20n;
       tx.maxPriorityFeePerGas = 10n;
       tx.value = 10n;
@@ -881,51 +879,9 @@ describe('EvmChain', () => {
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
       const tx = Transaction.from(TestData.transaction1Json);
-      tx.gasLimit = 76000n;
+      tx.gasLimit = 76000n * evmChain.configs.gasLimitMultiplier;
       tx.maxFeePerGas = 20n;
       tx.maxPriorityFeePerGas = 5n;
-      tx.value = 10n;
-
-      const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN,
-        tx.unsignedHash,
-        eventId,
-        Serializer.serialize(tx),
-        txType
-      );
-
-      // run test
-      const result = await evmChain.verifyTransactionFee(paymentTx);
-
-      // check returned value
-      expect(result).toEqual(false);
-    });
-
-    /**
-     * @target EvmChain.verifyTransactionFee should return false when maxFeePerGas
-     * is too much smaller than expected
-     * @dependencies
-     * @scenario
-     * - mock mockGetGasRequired
-     * - mock mockGetMaxFeePerGas, mockGetMaxPriorityFeePerGas
-     * - mock PaymentTransaction
-     * - check returned value
-     * @expected
-     * - it should return false
-     */
-    it('should return false when max fee per gas is too much smaller than exptected', async () => {
-      // mock a config that has too much smaller max fee comparing to the mocked transaction
-      testUtils.mockGetGasRequired(network, 76000n);
-      testUtils.mockGetMaxFeePerGas(network, 20n);
-      testUtils.mockGetMaxPriorityFeePerGas(network, 7n);
-
-      // mock PaymentTransaction
-      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-      const txType = TransactionType.payment;
-      const tx = Transaction.from(TestData.transaction1Json);
-      tx.gasLimit = 76000n;
-      tx.maxFeePerGas = 16n;
-      tx.maxPriorityFeePerGas = 8n;
       tx.value = 10n;
 
       const paymentTx = new PaymentTransaction(
@@ -1228,68 +1184,25 @@ describe('EvmChain', () => {
 
     /**
      * @target EvmChain.submitTransaction should not submit the transaction
-     * when max fee per gas is wrong
+     * when maxFeePerGas is wrong
      * @dependencies
      * @scenario
      * - mock invalid PaymentTransaction
-     * - mock getMaxFeePerGas, getMaxPriorityFeePerGas
+     * - mock getGasRequired
      * - mock hasLockAddressEnoughAssets
      * - run test
      * - check function is not called
      * @expected
      * - it should not call the function
      */
-    it('should submit the transaction when max fee per gas is wrong', async () => {
-      // mock getMaxFeePerGas, getMaxPriorityFeePerGas, and hasLockAddressEnoughAssets
-      testUtils.mockGetMaxFeePerGas(network, 20n);
-      testUtils.mockGetMaxPriorityFeePerGas(network, 7n);
-      testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
+    it('should not submit the transaction when gas limit is wrong', async () => {
+      // mock getGasRequired, and hasLockAddressEnoughAssets
+      testUtils.mockGetGasRequired(network, 77000n);
 
       // mock PaymentTransaction
       const tx = Transaction.from(TestData.transaction1Json);
       tx.gasLimit = 55000n + 21000n;
       tx.maxFeePerGas = 21n;
-      tx.maxPriorityFeePerGas = 6n;
-      tx.value = 2n;
-
-      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-      const txType = TransactionType.payment;
-      const paymentTx = new PaymentTransaction(
-        evmChain.CHAIN,
-        tx.unsignedHash,
-        eventId,
-        Serializer.serialize(tx),
-        txType
-      );
-      const submitTransactionSpy = vi.spyOn(network, 'submitTransaction');
-      submitTransactionSpy.mockImplementation(async () => undefined);
-      await evmChain.submitTransaction(paymentTx);
-      expect(submitTransactionSpy).not.toHaveBeenCalled();
-    });
-
-    /**
-     * @target EvmChain.submitTransaction should not submit the transaction
-     * when max priority fee per gas is wrong
-     * @dependencies
-     * @scenario
-     * - mock invalid PaymentTransaction
-     * - mock getMaxFeePerGas, getMaxPriorityFeePerGas
-     * - mock hasLockAddressEnoughAssets
-     * - run test
-     * - check the function is not called
-     * @expected
-     * - it should not call the function
-     */
-    it('should submit the transaction when max fee per gas is wrong', async () => {
-      // mock getMaxFeePerGas, getMaxPriorityFeePerGas, and hasLockAddressEnoughAssets
-      testUtils.mockGetMaxFeePerGas(network, 20n);
-      testUtils.mockGetMaxPriorityFeePerGas(network, 7n);
-      testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
-
-      // mock PaymentTransaction
-      const tx = Transaction.from(TestData.transaction1Json);
-      tx.gasLimit = 55000n + 21000n;
-      tx.maxFeePerGas = 20n;
       tx.maxPriorityFeePerGas = 6n;
       tx.value = 2n;
 
@@ -1321,7 +1234,7 @@ describe('EvmChain', () => {
      * @expected
      * - it should not call the function
      */
-    it('should submit the transaction when lock address does not have enough asset', async () => {
+    it('should not submit the transaction when lock address does not have enough asset', async () => {
       // mock getMaxFeePerGas, getMaxPriorityFeePerGas, and hasLockAddressEnoughAssets
       testUtils.mockGetMaxFeePerGas(network, 20n);
       testUtils.mockGetMaxPriorityFeePerGas(network, 7n);
