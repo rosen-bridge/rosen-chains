@@ -361,8 +361,6 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       );
     }
 
-    console.log('nashod?');
-
     // check gas limit
     const gasRequired =
       this.network.getGasRequired(tx) * this.configs.gasLimitMultiplier;
@@ -375,12 +373,10 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
     if (gasDifference > gasLimitSlippage) {
       this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction gas limit [${tx.gasLimit}]
-          is too far from calculated gas limit [${gasRequired}]`
+        `Tx [${transaction.txId}] invalid: Transaction gas limit [${tx.gasLimit}] is too far from calculated gas limit [${gasRequired}]`
       );
       return false;
     }
-    console.log('rad shod?');
 
     // check fees
     const networkMaxFee = await this.network.getMaxFeePerGas();
@@ -393,8 +389,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
     if (maxFeeDifference > maxFeeSlippage) {
       this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction max fee [${tx.maxFeePerGas}]
-         is too far from network's max fee [${networkMaxFee}]`
+        `Tx [${transaction.txId}] invalid: Transaction max fee [${tx.maxFeePerGas}] is too far from network's max fee [${networkMaxFee}]`
       );
       return false;
     }
@@ -409,8 +404,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
     if (maxPriorityFeeDifference > priorityFeeSlippage) {
       this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction max priority fee [${tx.maxPriorityFeePerGas}]
-         is too far from network's max priority fee [${networkMaxPriorityFee}]`
+        `Tx [${transaction.txId}] invalid: Transaction max priority fee [${tx.maxPriorityFeePerGas}] is too far from network's max priority fee [${networkMaxPriorityFee}]`
       );
       return false;
     }
@@ -447,8 +441,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     );
     if (nextNonce > trx.nonce) {
       this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction's nonce ${trx.nonce} is not available anymore 
-        according to address's current nonce ${nextNonce}`
+        `Tx [${transaction.txId}] invalid: Transaction's nonce ${trx.nonce} is not available anymore according to address's current nonce ${nextNonce}`
       );
       return false;
     }
@@ -502,9 +495,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     const gasRequired = await this.network.getGasRequired(tx);
     if (gasRequired > tx.gasLimit) {
       this.logger.warn(
-        `Cannot submit transaction [${transaction.txId}]: 
-        Transaction gas limit [${tx.maxFeePerGas}]
-        is less than the required gas [${gasRequired}]`
+        `Cannot submit transaction [${transaction.txId}]: Transaction gas limit [${tx.maxFeePerGas}] is less than the required gas [${gasRequired}]`
       );
       return;
     }
@@ -513,8 +504,9 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     const txAssets = await this.getTransactionAssets(transaction);
     if (!(await this.hasLockAddressEnoughAssets(txAssets.inputAssets))) {
       this.logger.warn(
-        `Cannot submit transaction [${transaction.txId}]: 
-        Locked assets cannot cover transaction assets: ${JSONBigInt.stringify(
+        `Cannot submit transaction [${
+          transaction.txId
+        }]: Locked assets cannot cover transaction assets: ${JSONBigInt.stringify(
           txAssets.inputAssets
         )}`
       );
@@ -648,8 +640,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     const eventId = tx.data.substring(tx.data.length - eidlen);
     if (eventId !== transaction.eventId) {
       this.logger.debug(
-        `Tx [${transaction.txId}] is invalid. Encoded eventId [${eventId}] does 
-        not match with the expected one [${transaction.eventId}]`
+        `Tx [${transaction.txId}] is invalid. Encoded eventId [${eventId}] does not match with the expected one [${transaction.eventId}]`
       );
       return false;
     }

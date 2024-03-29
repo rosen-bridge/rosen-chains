@@ -307,7 +307,7 @@ describe('EvmChain', () => {
       const order = TestData.multipleOrders;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
-      const unsigned = TestData.paralelTransactions.map((elem) => {
+      const unsigned = TestData.paralelTransactions.map((elem: Transaction) => {
         elem = elem.clone();
         elem.signature = null;
         return new PaymentTransaction(
@@ -522,7 +522,7 @@ describe('EvmChain', () => {
   describe('verifyTransactionFee', () => {
     /**
      * @target EvmChain.verifyTransactionFee should return true when
-     * both fee and gas limits were set properly
+     * both fees and gasLimit are set properly
      * @dependencies
      * @scenario
      * - mock mockGetGasRequired
@@ -532,7 +532,7 @@ describe('EvmChain', () => {
      * @expected
      * - it should return true
      */
-    it('should return true when both fee and gas limits were set properly', async () => {
+    it('should return true when both fees and gasLimit are set properly', async () => {
       // mock a config that has almost the same fee as the mocked transaction
       testUtils.mockGetGasRequired(network, 100000n);
       testUtils.mockGetMaxFeePerGas(network, 20n);
@@ -645,7 +645,7 @@ describe('EvmChain', () => {
     });
 
     /**
-     * @target EvmChain.verifyTransactionFee should return false when gas limit is wrong
+     * @target EvmChain.verifyTransactionFee should return false when gasLimit is wrong
      * for erc-20 transfer
      * @dependencies
      * @scenario
@@ -656,7 +656,7 @@ describe('EvmChain', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when gas limit is wrong for erc-20 transfer', async () => {
+    it('should return false when gasLimit is wrong for erc-20 transfer', async () => {
       // mock a config that has more fee and wrong required gas
       // comparing to the mocked transaction
       testUtils.mockGetGasRequired(network, 90000n);
@@ -688,7 +688,7 @@ describe('EvmChain', () => {
     });
 
     /**
-     * @target EvmChain.verifyTransactionFee should return false when gas limit is wrong
+     * @target EvmChain.verifyTransactionFee should return false when gasLimit is wrong
      * for native-token transfer
      * @dependencies
      * @scenario
@@ -699,7 +699,7 @@ describe('EvmChain', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when gas limit is wrong for native-token transfer', async () => {
+    it('should return false when gasLimit is wrong for native-token transfer', async () => {
       // mock a config that has more fee and wrong required gas
       // comparing to the mocked transaction
       testUtils.mockGetGasRequired(network, 20000n);
@@ -1184,7 +1184,7 @@ describe('EvmChain', () => {
 
     /**
      * @target EvmChain.submitTransaction should not submit the transaction
-     * when maxFeePerGas is wrong
+     * when gasLimit is wrong
      * @dependencies
      * @scenario
      * - mock invalid PaymentTransaction
@@ -1195,7 +1195,7 @@ describe('EvmChain', () => {
      * @expected
      * - it should not call the function
      */
-    it('should not submit the transaction when gas limit is wrong', async () => {
+    it('should not submit the transaction when gasLimit is wrong', async () => {
       // mock getGasRequired, and hasLockAddressEnoughAssets
       testUtils.mockGetGasRequired(network, 77000n);
 
