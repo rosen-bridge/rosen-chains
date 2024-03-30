@@ -27,7 +27,9 @@ export const configs: EvmConfigs = {
     cold: coldTxConfirmation,
     manual: manualTxConfirmation,
   },
-  feeSlippage: 15,
+  gasPriceSlippage: 15n,
+  gasLimitSlippage: 25n,
+  gasLimitMultiplier: 3n,
 };
 
 export const mockedSignFn = () => Promise.resolve('');
@@ -46,18 +48,11 @@ export const mockGetMaxFeePerGas = (
   spyOn(network, 'getMaxFeePerGas').mockResolvedValue(value);
 };
 
-export const mockGetGasRequiredERC20Transfer = (
+export const mockGetGasRequired = (
   network: AbstractEvmNetwork,
   value: bigint
 ) => {
-  spyOn(network, 'getGasRequiredERC20Transfer').mockReturnValue(value);
-};
-
-export const mockGetGasRequiredNativeTransfer = (
-  network: AbstractEvmNetwork,
-  value: bigint
-) => {
-  spyOn(network, 'getGasRequiredNativeTransfer').mockReturnValue(value);
+  spyOn(network, 'getGasRequired').mockReturnValue(value);
 };
 
 export const mockGetAddressNextAvailableNonce = (

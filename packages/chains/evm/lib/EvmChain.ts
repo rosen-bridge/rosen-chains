@@ -10,13 +10,13 @@ import {
   SigningStatus,
   TransactionAssetBalance,
   TransactionType,
-  SinglePayment,
   PaymentTransactionJsonModel,
   AssetBalance,
   AssetNotSupportedError,
   BlockInfo,
   ImpossibleBehavior,
   TransactionFormatError,
+  SinglePayment,
 } from '@rosen-chains/abstract-chain';
 import { EvmRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
@@ -94,6 +94,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[]
   ): Promise<PaymentTransaction[]> => {
+    // split orders
     const orders = EvmUtils.splitPaymentOrders(order);
     orders.forEach((singleOrder) => {
       if (singleOrder.assets.tokens.length === 1) {
@@ -105,49 +106,30 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         }
       }
     });
-    // Check the number of parallel transactions won't be exceeded
-    const waiting =
-      unsignedTransactions.length + serializedSignedTransactions.length;
-    if (waiting + order.length > this.configs.maxParallelTx) {
-      throw new MaxParallelTxError(`
-      There are [${waiting}] transactions already in the process`);
-    }
 
-    // Check the balance in the lock address
-    const gasPrice = await this.network.getMaxFeePerGas();
-    let gasRequired = 0n;
-    let requiredAssets: AssetBalance = {
-      nativeToken: 0n,
-      tokens: [],
-    };
-    orders.forEach((singleOrder) => {
-      gasRequired += this.getGasRequired(singleOrder);
-      requiredAssets = ChainUtils.sumAssetBalance(
-        singleOrder.assets,
-        requiredAssets
-      );
-    });
-    // add fee
-    requiredAssets = ChainUtils.sumAssetBalance(
-      {
-        nativeToken: gasRequired * gasPrice,
-        tokens: [],
-      },
-      requiredAssets
-    );
-
-    if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
-      const neededETH = requiredAssets.nativeToken.toString();
-      const neededTokens = JSONBigInt.stringify(requiredAssets.tokens);
-      throw new NotEnoughAssetsError(
-        `Locked assets cannot cover required assets. native: ${neededETH}, erc-20: ${neededTokens}`
-      );
-    }
-
-    // Generate transactions
-    let nonce = await this.network.getAddressNextAvailableNonce(
+    // check the number of parallel transactions won't be exceeded
+    let nextNonce = await this.network.getAddressNextAvailableNonce(
       this.configs.addresses.lock
     );
+    const waiting =
+      unsignedTransactions.filter(
+        (tx) => Serializer.deserialize(tx.txBytes).nonce === nextNonce
+      ).length +
+      serializedSignedTransactions.filter(
+        (tx) =>
+          Serializer.signedDeserialize(Buffer.from(tx, 'hex')).nonce ===
+          nextNonce
+      ).length;
+    if (waiting > this.configs.maxParallelTx) {
+      throw new MaxParallelTxError(
+        `There are [${waiting}] transactions already in the process`
+      );
+    }
+
+    const gasPrice = await this.network.getMaxFeePerGas();
+    let totalGas = 0n;
+
+    // try to generate transactions
     const maxPriorityFeePerGas = await this.network.getMaxPriorityFeePerGas();
     const evmTrxs: Array<PaymentTransaction> = [];
     orders.forEach((singleOrder) => {
@@ -156,8 +138,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         trx = Transaction.from({
           type: 2,
           to: singleOrder.address,
-          nonce: nonce,
-          gasLimit: gasRequired,
+          nonce: nextNonce,
           maxPriorityFeePerGas: maxPriorityFeePerGas,
           maxFeePerGas: gasPrice,
           data: '0x' + eventId,
@@ -171,11 +152,11 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           singleOrder.address,
           token.value
         );
+
         trx = Transaction.from({
           type: 2,
           to: token.id,
-          nonce: nonce,
-          gasLimit: gasRequired,
+          nonce: nextNonce,
           maxPriorityFeePerGas: maxPriorityFeePerGas,
           maxFeePerGas: gasPrice,
           data: data + eventId,
@@ -183,6 +164,10 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           chainId: this.CHAIN_ID,
         });
       }
+      trx.gasLimit =
+        this.network.getGasRequired(trx) * this.configs.gasLimitMultiplier;
+      totalGas += trx.gasLimit;
+
       evmTrxs.push(
         new PaymentTransaction(
           this.CHAIN,
@@ -192,34 +177,36 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           txType
         )
       );
-      this.logger.info(
-        `${this.CHAIN} transaction [${trx.hash}] as type [${txType}] generated for event [${eventId}]`
+      nextNonce += 1;
+    });
+
+    // check the balance in the lock address
+    const requiredAssets: AssetBalance = orders.reduce(
+      (sum: AssetBalance, order: SinglePayment) => {
+        return ChainUtils.sumAssetBalance(sum, order.assets);
+      },
+      {
+        nativeToken: totalGas * gasPrice,
+        tokens: [],
+      }
+    );
+
+    if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
+      const neededETH = requiredAssets.nativeToken.toString();
+      const neededTokens = JSONBigInt.stringify(requiredAssets.tokens);
+      throw new NotEnoughAssetsError(
+        `Locked assets cannot cover required assets. native: ${neededETH}, erc-20: ${neededTokens}`
       );
-      nonce += 1;
+    }
+
+    // report result
+    evmTrxs.forEach((trx) => {
+      this.logger.info(
+        `${this.CHAIN} transaction [${trx.txId}] as type [${trx.txType}] generated for event [${trx.eventId}]`
+      );
     });
 
     return evmTrxs;
-  };
-
-  /**
-   * gets gas required to do the transfer.
-   * @param payment the SinglePayment to be made
-   * @returns gas required in bigint
-   */
-  getGasRequired = (payment: SinglePayment): bigint => {
-    let res = 0n;
-    if (payment.assets.nativeToken !== 0n) {
-      res = this.network.getGasRequiredNativeTransfer(payment.address);
-    }
-
-    payment.assets.tokens.forEach((token) => {
-      res += this.network.getGasRequiredERC20Transfer(
-        token.id,
-        payment.address,
-        token.value
-      );
-    });
-    return res;
   };
 
   /**
@@ -375,49 +362,49 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     }
 
     // check gas limit
-    let gasRequired = 0n;
-    if (EvmUtils.isTransfer(tx.to, tx.data)) {
-      const [to, amount] = EvmUtils.decodeTransferCallData(tx.to, tx.data);
-      gasRequired = this.network.getGasRequiredERC20Transfer(tx.to, to, amount);
-    }
-    if (tx.value !== 0n) {
-      gasRequired += this.network.getGasRequiredNativeTransfer(tx.to);
-    }
+    const gasRequired =
+      this.network.getGasRequired(tx) * this.configs.gasLimitMultiplier;
+    const gasLimitSlippage =
+      (gasRequired * BigInt(this.configs.gasLimitSlippage)) / 100n;
+    const gasDifference =
+      tx.gasLimit >= gasRequired
+        ? tx.gasLimit - gasRequired
+        : gasRequired - tx.gasLimit;
 
-    if (tx.gasLimit !== gasRequired) {
+    if (gasDifference > gasLimitSlippage) {
       this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction gasLimit [${tx.gasLimit}] is more than maximum required [${gasRequired}]`
+        `Tx [${transaction.txId}] invalid: Transaction gas limit [${tx.gasLimit}] is too far from calculated gas limit [${gasRequired}]`
       );
       return false;
     }
 
     // check fees
     const networkMaxFee = await this.network.getMaxFeePerGas();
-    const feeSlippage =
-      (networkMaxFee * BigInt(this.configs.feeSlippage)) / 100n;
-    if (
-      tx.maxFeePerGas - networkMaxFee > feeSlippage ||
-      networkMaxFee - tx.maxFeePerGas > feeSlippage
-    ) {
+    const maxFeeSlippage =
+      (networkMaxFee * this.configs.gasPriceSlippage) / 100n;
+    const maxFeeDifference =
+      tx.maxFeePerGas >= networkMaxFee
+        ? tx.maxFeePerGas - networkMaxFee
+        : networkMaxFee - tx.maxFeePerGas;
+
+    if (maxFeeDifference > maxFeeSlippage) {
       this.logger.debug(
-        `Tx [${
-          transaction.txId
-        }] invalid: Transaction max fee [${tx.maxFeePerGas!}]
-         is too far from network's max fee [${networkMaxFee}]`
+        `Tx [${transaction.txId}] invalid: Transaction max fee [${tx.maxFeePerGas}] is too far from network's max fee [${networkMaxFee}]`
       );
       return false;
     }
 
     const networkMaxPriorityFee = await this.network.getMaxPriorityFeePerGas();
     const priorityFeeSlippage =
-      (networkMaxPriorityFee * BigInt(this.configs.feeSlippage)) / 100n;
-    if (
-      tx.maxPriorityFeePerGas - networkMaxPriorityFee > priorityFeeSlippage ||
-      networkMaxPriorityFee - tx.maxPriorityFeePerGas > priorityFeeSlippage
-    ) {
+      (networkMaxPriorityFee * this.configs.gasPriceSlippage) / 100n;
+    const maxPriorityFeeDifference =
+      tx.maxPriorityFeePerGas >= networkMaxPriorityFee
+        ? tx.maxPriorityFeePerGas - networkMaxPriorityFee
+        : networkMaxPriorityFee - tx.maxPriorityFeePerGas;
+
+    if (maxPriorityFeeDifference > priorityFeeSlippage) {
       this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction max priority fee [${tx.maxPriorityFeePerGas}]
-         is too far from network's max priority fee [${networkMaxPriorityFee}]`
+        `Tx [${transaction.txId}] invalid: Transaction max priority fee [${tx.maxPriorityFeePerGas}] is too far from network's max priority fee [${networkMaxPriorityFee}]`
       );
       return false;
     }
@@ -454,8 +441,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     );
     if (nextNonce > trx.nonce) {
       this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction's nonce ${trx.nonce} is not available anymore 
-        according to address's current nonce ${nextNonce}`
+        `Tx [${transaction.txId}] invalid: Transaction's nonce ${trx.nonce} is not available anymore according to address's current nonce ${nextNonce}`
       );
       return false;
     }
@@ -505,35 +491,11 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       return;
     }
 
-    if (tx.maxFeePerGas === null) {
-      throw new ImpossibleBehavior(
-        'Type 2 transaction can not have null maxFeePerGas'
-      );
-    }
-
-    if (tx.maxPriorityFeePerGas === null) {
-      throw new ImpossibleBehavior(
-        'Type 2 transaction can not have null maxPriorityFeePerGas'
-      );
-    }
-
     // check fees
-    const networkMaxFee = await this.network.getMaxFeePerGas();
-    if (tx.maxFeePerGas < networkMaxFee) {
+    const gasRequired = await this.network.getGasRequired(tx);
+    if (gasRequired > tx.gasLimit) {
       this.logger.warn(
-        `Cannot submit transaction [${transaction.txId}]: 
-        Transaction max fee per gas [${tx.maxFeePerGas}]
-        is less than network's max fee per gas [${networkMaxFee}]`
-      );
-      return;
-    }
-
-    const networkMaxPriorityFee = await this.network.getMaxPriorityFeePerGas();
-    if (tx.maxPriorityFeePerGas < networkMaxPriorityFee) {
-      this.logger.warn(
-        `Cannot submit transaction [${transaction.txId}]:: 
-        Transaction max priority fee per gas [${tx.maxPriorityFeePerGas}]
-        is less than network's max priority fee per gas [${networkMaxPriorityFee!}]`
+        `Cannot submit transaction [${transaction.txId}]: Transaction gas limit [${tx.maxFeePerGas}] is less than the required gas [${gasRequired}]`
       );
       return;
     }
@@ -542,8 +504,9 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     const txAssets = await this.getTransactionAssets(transaction);
     if (!(await this.hasLockAddressEnoughAssets(txAssets.inputAssets))) {
       this.logger.warn(
-        `Cannot submit transaction [${transaction.txId}]: 
-        Locked assets cannot cover transaction assets: ${JSONBigInt.stringify(
+        `Cannot submit transaction [${
+          transaction.txId
+        }]: Locked assets cannot cover transaction assets: ${JSONBigInt.stringify(
           txAssets.inputAssets
         )}`
       );
@@ -677,8 +640,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     const eventId = tx.data.substring(tx.data.length - eidlen);
     if (eventId !== transaction.eventId) {
       this.logger.debug(
-        `Tx [${transaction.txId}] is invalid. Encoded eventId [${eventId}] does 
-        not match with the expected one [${transaction.eventId}]`
+        `Tx [${transaction.txId}] is invalid. Encoded eventId [${eventId}] does not match with the expected one [${transaction.eventId}]`
       );
       return false;
     }

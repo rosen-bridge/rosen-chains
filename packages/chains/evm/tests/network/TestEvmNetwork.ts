@@ -9,7 +9,6 @@ import { BlockHeader } from '../../lib';
 
 class TestEvmNetwork extends AbstractEvmNetwork {
   submitTransaction = async (): Promise<void> => {
-    console.log('done?');
     throw Error('Not mocked');
   };
 
@@ -68,15 +67,7 @@ class TestEvmNetwork extends AbstractEvmNetwork {
     throw Error('Not mocked');
   };
 
-  getGasRequiredERC20Transfer = (
-    contract: string,
-    to: string,
-    amount: bigint
-  ): bigint => {
-    throw Error('Not mocked');
-  };
-
-  getGasRequiredNativeTransfer = (to: string): bigint => {
+  getGasRequired = (transaction: Transaction): bigint => {
     throw Error('Not mocked');
   };
 
