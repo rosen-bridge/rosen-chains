@@ -1,5 +1,17 @@
 # @rosen-chains/cardano-koios-network
 
+## 7.0.0
+
+### Major Changes
+
+- remove rosen-extractor initialization
+
+### Patch Changes
+
+- Updated dependencies
+  - @rosen-chains/cardano@6.0.0
+  - @rosen-chains/abstract-chain@6.0.0
+
 ## 6.0.0
 
 ### Patch Changes

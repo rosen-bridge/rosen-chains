@@ -1,5 +1,21 @@
 # @rosen-chains/abstract-chain
 
+## 6.0.0
+
+### Major Changes
+
+- add generateMultipleTransactions to AbstractChain and implement generateTransaction
+- implement verifyEvent and add verifyLockTransactionExtraConditions to be implemented in child classes
+
+### Minor Changes
+
+- Introduced new error types for EvmChain
+
+### Patch Changes
+
+- allow undefined extractor
+- Updated rosen-extractor version
+
 ## 5.0.0
 
 ### Major Changes
