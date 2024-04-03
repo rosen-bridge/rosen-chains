@@ -16,6 +16,7 @@ import * as testUtils from './TestUtils';
 import TestChain from './TestChain';
 import Serializer from '../lib/Serializer';
 import { Transaction, TransactionLike } from 'ethers';
+import { TssSignFunction } from '../lib';
 
 describe('EvmChain', () => {
   const network = new TestEvmNetwork();
@@ -23,7 +24,7 @@ describe('EvmChain', () => {
 
   const generateChainObject = (
     network: TestEvmNetwork,
-    signFn: (txHash: Uint8Array) => Promise<string> = testUtils.mockedSignFn
+    signFn: TssSignFunction = testUtils.mockedSignFn
   ) => {
     return new TestChain(
       network,

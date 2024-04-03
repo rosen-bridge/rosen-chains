@@ -12,6 +12,7 @@ import {
   BitcoinTransaction,
   BitcoinUtxo,
   SEGWIT_INPUT_WEIGHT_UNIT,
+  TssSignFunction,
 } from '../lib';
 import TestBitcoinNetwork from './network/TestBitcoinNetwork';
 import * as testData from './testData';
@@ -43,10 +44,14 @@ describe('BitcoinChain', () => {
     aggregatedPublicKey: testData.lockAddressPublicKey,
     txFeeSlippage: 10,
   };
-  const mockedSignFn = () => Promise.resolve('');
+  const mockedSignFn = () =>
+    Promise.resolve({
+      signature: '',
+      signatureRecovery: '',
+    });
   const generateChainObject = (
     network: TestBitcoinNetwork,
-    signFn: (txHash: Uint8Array) => Promise<string> = mockedSignFn
+    signFn: TssSignFunction = mockedSignFn
   ) => {
     return new BitcoinChain(
       network,
@@ -491,12 +496,18 @@ describe('BitcoinChain', () => {
      */
     it('should return PaymentTransaction of the signed transaction', async () => {
       // mock a sign function to return signature
-      const signFunction = async (hash: Uint8Array): Promise<string> => {
+      const signFunction: TssSignFunction = async (hash: Uint8Array) => {
         const hashHex = Buffer.from(hash).toString('hex');
         if (hashHex === testData.transaction2HashMessage0)
-          return testData.transaction2Signature0;
+          return {
+            signature: testData.transaction2Signature0,
+            signatureRecovery: '',
+          };
         else if (hashHex === testData.transaction2HashMessage1)
-          return testData.transaction2Signature1;
+          return {
+            signature: testData.transaction2Signature1,
+            signatureRecovery: '',
+          };
         else
           throw Error(
             `TestError: sign function is called with wrong message [${hashHex}]`
@@ -534,12 +545,15 @@ describe('BitcoinChain', () => {
      */
     it('should throw error when at least signing of one message is failed', async () => {
       // mock a sign function to throw error
-      const signFunction = async (hash: Uint8Array): Promise<string> => {
+      const signFunction: TssSignFunction = async (hash: Uint8Array) => {
         if (
           Buffer.from(hash).toString('hex') ===
           testData.transaction2HashMessage0
         )
-          return testData.transaction2Signature0;
+          return {
+            signature: testData.transaction2Signature0,
+            signatureRecovery: '',
+          };
         else throw Error(`TestError: sign failed`);
       };
 

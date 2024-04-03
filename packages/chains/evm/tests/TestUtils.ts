@@ -32,7 +32,11 @@ export const configs: EvmConfigs = {
   gasLimitMultiplier: 3n,
 };
 
-export const mockedSignFn = () => Promise.resolve('');
+export const mockedSignFn = () =>
+  Promise.resolve({
+    signature: '',
+    signatureRecovery: '',
+  });
 
 export const mockHasLockAddressEnoughAssets = (
   chain: EvmChain,

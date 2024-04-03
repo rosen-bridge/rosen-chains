@@ -20,7 +20,7 @@ import {
 } from '@rosen-chains/abstract-chain';
 import { EvmRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
-import { EvmConfigs } from './types';
+import { EvmConfigs, TssSignFunction } from './types';
 import { Transaction } from 'ethers';
 import Serializer from './Serializer';
 import * as EvmUtils from './EvmUtils';
@@ -34,7 +34,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
   feeRatioDivisor: bigint;
   supportedTokens: Array<string>;
-  protected signFunction: (txHash: Uint8Array) => Promise<string>;
+  protected signFunction: TssSignFunction;
 
   constructor(
     network: AbstractEvmNetwork,
@@ -43,7 +43,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     tokens: RosenTokens,
     nativeToken: string,
     supportedTokens: Array<string>,
-    signFunction: (txHash: Uint8Array) => Promise<string>,
+    signFunction: TssSignFunction,
     logger?: any
   ) {
     super(network, configs, logger);
