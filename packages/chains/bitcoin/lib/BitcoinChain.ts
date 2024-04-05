@@ -18,7 +18,12 @@ import {
 } from '@rosen-chains/abstract-chain';
 import AbstractBitcoinNetwork from './network/AbstractBitcoinNetwork';
 import BitcoinTransaction from './BitcoinTransaction';
-import { BitcoinConfigs, BitcoinTx, BitcoinUtxo } from './types';
+import {
+  BitcoinConfigs,
+  BitcoinTx,
+  BitcoinUtxo,
+  TssSignFunction,
+} from './types';
 import Serializer from './Serializer';
 import { Psbt, Transaction, address, payments, script } from 'bitcoinjs-lib';
 import JsonBigInt from '@rosen-bridge/json-bigint';
@@ -33,7 +38,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
   declare configs: BitcoinConfigs;
   CHAIN = BITCOIN_CHAIN;
   extractor: BitcoinRosenExtractor;
-  protected signFunction: (txHash: Uint8Array) => Promise<string>;
+  protected signFunction: TssSignFunction;
   protected lockScript: string;
   protected signingScript: Buffer;
 
@@ -42,7 +47,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
     configs: BitcoinConfigs,
     feeRatioDivisor: bigint,
     tokens: RosenTokens,
-    signFunction: (txHash: Uint8Array) => Promise<string>,
+    signFunction: TssSignFunction,
     logger?: AbstractLogger
   ) {
     super(network, configs, feeRatioDivisor, logger);
@@ -398,14 +403,12 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
         Transaction.SIGHASH_ALL
       );
 
-      const signatureHex = this.signFunction(signMessage).then(
-        (signatureHex: string) => {
-          this.logger.debug(
-            `Input [${i}] of tx [${bitcoinTx.txId}] is signed. signature: ${signatureHex}`
-          );
-          return signatureHex;
-        }
-      );
+      const signatureHex = this.signFunction(signMessage).then((response) => {
+        this.logger.debug(
+          `Input [${i}] of tx [${bitcoinTx.txId}] is signed. signature: ${response.signature}`
+        );
+        return response.signature;
+      });
       signaturePromises.push(signatureHex);
     }
 
