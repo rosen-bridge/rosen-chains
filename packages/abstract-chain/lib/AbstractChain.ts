@@ -1,5 +1,5 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { Fee } from '@rosen-bridge/minimum-fee';
+import { ChainMinimumFee } from '@rosen-bridge/minimum-fee';
 import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
 import { blake2b } from 'blakejs';
 import ChainUtils from './ChainUtils';
@@ -31,18 +31,15 @@ abstract class AbstractChain<TxType> {
   protected abstract extractor: AbstractRosenDataExtractor<string> | undefined;
   protected network: AbstractChainNetwork<TxType>;
   protected configs: ChainConfigs;
-  feeRatioDivisor: bigint;
   logger: AbstractLogger;
 
   constructor(
     network: AbstractChainNetwork<TxType>,
     configs: ChainConfigs,
-    feeRatioDivisor: bigint,
     logger?: AbstractLogger
   ) {
     this.network = network;
     this.configs = configs;
-    this.feeRatioDivisor = feeRatioDivisor;
     this.logger = logger ? logger : new DummyLogger();
   }
 
@@ -156,7 +153,7 @@ abstract class AbstractChain<TxType> {
    */
   verifyEvent = async (
     event: EventTrigger,
-    feeConfig: Fee
+    feeConfig: ChainMinimumFee
   ): Promise<boolean> => {
     if (!this.extractor)
       throw new ImpossibleBehavior(
@@ -207,7 +204,7 @@ abstract class AbstractChain<TxType> {
           let bridgeFee = BigInt(event.bridgeFee);
           if (feeConfig.bridgeFee > bridgeFee) bridgeFee = feeConfig.bridgeFee;
           const transferringAmountFee =
-            (eventAmount * feeConfig.feeRatio) / this.feeRatioDivisor;
+            (eventAmount * feeConfig.feeRatio) / feeConfig.feeRatioDivisor;
           if (transferringAmountFee > bridgeFee)
             bridgeFee = transferringAmountFee;
           const networkFee =

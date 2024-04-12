@@ -562,7 +562,6 @@ describe('CardanoChain', () => {
     const testInstance = new TestCardanoChain(
       network,
       TestUtils.configs,
-      TestUtils.feeRationDivisor,
       TestUtils.rosenTokens,
       null as any
     );
@@ -1029,7 +1028,6 @@ describe('CardanoChain', () => {
       const cardanoChain = new CardanoChain(
         network,
         newConfigs,
-        TestUtils.feeRationDivisor,
         TestUtils.rosenTokens,
         TestUtils.mockedSignFn
       );

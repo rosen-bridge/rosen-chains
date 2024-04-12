@@ -34,7 +34,6 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
     '1005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304';
   declare network: AbstractErgoNetwork;
   declare configs: ErgoConfigs;
-  feeRatioDivisor: bigint;
   protected signFunction: (
     tx: wasm.ReducedTransaction,
     requiredSign: number,
@@ -45,7 +44,6 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
   constructor(
     network: AbstractErgoNetwork,
     configs: ErgoConfigs,
-    feeRatioDivisor: bigint,
     tokens: RosenTokens,
     signFunction: (
       tx: wasm.ReducedTransaction,
@@ -55,13 +53,12 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
     ) => Promise<wasm.Transaction>,
     logger?: AbstractLogger
   ) {
-    super(network, configs, feeRatioDivisor, logger);
+    super(network, configs, logger);
     this.extractor = new ErgoRosenExtractor(
       configs.addresses.lock,
       tokens,
       logger
     );
-    this.feeRatioDivisor = feeRatioDivisor;
     this.signFunction = signFunction;
   }
 

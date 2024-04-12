@@ -23,5 +23,5 @@ export const generateChainObject = (network: TestChainNetwork) => {
     },
     rwtId: 'rwt',
   };
-  return new TestChain(network, config, testData.feeRatioDivisor);
+  return new TestChain(network, config);
 };

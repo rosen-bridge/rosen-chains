@@ -34,7 +34,6 @@ export const coldTxConfirmation = 10;
 export const manualTxConfirmation = 11;
 export const rwtId =
   '9410db5b39388c6b515160e7248346d7ec63d5457292326da12a26cc02efb526';
-export const feeRatioDivisor = 10000n;
 export const generateChainObject = (
   network: TestErgoNetwork,
   rwt = rwtId,
@@ -43,8 +42,7 @@ export const generateChainObject = (
     requiredSign: number,
     boxes: Array<wasm.ErgoBox>,
     dataBoxes?: Array<wasm.ErgoBox>
-  ) => Promise<wasm.Transaction> = defaultSignFunction,
-  logger?: AbstractLogger
+  ) => Promise<wasm.Transaction> = defaultSignFunction
 ) => {
   const config: ErgoConfigs = {
     fee: 100n,
@@ -65,14 +63,7 @@ export const generateChainObject = (
     eventTxConfirmation: 18,
   };
   // mock a sign function to return signed transaction
-  return new ErgoChain(
-    network,
-    config,
-    feeRatioDivisor,
-    testTokenMap,
-    signFn,
-    logger
-  );
+  return new ErgoChain(network, config, testTokenMap, signFn);
 };
 
 /**

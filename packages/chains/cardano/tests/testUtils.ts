@@ -130,7 +130,6 @@ export const coldTxConfirmation = 10;
 export const manualTxConfirmation = 11;
 export const rwtId =
   '9410db5b39388c6b515160e7248346d7ec63d5457292326da12a26cc02efb526';
-export const feeRationDivisor = 1n;
 export const minBoxValue = 2000000n;
 export const configs: CardanoConfigs = {
   fee: 1000000n,
@@ -158,11 +157,5 @@ export const generateChainObject = (
   network: TestCardanoNetwork,
   signFn: (txHash: Uint8Array) => Promise<string> = mockedSignFn
 ) => {
-  return new CardanoChain(
-    network,
-    configs,
-    feeRationDivisor,
-    rosenTokens,
-    signFn
-  );
+  return new CardanoChain(network, configs, rosenTokens, signFn);
 };

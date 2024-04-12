@@ -45,12 +45,11 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
   constructor(
     network: AbstractBitcoinNetwork,
     configs: BitcoinConfigs,
-    feeRatioDivisor: bigint,
     tokens: RosenTokens,
     signFunction: TssSignFunction,
     logger?: AbstractLogger
   ) {
-    super(network, configs, feeRatioDivisor, logger);
+    super(network, configs, logger);
     this.extractor = new BitcoinRosenExtractor(
       configs.addresses.lock,
       tokens,

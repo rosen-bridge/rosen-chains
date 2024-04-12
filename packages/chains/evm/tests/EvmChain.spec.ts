@@ -20,7 +20,6 @@ import { TssSignFunction } from '../lib';
 
 describe('EvmChain', () => {
   const network = new TestEvmNetwork();
-  const feeRatioDivisor = 1n;
 
   const generateChainObject = (
     network: TestEvmNetwork,
@@ -29,7 +28,6 @@ describe('EvmChain', () => {
     return new TestChain(
       network,
       testUtils.configs,
-      feeRatioDivisor,
       {
         idKeys: {},
         tokens: [],
