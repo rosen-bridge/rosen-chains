@@ -1,5 +1,11 @@
 # @rosen-chains/abstract-chain
 
+## 7.0.0
+
+### Major Changes
+
+- update minimum-fee to v1 and remove feeRatioDivisor from constructor
+
 ## 6.0.0
 
 ### Major Changes

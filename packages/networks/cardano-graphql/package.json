@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/cardano-graphql-network",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "a package to be used as network api provider for @rosen-chains/cardano package",
   "repository": "@rosen-chains/cardano-graphql-network",
   "license": "GPL-3.0",
@@ -41,7 +41,7 @@
     "@rosen-bridge/abstract-logger": "^1.0.0"
   },
   "peerDependencies": {
-    "@rosen-chains/abstract-chain": "^6.0.0",
-    "@rosen-chains/cardano": "^6.0.0"
+    "@rosen-chains/abstract-chain": "^7.0.0",
+    "@rosen-chains/cardano": "^7.0.0"
   }
 }
