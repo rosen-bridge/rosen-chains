@@ -6,7 +6,6 @@ import { when } from 'jest-when';
 const spyOn = jest.spyOn;
 
 describe('AbstractUtxoChain', () => {
-  const feeRatioDivisor = 1n;
   const generateChainObject = (network: TestUtxoChainNetwork) => {
     const config: ChainConfigs = {
       fee: 100n,
@@ -24,7 +23,7 @@ describe('AbstractUtxoChain', () => {
       },
       rwtId: 'rwt',
     };
-    return new TestUtxoChain(network, config, feeRatioDivisor);
+    return new TestUtxoChain(network, config);
   };
 
   describe('getCoveringBoxes', () => {

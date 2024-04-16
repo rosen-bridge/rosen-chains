@@ -242,7 +242,7 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
    * @param transaction the transaction
    */
   submitTransaction = async (transaction: Psbt): Promise<void> => {
-    await this.client.post(`/tx`, transaction.extractTransaction().toHex());
+    await this.client.post(`/api/tx`, transaction.extractTransaction().toHex());
   };
 
   /**

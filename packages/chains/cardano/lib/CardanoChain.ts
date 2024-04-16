@@ -42,24 +42,21 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
   declare configs: CardanoConfigs;
   CHAIN = CARDANO_CHAIN;
   extractor: CardanoRosenExtractor;
-  feeRatioDivisor: bigint;
   protected signFunction: (txHash: Uint8Array) => Promise<string>;
 
   constructor(
     network: AbstractCardanoNetwork,
     configs: CardanoConfigs,
-    feeRatioDivisor: bigint,
     tokens: RosenTokens,
     signFunction: (txHash: Uint8Array) => Promise<string>,
     logger?: AbstractLogger
   ) {
-    super(network, configs, feeRatioDivisor, logger);
+    super(network, configs, logger);
     this.extractor = new CardanoRosenExtractor(
       configs.addresses.lock,
       tokens,
       logger
     );
-    this.feeRatioDivisor = feeRatioDivisor;
     this.signFunction = signFunction;
   }
 

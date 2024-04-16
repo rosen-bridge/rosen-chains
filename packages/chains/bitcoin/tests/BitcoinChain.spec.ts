@@ -25,7 +25,6 @@ describe('BitcoinChain', () => {
   const manualTxConfirmation = 11;
   const rwtId =
     '9410db5b39388c6b515160e7248346d7ec63d5457292326da12a26cc02efb526';
-  const feeRationDivisor = 1n;
   const configs: BitcoinConfigs = {
     fee: 1000000n,
     addresses: {
@@ -53,13 +52,7 @@ describe('BitcoinChain', () => {
     network: TestBitcoinNetwork,
     signFn: TssSignFunction = mockedSignFn
   ) => {
-    return new BitcoinChain(
-      network,
-      configs,
-      feeRationDivisor,
-      testData.testTokenMap,
-      signFn
-    );
+    return new BitcoinChain(network, configs, testData.testTokenMap, signFn);
   };
 
   describe('generateTransaction', () => {
@@ -396,7 +389,6 @@ describe('BitcoinChain', () => {
       const bitcoinChain = new BitcoinChain(
         network,
         newConfigs,
-        feeRationDivisor,
         testData.testTokenMap,
         mockedSignFn
       );
@@ -644,7 +636,6 @@ describe('BitcoinChain', () => {
     const testInstance = new TestBitcoinChain(
       network,
       configs,
-      feeRationDivisor,
       testData.testTokenMap,
       null as any
     );

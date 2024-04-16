@@ -1,4 +1,4 @@
-import { Fee } from '@rosen-bridge/minimum-fee';
+import { ChainMinimumFee } from '@rosen-bridge/minimum-fee';
 import { RosenData } from '@rosen-bridge/rosen-extractor';
 import { when } from 'jest-when';
 import TestChainNetwork from './network/TestChainNetwork';
@@ -205,12 +205,13 @@ describe('AbstractChain', () => {
   });
 
   describe('verifyEvent', () => {
-    const feeConfig: Fee = {
+    const feeConfig = new ChainMinimumFee({
       bridgeFee: 0n,
       networkFee: 0n,
       feeRatio: 0n,
       rsnRatio: 0n,
-    };
+      rsnRatioDivisor: 10000000000000000n,
+    });
 
     /**
      * @target AbstractChain.verifyEvent should return true when event is valid
@@ -545,12 +546,13 @@ describe('AbstractChain', () => {
      */
     it('should return false when event amount is less than sum of event fees while bridgeFee is less than minimum-fee', async () => {
       // mock feeConfig
-      const fee: Fee = {
+      const fee = new ChainMinimumFee({
         bridgeFee: 1200000n,
         networkFee: 0n,
-        rsnRatio: 0n,
         feeRatio: 0n,
-      };
+        rsnRatio: 0n,
+        rsnRatioDivisor: 10000000000000000n,
+      });
 
       // mock an event
       const event = testData.validEventWithHighFee;
@@ -624,12 +626,13 @@ describe('AbstractChain', () => {
      */
     it('should return false when event amount is less than sum of event fees while bridgeFee is less than expected value', async () => {
       // mock feeConfig
-      const fee: Fee = {
+      const fee = new ChainMinimumFee({
         bridgeFee: 0n,
         networkFee: 0n,
-        rsnRatio: 0n,
         feeRatio: 1200n,
-      };
+        rsnRatio: 0n,
+        rsnRatioDivisor: 10000000000000000n,
+      });
 
       // mock an event
       const event = testData.validEventWithHighFee;

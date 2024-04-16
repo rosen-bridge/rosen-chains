@@ -32,14 +32,12 @@ abstract class EvmChain extends AbstractChain<Transaction> {
   abstract CHAIN_ID: bigint;
   extractor: EvmRosenExtractor | undefined;
 
-  feeRatioDivisor: bigint;
   supportedTokens: Array<string>;
   protected signFunction: TssSignFunction;
 
   constructor(
     network: AbstractEvmNetwork,
     configs: any,
-    feeRatioDivisor: bigint,
     tokens: RosenTokens,
     nativeToken: string,
     supportedTokens: Array<string>,
@@ -47,7 +45,6 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     logger?: any
   ) {
     super(network, configs, logger);
-    this.feeRatioDivisor = feeRatioDivisor;
     this.supportedTokens = supportedTokens;
     this.signFunction = signFunction;
     this.initExtractor(tokens, nativeToken, logger);

@@ -141,7 +141,6 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        ergoTestUtils.feeRatioDivisor,
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );
@@ -315,7 +314,6 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        ergoTestUtils.feeRatioDivisor,
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );
@@ -421,7 +419,6 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        ergoTestUtils.feeRatioDivisor,
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );
@@ -547,7 +544,6 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        ergoTestUtils.feeRatioDivisor,
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );
@@ -669,7 +665,6 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        ergoTestUtils.feeRatioDivisor,
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );
@@ -732,7 +727,6 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        ergoTestUtils.feeRatioDivisor,
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );
@@ -791,7 +785,6 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        ergoTestUtils.feeRatioDivisor,
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );
@@ -911,7 +904,6 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        ergoTestUtils.feeRatioDivisor,
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );
@@ -965,7 +957,6 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        ergoTestUtils.feeRatioDivisor,
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );
@@ -1888,7 +1879,6 @@ describe('ErgoChain', () => {
       const ergoChain = new ErgoChain(
         network,
         config,
-        ergoTestUtils.feeRatioDivisor,
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );

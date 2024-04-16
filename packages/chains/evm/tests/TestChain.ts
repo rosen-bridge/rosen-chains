@@ -10,30 +10,18 @@ class TestChain extends EvmChain {
   constructor(
     network: AbstractEvmNetwork,
     configs: any,
-    feeRatioDivisor: bigint,
     tokens: RosenTokens,
     nativeToken: string,
     supportedTokens: Array<string>,
-    signFunction: TssSignFunction,
-    logger?: any
+    signFunction: TssSignFunction
   ) {
-    super(
-      network,
-      configs,
-      feeRatioDivisor,
-      tokens,
-      nativeToken,
-      supportedTokens,
-      signFunction,
-      logger
-    );
+    super(network, configs, tokens, nativeToken, supportedTokens, signFunction);
 
     this.extractor = new EvmRosenExtractor(
       this.configs.addresses.lock,
       tokens,
       this.CHAIN,
-      nativeToken,
-      logger
+      nativeToken
     );
   }
 }

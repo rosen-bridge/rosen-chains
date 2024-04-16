@@ -1,5 +1,16 @@
 # @rosen-chains/ergo
 
+## 7.0.0
+
+### Major Changes
+
+- update minimum-fee to v1 and remove feeRatioDivisor from constructor
+
+### Patch Changes
+
+- Updated dependencies
+  - @rosen-chains/abstract-chain@7.0.0
+
 ## 6.0.0
 
 ### Major Changes

@@ -1,7 +1,6 @@
 import { EventTrigger } from '../lib';
 
 export const paymentTxConfirmation = 6;
-export const feeRatioDivisor = 1n;
 
 export const validEvent: EventTrigger = {
   height: 300,

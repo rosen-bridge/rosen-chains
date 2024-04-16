@@ -35,10 +35,10 @@
   "dependencies": {
     "@rosen-bridge/abstract-logger": "^1.0.0",
     "@rosen-bridge/json-bigint": "^0.1.0",
-    "@rosen-bridge/rosen-extractor": "^4.0.1",
+    "@rosen-bridge/rosen-extractor": "^4.1.1",
     "ethers": "^6.11.1"
   },
   "peerDependencies": {
-    "@rosen-chains/abstract-chain": "^6.0.0"
+    "@rosen-chains/abstract-chain": "^7.0.0"
   }
 }
