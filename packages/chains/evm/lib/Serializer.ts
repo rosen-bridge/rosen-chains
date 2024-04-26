@@ -16,7 +16,7 @@ class Serializer {
   };
 
   /**
-   * converts bytearray representation of the unsigned transaction to the transaction model in the chain
+   * converts bytearray representation of the transaction to the transaction model in the chain
    * @param txBytes bytearray representation of the transaction
    * @returns the transaction model in the chain library
    */
@@ -36,19 +36,6 @@ class Serializer {
   static signedSerialize = (tx: Transaction): Uint8Array => {
     try {
       return Buffer.from(tx.serialized.substring(2), 'hex');
-    } catch (error) {
-      throw new SerializationError(`${error}`);
-    }
-  };
-
-  /**
-   * converts bytearray representation of the signed transaction to the transaction model in the chain
-   * @param txBytes bytearray representation of the transaction
-   * @returns the transaction model in the chain library
-   */
-  static signedDeserialize = (txBytes: Uint8Array): Transaction => {
-    try {
-      return Transaction.from('0x' + Buffer.from(txBytes).toString('hex'));
     } catch (error) {
       throw new SerializationError(`${error}`);
     }

@@ -1802,7 +1802,7 @@ describe('EvmChain', () => {
       expect(result.txType).toEqual(paymentTx.txType);
       expect(result.eventId).toEqual(paymentTx.eventId);
       expect(result.network).toEqual(paymentTx.network);
-      const signedTx = Serializer.signedDeserialize(result.txBytes);
+      const signedTx = Serializer.deserialize(result.txBytes);
       expect(signedTx.serialized).toEqual(TestData.transaction2SignedTx);
       expect(signedTx.hash).toEqual(TestData.transaction2TxId);
     });

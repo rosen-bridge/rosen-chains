@@ -114,8 +114,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       ).length +
       serializedSignedTransactions.filter(
         (tx) =>
-          Serializer.signedDeserialize(Buffer.from(tx, 'hex')).nonce ===
-          nextNonce
+          Serializer.deserialize(Buffer.from(tx, 'hex')).nonce === nextNonce
       ).length;
     if (waiting > this.configs.maxParallelTx) {
       throw new MaxParallelTxError(
@@ -422,11 +421,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     let trx: Transaction;
 
     try {
-      if (signingStatus === SigningStatus.Signed) {
-        trx = Serializer.signedDeserialize(transaction.txBytes);
-      } else {
-        trx = Serializer.deserialize(transaction.txBytes);
-      }
+      trx = Serializer.deserialize(transaction.txBytes);
     } catch (error) {
       this.logger.debug(`Tx [${transaction.txId}] invalid: ${error}`);
       return false;
@@ -456,7 +451,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     transaction: PaymentTransaction,
     requiredSign: number
   ): Promise<PaymentTransaction> => {
-    const tx = Serializer.signedDeserialize(transaction.txBytes);
+    const tx = Serializer.deserialize(transaction.txBytes);
     return this.signFunction(Buffer.from(tx.unsignedHash, 'hex')).then(
       (res) => {
         const r = '0x' + res.signature.slice(0, 64);
@@ -497,7 +492,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     // deserialize transaction
     let tx: Transaction;
     try {
-      tx = Serializer.signedDeserialize(transaction.txBytes);
+      tx = Serializer.deserialize(transaction.txBytes);
     } catch (error) {
       this.logger.debug(`Tx [${transaction.txId}] invalid: ${error}`);
       return;
