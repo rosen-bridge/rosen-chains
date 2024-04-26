@@ -1755,4 +1755,92 @@ describe('EvmChain', () => {
       expect(result).toEqual(false);
     });
   });
+
+  describe('signTransaction', () => {
+    /**
+     * @target EvmChain.signTransaction should return PaymentTransaction of the
+     * signed transaction
+     * @dependencies
+     * @scenario
+     * - mock a sign function to return signature
+     * - mock PaymentTransaction of unsigned transaction
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return PaymentTransaction of signed transaction (all fields
+     *   are same as input object, except txBytes which is signed transaction)
+     * - signed tx bytes and hash should be as expected
+     */
+    it('should return PaymentTransaction of the signed transaction', async () => {
+      // mock a sign function to return signature
+      const signFunction = async (txHash: Uint8Array) => {
+        return {
+          signature: TestData.transaction2Signature,
+          signatureRecovery: TestData.transaction2SignatureRecovery,
+        };
+      };
+      const evmChain = generateChainObject(network, signFunction);
+
+      // mock PaymentTransaction of unsigned transaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const tx = Transaction.from(TestData.transaction2UnsignedTx);
+
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // call the function
+      const result = await evmChain.signTransaction(paymentTx, 0);
+
+      // check returned value
+      expect(result.txId).toEqual(paymentTx.txId);
+      expect(result.txType).toEqual(paymentTx.txType);
+      expect(result.eventId).toEqual(paymentTx.eventId);
+      expect(result.network).toEqual(paymentTx.network);
+      const signedTx = Serializer.signedDeserialize(result.txBytes);
+      expect(signedTx.serialized).toEqual(TestData.transaction2SignedTx);
+      expect(signedTx.hash).toEqual(TestData.transaction2TxId);
+    });
+
+    /**
+     * @target EvmChain.signTransaction should throw error when signing failed
+     * @dependencies
+     * @scenario
+     * - mock a sign function to throw error
+     * - mock PaymentTransaction of unsigned transaction
+     * - call the function & check thrown exception
+     * @expected
+     * - it should throw the exact error thrown by sign function
+     */
+    it('should throw error when signing failed', async () => {
+      // mock a sign function to throw error
+      const signFunction = async (txHash: Uint8Array) => {
+        throw Error(`TestError: sign failed`);
+      };
+      const evmChain = generateChainObject(network, signFunction);
+
+      // mock PaymentTransaction of unsigned transaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const tx = Transaction.from(TestData.transaction2UnsignedTx);
+
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // call the function & check thrown exception
+      await expect(async () => {
+        await evmChain.signTransaction(paymentTx, 0);
+      }).rejects.toThrow('TestError: sign failed');
+    });
+  });
 });

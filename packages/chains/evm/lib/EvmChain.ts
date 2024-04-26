@@ -21,7 +21,7 @@ import {
 import { EvmRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
 import { EvmConfigs, TssSignFunction } from './types';
-import { Transaction } from 'ethers';
+import { Signature, Transaction } from 'ethers';
 import Serializer from './Serializer';
 import * as EvmUtils from './EvmUtils';
 
@@ -456,8 +456,31 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     transaction: PaymentTransaction,
     requiredSign: number
   ): Promise<PaymentTransaction> => {
-    // TODO: implement this function (local:ergo/rosen-bridge/rosen-chains#94)
-    throw new Error('Not implemented yet.');
+    const tx = Serializer.signedDeserialize(transaction.txBytes);
+    return this.signFunction(Buffer.from(tx.unsignedHash, 'hex')).then(
+      (res) => {
+        const r = '0x' + res.signature.slice(0, 64);
+        const s = '0x' + res.signature.slice(64, 128);
+        const yParity = Number(res.signatureRecovery);
+        if (yParity !== 0 && yParity !== 1)
+          throw new ImpossibleBehavior(
+            `non-binary signature recovery: ${res.signatureRecovery}`
+          );
+        const signature = Signature.from({
+          r,
+          s,
+          yParity: yParity,
+        });
+        tx.signature = signature;
+        return new PaymentTransaction(
+          transaction.network,
+          transaction.txId,
+          transaction.eventId,
+          Serializer.signedSerialize(tx),
+          transaction.txType
+        );
+      }
+    );
   };
 
   /**
