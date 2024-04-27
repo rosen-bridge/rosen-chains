@@ -447,3 +447,13 @@ export const paralelTransactions = [
     accessList: [],
   }),
 ];
+
+export const transaction2UnsignedTx =
+  '0x02f0010a841dcd6500850b675899a0825208944606d11ff65b17d29e8c5e4085f9a868a8e5e4f2880149df7b6be0313680c0';
+export const transaction2SignedTx =
+  '0x02f873010a841dcd6500850b675899a0825208944606d11ff65b17d29e8c5e4085f9a868a8e5e4f2880149df7b6be0313680c001a020775ad79e6b7ab8902503c4b3d9b57a14dd9a931b549f2d44d9e335e308a806a007d6a4560e5e586abcea735cb35a2fcaa7c19b6aba460fba37f604ad46dd270d';
+export const transaction2Signature =
+  '20775ad79e6b7ab8902503c4b3d9b57a14dd9a931b549f2d44d9e335e308a80607d6a4560e5e586abcea735cb35a2fcaa7c19b6aba460fba37f604ad46dd270d';
+export const transaction2SignatureRecovery = '01';
+export const transaction2TxId =
+  '0x73c9ff5665d84067d98afbbeb2d9ff316c4b5bf885f9f3d31fa56eb1b13b3b90';
