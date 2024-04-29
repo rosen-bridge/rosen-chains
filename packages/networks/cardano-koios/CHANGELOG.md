@@ -1,5 +1,11 @@
 # @rosen-chains/cardano-koios-network
 
+## 8.0.1
+
+### Patch Changes
+
+- update client version
+
 ## 8.0.0
 
 ### Patch Changes
