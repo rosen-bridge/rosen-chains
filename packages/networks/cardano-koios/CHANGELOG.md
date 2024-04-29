@@ -1,5 +1,11 @@
 # @rosen-chains/cardano-koios-network
 
+## 6.0.1
+
+### Patch Changes
+
+- Update client version
+
 ## 6.0.0
 
 ### Patch Changes
