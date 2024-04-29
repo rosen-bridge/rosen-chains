@@ -1,5 +1,11 @@
 # @rosen-chains/ergo-node-network
 
+## 5.0.1
+
+### Patch Changes
+
+- Update client version
+
 ## 5.0.0
 
 ### Patch Changes
