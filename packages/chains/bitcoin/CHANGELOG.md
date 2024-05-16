@@ -1,5 +1,16 @@
 # @rosen-chains/bitcoin
 
+## 3.0.0
+
+### Major Changes
+
+- update rosen-extractor (change fromAddress to first input box ID)
+
+### Patch Changes
+
+- Updated dependencies
+  - @rosen-chains/abstract-chain@7.0.1
+
 ## 2.0.0
 
 ### Major Changes
