@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/abstract-chain",
-  "version": "7.0.1",
+  "version": "7.0.2",
   "description": "this project contains abstract classes to implement any chain for Rosen-bridge",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
@@ -22,8 +22,8 @@
   "dependencies": {
     "@rosen-bridge/abstract-logger": "^1.0.0",
     "@rosen-bridge/json-bigint": "^0.1.0",
-    "@rosen-bridge/minimum-fee": "^1.0.2",
-    "@rosen-bridge/rosen-extractor": "^5.0.0",
+    "@rosen-bridge/minimum-fee": "^2.0.0",
+    "@rosen-bridge/rosen-extractor": "^5.0.1",
     "blakejs": "^1.2.1"
   },
   "devDependencies": {
