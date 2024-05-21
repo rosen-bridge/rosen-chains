@@ -1,5 +1,13 @@
 # @rosen-chains/cardano
 
+## 7.0.2
+
+### Patch Changes
+
+- update rosen-extractor
+- Updated dependencies
+  - @rosen-chains/abstract-chain@7.0.2
+
 ## 7.0.1
 
 ### Patch Changes
