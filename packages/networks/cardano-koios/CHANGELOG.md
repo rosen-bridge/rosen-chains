@@ -1,5 +1,17 @@
 # @rosen-chains/cardano-koios-network
 
+## 8.0.2
+
+### Patch Changes
+
+- Fix client when authToken is empty
+
+## 8.0.1
+
+### Patch Changes
+
+- update client version
+
 ## 8.0.0
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @rosen-chains/abstract-chain
 
+## 7.0.2
+
+### Patch Changes
+
+- update rosen-extractor and minimum-fee packages
+
+## 7.0.1
+
+### Patch Changes
+
+- update rosen-extractor version
+
 ## 7.0.0
 
 ### Major Changes

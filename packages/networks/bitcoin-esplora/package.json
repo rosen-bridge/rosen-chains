@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/bitcoin-esplora",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A package to be used as network api provider for @rosen-chains/bitcoin package",
   "repository": "https://github.com/rosen-bridge/rosen-chains",
   "license": "GPL-3.0",
@@ -33,8 +33,8 @@
     "node": ">=20.11.0"
   },
   "peerDependencies": {
-    "@rosen-chains/abstract-chain": "^7.0.0",
-    "@rosen-chains/bitcoin": "^2.0.0"
+    "@rosen-chains/abstract-chain": "^7.0.1",
+    "@rosen-chains/bitcoin": "^3.0.0"
   },
   "dependencies": {
     "@rosen-bridge/abstract-logger": "^1.0.0",
