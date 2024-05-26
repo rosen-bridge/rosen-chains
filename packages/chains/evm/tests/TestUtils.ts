@@ -56,7 +56,7 @@ export const mockGetGasRequired = (
   network: AbstractEvmNetwork,
   value: bigint
 ) => {
-  spyOn(network, 'getGasRequired').mockReturnValue(value);
+  spyOn(network, 'getGasRequired').mockResolvedValue(value);
 };
 
 export const mockGetAddressNextAvailableNonce = (

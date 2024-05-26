@@ -128,7 +128,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     // try to generate transactions
     const maxPriorityFeePerGas = await this.network.getMaxPriorityFeePerGas();
     const evmTrxs: Array<PaymentTransaction> = [];
-    orders.forEach((singleOrder) => {
+    for (const singleOrder of orders) {
       let trx;
       if (singleOrder.assets.nativeToken !== 0n) {
         trx = Transaction.from({
@@ -161,7 +161,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         });
       }
       trx.gasLimit =
-        this.network.getGasRequired(trx) * this.configs.gasLimitMultiplier;
+        (await this.network.getGasRequired(trx)) *
+        this.configs.gasLimitMultiplier;
       totalGas += trx.gasLimit;
 
       evmTrxs.push(
@@ -174,7 +175,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         )
       );
       nextNonce += 1;
-    });
+    }
 
     // check the balance in the lock address
     const requiredAssets: AssetBalance = orders.reduce(
@@ -359,7 +360,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
     // check gas limit
     const gasRequired =
-      this.network.getGasRequired(tx) * this.configs.gasLimitMultiplier;
+      (await this.network.getGasRequired(tx)) * this.configs.gasLimitMultiplier;
     const gasLimitSlippage =
       (gasRequired * BigInt(this.configs.gasLimitSlippage)) / 100n;
     const gasDifference =
@@ -701,6 +702,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
    * serializes the transaction of this chain into string
    */
   protected serializeTx = (tx: Transaction): string => tx.toJSON();
+
+  // TODO: overwrite `getAddressAssets` function to fetch tokens assets respectively
 }
 
 export default EvmChain;
