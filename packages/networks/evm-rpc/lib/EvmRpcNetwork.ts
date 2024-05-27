@@ -17,14 +17,18 @@ import {
   ethers,
   FeeData,
 } from 'ethers';
+import { DataSource } from 'typeorm';
+import AddressTxAction from './AddressTxAction';
 
 class EvmRpcNetwork extends AbstractEvmNetwork {
   readonly chain: string;
   protected readonly provider: JsonRpcProvider;
+  protected readonly dbAction: AddressTxAction;
 
   constructor(
     chain: string,
     url: string,
+    dataSource: DataSource,
     authToken?: string,
     logger?: AbstractLogger
   ) {
@@ -33,6 +37,7 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
     this.provider = authToken
       ? new JsonRpcProvider(`${url}/${authToken}`)
       : new JsonRpcProvider(`${url}`);
+    this.dbAction = new AddressTxAction(dataSource, logger);
   }
 
   /**
@@ -56,19 +61,39 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
 
   /**
    * gets confirmation for a transaction (returns -1 if tx is not mined or found)
-   * Note: this functions gets transaction unsigned hash instead of tx id
-   * @param transactionUnsignedHash the unsigned hash of the transaction
+   * Note: this function considers the hash as unsigned hash
+   *  if the tx was not found, considers it as TxId (signed hash)
+   * @param hash the unsigned hash or ID of the transaction
    * @returns the transaction confirmation
    */
-  getTxConfirmation = async (
-    transactionUnsignedHash: string
-  ): Promise<number> => {
-    // TODO:
-    //  it should check if the tx is in database
-    //    yes: this is unsigned hash, should fetch the txId from database
-    //    no: this is TxId (signed hash)
-    //  then use `getTxConfirmation` function of the network
-    throw Error(`not implemented`);
+  getTxConfirmation = async (hash: string): Promise<number> => {
+    // check if hash is representing signed or unsigned version of the tx
+    const txRecord = await this.dbAction.getTxByUnsignedHash(hash);
+    const transactionId = txRecord === null ? hash : txRecord.signedHash;
+
+    // get transaction confirmation
+    try {
+      const tx = await this.provider.getTransaction(transactionId);
+      this.logger.debug(
+        `requested 'getTransaction' of ${
+          this.chain
+        } RPC with id [${transactionId}]. res: ${JsonBigInt.stringify(tx)}`
+      );
+      if (!tx) {
+        this.logger.debug(`Transaction [${transactionId}] is not found`);
+        return -1;
+      }
+      return await tx.confirmations();
+    } catch (e: any) {
+      const baseError = `Failed to get transaction [${transactionId}] from ${this.chain} RPC: `;
+      if (e.response) {
+        throw new FailedError(baseError + e.response.data);
+      } else if (e.request) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
   };
 
   /**
@@ -160,9 +185,7 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
       this.logger.debug(
         `requested 'getTransaction' of ${
           this.chain
-        } RPC with id [${transactionId}] and blockId [${blockId}]. res: ${JsonBigInt.stringify(
-          tx
-        )}`
+        } RPC with id [${transactionId}]. res: ${JsonBigInt.stringify(tx)}`
       );
     } catch (e: any) {
       if (e.response) {
@@ -228,7 +251,13 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
     const baseError = `Failed to get address [${address}] token [${tokenId}] balance from ${this.chain} RPC: `;
     try {
       const contract = new ethers.Contract(tokenId, ERC20ABI, this.provider);
-      return await contract.balanceOf(address);
+      const balance = await contract.balanceOf(address);
+      this.logger.debug(
+        `requested 'balanceOf' method of [${tokenId}] contract from ${
+          this.chain
+        } RPC. res: ${JsonBigInt.stringify(balance)}`
+      );
+      return balance;
     } catch (e: any) {
       if (e.response) {
         throw new FailedError(baseError + e.response.data);
@@ -250,7 +279,13 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
   ): Promise<bigint> => {
     const baseError = `Failed to get address [${address}] native token balance from ${this.chain} RPC: `;
     try {
-      return await this.provider.getBalance(address);
+      const balance = await this.provider.getBalance(address);
+      this.logger.debug(
+        `requested 'getBalance' of ${
+          this.chain
+        } RPC with address [${address}]. res: ${JsonBigInt.stringify(balance)}`
+      );
+      return balance;
     } catch (e: any) {
       if (e.response) {
         throw new FailedError(baseError + e.response.data);
@@ -270,7 +305,13 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
   getAddressNextAvailableNonce = async (address: string): Promise<number> => {
     const baseError = `Failed to get address [${address}] nonce from ${this.chain} RPC: `;
     try {
-      return await this.provider.getTransactionCount(address);
+      const nonce = await this.provider.getTransactionCount(address);
+      this.logger.debug(
+        `requested 'getTransactionCount' of ${
+          this.chain
+        } RPC with address [${address}]. res: ${JsonBigInt.stringify(nonce)}`
+      );
+      return nonce;
     } catch (e: any) {
       if (e.response) {
         throw new FailedError(baseError + e.response.data);
@@ -290,7 +331,13 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
   getGasRequired = async (transaction: Transaction): Promise<bigint> => {
     const baseError = `Failed to get required Gas from ${this.chain} RPC: `;
     try {
-      return await this.provider.estimateGas(transaction);
+      const gas = await this.provider.estimateGas(transaction);
+      this.logger.debug(
+        `requested 'estimateGas' of ${
+          this.chain
+        } RPC. res: ${JsonBigInt.stringify(gas)}`
+      );
+      return gas;
     } catch (e: any) {
       if (e.response) {
         throw new FailedError(baseError + e.response.data);
@@ -312,6 +359,11 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
     let feeData: FeeData;
     try {
       feeData = await this.provider.getFeeData();
+      this.logger.debug(
+        `requested 'getFeeData' of ${
+          this.chain
+        } RPC. res: ${JsonBigInt.stringify(feeData)}`
+      );
     } catch (e: any) {
       if (e.response) {
         throw new FailedError(baseError + e.response.data);
@@ -336,6 +388,11 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
     let feeData: FeeData;
     try {
       feeData = await this.provider.getFeeData();
+      this.logger.debug(
+        `requested 'getFeeData' of ${
+          this.chain
+        } RPC. res: ${JsonBigInt.stringify(feeData)}`
+      );
     } catch (e: any) {
       if (e.response) {
         throw new FailedError(baseError + e.response.data);
