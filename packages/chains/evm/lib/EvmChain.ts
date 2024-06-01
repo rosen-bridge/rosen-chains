@@ -17,6 +17,7 @@ import {
   ImpossibleBehavior,
   TransactionFormatError,
   SinglePayment,
+  TokenInfo,
 } from '@rosen-chains/abstract-chain';
 import { EvmRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
@@ -703,7 +704,34 @@ abstract class EvmChain extends AbstractChain<Transaction> {
    */
   protected serializeTx = (tx: Transaction): string => tx.toJSON();
 
-  // TODO: overwrite `getAddressAssets` function to fetch tokens assets respectively
+  /**
+   * gets the address balance for native token and all supported tokens
+   * @param address
+   * @returns an object containing the amount of each asset
+   */
+  getAddressAssets = async (address: string): Promise<AssetBalance> => {
+    if (address === '') {
+      this.logger.debug(`returning empty assets for address [${address}]`);
+      return { nativeToken: 0n, tokens: [] };
+    }
+    const nativeTokenBalance =
+      await this.network.getAddressBalanceForNativeToken(address);
+    const tokens: Array<TokenInfo> = [];
+    for (const tokenId of this.supportedTokens) {
+      const balance = await this.network.getAddressBalanceForERC20Asset(
+        address,
+        tokenId
+      );
+      tokens.push({
+        id: tokenId,
+        value: balance,
+      });
+    }
+    return {
+      nativeToken: nativeTokenBalance,
+      tokens: tokens,
+    };
+  };
 }
 
 export default EvmChain;

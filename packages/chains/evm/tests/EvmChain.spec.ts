@@ -17,6 +17,7 @@ import TestChain from './TestChain';
 import Serializer from '../lib/Serializer';
 import { Transaction, TransactionLike } from 'ethers';
 import { TssSignFunction } from '../lib';
+import { mockGetAddressBalanceForNativeToken } from './TestUtils';
 
 describe('EvmChain', () => {
   const network = new TestEvmNetwork();
@@ -1841,6 +1842,67 @@ describe('EvmChain', () => {
       await expect(async () => {
         await evmChain.signTransaction(paymentTx, 0);
       }).rejects.toThrow('TestError: sign failed');
+    });
+  });
+
+  describe('getAddressAssets', () => {
+    /**
+     * @target EvmChain.getAddressAssets should get address assets successfully
+     * @dependencies
+     * @scenario
+     * - mock getAddressBalanceForNativeToken
+     * - mock getAddressBalanceForERC20Asset for each supported tokens
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked address assets (both input and output assets)
+     */
+    it('should get address assets successfully', async () => {
+      mockGetAddressBalanceForNativeToken(evmChain.network, 1000n);
+      vi.spyOn(network, 'getAddressBalanceForERC20Asset').mockImplementation(
+        async (address, tokenId) => {
+          if (tokenId === '0xedee4752e5a2f595151c94762fb38e5730357785')
+            return 0n;
+          else if (tokenId === '0x12345752e5a2f595151c94762fb38e5730357785')
+            return 10n;
+          else if (tokenId === '0xedee4752e5a2f595151c94762fb38e5730357786')
+            return 30n;
+          else if (tokenId === '0xedee4752e5a2f595151c94762fb38e5730357787')
+            return 40n;
+          else return 0n;
+        }
+      );
+
+      // run test
+      const result = await evmChain.getAddressAssets(TestData.lockAddress);
+
+      // check returned value
+      expect(result).toEqual({
+        nativeToken: 1000n,
+        tokens: [
+          { id: '0xedee4752e5a2f595151c94762fb38e5730357785', value: 0n },
+          { id: '0x12345752e5a2f595151c94762fb38e5730357785', value: 10n },
+          { id: '0xedee4752e5a2f595151c94762fb38e5730357786', value: 30n },
+          { id: '0xedee4752e5a2f595151c94762fb38e5730357787', value: 40n },
+        ],
+      });
+    });
+
+    /**
+     * @target EvmChain.getAddressAssets should return 0 balance with no token if address is empty
+     * @dependencies
+     * @scenario
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked address assets (both input and output assets)
+     */
+    it('should return 0 balance with no token if address is empty', async () => {
+      // run test
+      const result = await evmChain.getAddressAssets('');
+
+      // check returned value
+      expect(result).toEqual({ nativeToken: 0n, tokens: [] });
     });
   });
 });
