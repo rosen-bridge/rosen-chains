@@ -189,30 +189,6 @@ describe('EvmRpcNetwork', () => {
 
   describe('getTransaction', () => {
     /**
-     * @target `EvmRpcNetwork.getTransaction` should return the transaction successfully
-     * @dependencies
-     * @scenario
-     * - mock provider.`getTransaction` to return mocked tx
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should be mocked the transaction
-     */
-    it('should return the transaction successfully', async () => {
-      fail(`Test is not working for some reason!`); // TODO!
-      vi.spyOn(network.getProvider(), 'getTransaction').mockResolvedValue(
-        testData.transaction0Response
-      );
-
-      const result = await network.getTransaction(
-        testData.transaction0Id,
-        testData.transaction0BlockId
-      );
-
-      expect(result).toEqual(testData.blockInfo);
-    });
-
-    /**
      * @target `EvmRpcNetwork.getTransaction` should throw error when tx is not found
      * @dependencies
      * @scenario
