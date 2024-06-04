@@ -4,27 +4,30 @@ import { DataSource, Repository } from 'typeorm';
 
 class AddressTxAction {
   private readonly repository: Repository<AddressTxsEntity>;
+  private readonly address: string;
   readonly logger: AbstractLogger;
 
-  constructor(dataSource: DataSource, logger?: AbstractLogger) {
+  constructor(
+    address: string,
+    dataSource: DataSource,
+    logger?: AbstractLogger
+  ) {
     this.repository = dataSource.getRepository(AddressTxsEntity);
+    this.address = address;
     this.logger = logger ? logger : new DummyLogger();
   }
 
   /**
    * gets transaction by unsigned hash
    * @param unsignedHash
-   * @returns
    */
   getTxByUnsignedHash = async (
     unsignedHash: string
   ): Promise<AddressTxsEntity | null> => {
-    // TODO: we are not considering the extractor here.
-    //  therefore we may have two transaction with same unsigned hash over two different evm networks
-    //  which may result in malfunction
     const res = await this.repository.find({
       where: {
-        unsignedHash,
+        address: this.address,
+        unsignedHash: unsignedHash,
       },
     });
     if (res.length === 0) {

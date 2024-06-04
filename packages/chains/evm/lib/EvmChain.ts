@@ -711,22 +711,23 @@ abstract class EvmChain extends AbstractChain<Transaction> {
    */
   getAddressAssets = async (address: string): Promise<AssetBalance> => {
     if (address === '') {
-      this.logger.debug(`returning empty assets for address [${address}]`);
+      this.logger.debug(`returning empty assets for empty address`);
       return { nativeToken: 0n, tokens: [] };
     }
     const nativeTokenBalance =
       await this.network.getAddressBalanceForNativeToken(address);
-    const tokens: Array<TokenInfo> = [];
-    for (const tokenId of this.supportedTokens) {
-      const balance = await this.network.getAddressBalanceForERC20Asset(
-        address,
-        tokenId
-      );
-      tokens.push({
-        id: tokenId,
-        value: balance,
-      });
-    }
+    const tokens: Array<TokenInfo> = await Promise.all(
+      this.supportedTokens.map(async (tokenId) => {
+        const balance = await this.network.getAddressBalanceForERC20Asset(
+          address,
+          tokenId
+        );
+        return {
+          id: tokenId,
+          value: balance,
+        };
+      })
+    );
     return {
       nativeToken: nativeTokenBalance,
       tokens: tokens,

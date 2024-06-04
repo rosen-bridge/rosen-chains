@@ -16,7 +16,12 @@ describe('EvmRpcNetwork', () => {
 
   beforeEach(async () => {
     const dataSource = await mockDataSource();
-    network = new TestEvmRpcNetwork('test', 'custom-url', dataSource);
+    network = new TestEvmRpcNetwork(
+      'test',
+      'custom-url',
+      dataSource,
+      testData.lockAddress
+    );
     addressTxRepository = dataSource.getRepository(AddressTxsEntity);
   });
 
