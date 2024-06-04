@@ -29,6 +29,7 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
     chain: string,
     url: string,
     dataSource: DataSource,
+    lockAddress: string,
     authToken?: string,
     logger?: AbstractLogger
   ) {
@@ -37,7 +38,7 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
     this.provider = authToken
       ? new JsonRpcProvider(`${url}/${authToken}`)
       : new JsonRpcProvider(`${url}`);
-    this.dbAction = new AddressTxAction(dataSource, logger);
+    this.dbAction = new AddressTxAction(lockAddress, dataSource, logger);
   }
 
   /**
