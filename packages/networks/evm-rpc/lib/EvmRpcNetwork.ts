@@ -3,12 +3,11 @@ import {
   AssetBalance,
   BlockInfo,
   FailedError,
-  NetworkError,
   TokenDetail,
   UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
 import JsonBigInt from '@rosen-bridge/json-bigint';
-import { AbstractEvmNetwork, ERC20ABI } from '@rosen-chains/evm';
+import { AbstractEvmNetwork, PartialERC20ABI } from '@rosen-chains/evm';
 import {
   Block,
   JsonRpcProvider,
@@ -189,7 +188,11 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
    */
   getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
     try {
-      const contract = new ethers.Contract(tokenId, ERC20ABI, this.provider);
+      const contract = new ethers.Contract(
+        tokenId,
+        PartialERC20ABI,
+        this.provider
+      );
       const name = await contract.name();
       const decimals = await contract.decimals();
       return {
@@ -214,7 +217,11 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
     tokenId: string
   ): Promise<bigint> => {
     try {
-      const contract = new ethers.Contract(tokenId, ERC20ABI, this.provider);
+      const contract = new ethers.Contract(
+        tokenId,
+        PartialERC20ABI,
+        this.provider
+      );
       const balance = await contract.balanceOf(address);
       this.logger.debug(
         `requested 'balanceOf' method of [${tokenId}] contract from ${

@@ -21,7 +21,7 @@ export const transferABI: InterfaceAbi = [
   },
 ];
 
-export const ERC20ABI: InterfaceAbi = [
+export const PartialERC20ABI: InterfaceAbi = [
   {
     constant: true,
     inputs: [],
@@ -61,19 +61,6 @@ export const ERC20ABI: InterfaceAbi = [
       {
         name: 'balance',
         type: 'uint256',
-      },
-    ],
-    payable: false,
-    type: 'function',
-  },
-  {
-    constant: true,
-    inputs: [],
-    name: 'symbol',
-    outputs: [
-      {
-        name: '',
-        type: 'string',
       },
     ],
     payable: false,
