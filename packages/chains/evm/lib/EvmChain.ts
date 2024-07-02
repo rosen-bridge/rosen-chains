@@ -17,6 +17,7 @@ import {
   ImpossibleBehavior,
   TransactionFormatError,
   SinglePayment,
+  TokenInfo,
 } from '@rosen-chains/abstract-chain';
 import { EvmRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
@@ -128,7 +129,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     // try to generate transactions
     const maxPriorityFeePerGas = await this.network.getMaxPriorityFeePerGas();
     const evmTrxs: Array<PaymentTransaction> = [];
-    orders.forEach((singleOrder) => {
+    for (const singleOrder of orders) {
       let trx;
       if (singleOrder.assets.nativeToken !== 0n) {
         trx = Transaction.from({
@@ -161,7 +162,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         });
       }
       trx.gasLimit =
-        this.network.getGasRequired(trx) * this.configs.gasLimitMultiplier;
+        (await this.network.getGasRequired(trx)) *
+        this.configs.gasLimitMultiplier;
       totalGas += trx.gasLimit;
 
       evmTrxs.push(
@@ -174,7 +176,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         )
       );
       nextNonce += 1;
-    });
+    }
 
     // check the balance in the lock address
     const requiredAssets: AssetBalance = orders.reduce(
@@ -359,7 +361,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
     // check gas limit
     const gasRequired =
-      this.network.getGasRequired(tx) * this.configs.gasLimitMultiplier;
+      (await this.network.getGasRequired(tx)) * this.configs.gasLimitMultiplier;
     const gasLimitSlippage =
       (gasRequired * BigInt(this.configs.gasLimitSlippage)) / 100n;
     const gasDifference =
@@ -701,6 +703,36 @@ abstract class EvmChain extends AbstractChain<Transaction> {
    * serializes the transaction of this chain into string
    */
   protected serializeTx = (tx: Transaction): string => tx.toJSON();
+
+  /**
+   * gets the address balance for native token and all supported tokens
+   * @param address
+   * @returns an object containing the amount of each asset
+   */
+  getAddressAssets = async (address: string): Promise<AssetBalance> => {
+    if (address === '') {
+      this.logger.debug(`returning empty assets for empty address`);
+      return { nativeToken: 0n, tokens: [] };
+    }
+    const nativeTokenBalance =
+      await this.network.getAddressBalanceForNativeToken(address);
+    const tokens: Array<TokenInfo> = await Promise.all(
+      this.supportedTokens.map(async (tokenId) => {
+        const balance = await this.network.getAddressBalanceForERC20Asset(
+          address,
+          tokenId
+        );
+        return {
+          id: tokenId,
+          value: balance,
+        };
+      })
+    );
+    return {
+      nativeToken: nativeTokenBalance,
+      tokens: tokens,
+    };
+  };
 }
 
 export default EvmChain;

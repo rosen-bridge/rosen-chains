@@ -5,7 +5,6 @@ import {
   AssetBalance,
   TokenDetail,
 } from '@rosen-chains/abstract-chain';
-import { BlockHeader } from '../../lib';
 
 class TestEvmNetwork extends AbstractEvmNetwork {
   submitTransaction = async (): Promise<void> => {
@@ -51,7 +50,7 @@ class TestEvmNetwork extends AbstractEvmNetwork {
   getAddressBalanceForERC20Asset = (
     address: string,
     tokenId: string
-  ): Promise<AssetBalance> => {
+  ): Promise<bigint> => {
     throw Error('Not mocked');
   };
 
@@ -59,15 +58,11 @@ class TestEvmNetwork extends AbstractEvmNetwork {
     throw Error('Not mocked');
   };
 
-  getBlockHeader = (blockId: string): Promise<BlockHeader> => {
-    throw Error('Not mocked');
-  };
-
   getAddressNextAvailableNonce = (address: string): Promise<number> => {
     throw Error('Not mocked');
   };
 
-  getGasRequired = (transaction: Transaction): bigint => {
+  getGasRequired = (transaction: Transaction): Promise<bigint> => {
     throw Error('Not mocked');
   };
 
@@ -76,13 +71,6 @@ class TestEvmNetwork extends AbstractEvmNetwork {
   };
 
   getMaxFeePerGas = (): Promise<bigint> => {
-    throw Error('Not mocked');
-  };
-
-  getTransactionViaAddressNonce = (
-    address: string,
-    nonce: bigint
-  ): Promise<Transaction | null> => {
     throw Error('Not mocked');
   };
 }

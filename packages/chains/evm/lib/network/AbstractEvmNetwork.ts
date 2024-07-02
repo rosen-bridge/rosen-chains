@@ -1,8 +1,4 @@
-import {
-  AbstractChainNetwork,
-  AssetBalance,
-} from '@rosen-chains/abstract-chain';
-import { BlockHeader } from '../types';
+import { AbstractChainNetwork } from '@rosen-chains/abstract-chain';
 import { Transaction } from 'ethers';
 
 abstract class AbstractEvmNetwork extends AbstractChainNetwork<Transaction> {
@@ -10,28 +6,21 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<Transaction> {
    * gets the amount of the input ERC20 asset in an address
    * @param address the address
    * @param tokenId the token address
-   * @returns an object containing the amount of asset
+   * @returns the amount of asset in bigint
    */
   abstract getAddressBalanceForERC20Asset: (
     address: string,
     tokenId: string
-  ) => Promise<AssetBalance>;
+  ) => Promise<bigint>;
 
   /**
    * gets the amount of the native token in an address
    * @param address the address
-   * @returns a bigint inidcating the amount of native token
+   * @returns the amount of native token in bigint
    */
   abstract getAddressBalanceForNativeToken: (
     address: string
   ) => Promise<bigint>;
-
-  /**
-   * gets the header of the given block
-   * @param blockId the block id
-   * @returns an object containing block info
-   */
-  abstract getBlockHeader: (blockId: string) => Promise<BlockHeader>;
 
   /**
    * gets the next available nonce for the address. Note that it only checks mined transactions.
@@ -45,7 +34,7 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<Transaction> {
    * @param transaction the transaction to be run
    * @returns gas required in bigint
    */
-  abstract getGasRequired: (transaction: Transaction) => bigint;
+  abstract getGasRequired: (transaction: Transaction) => Promise<bigint>;
   /**
    * gets the maximum wei we would pay to the miner according
    * to the network's current condition
@@ -61,16 +50,13 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<Transaction> {
   abstract getMaxFeePerGas: () => Promise<bigint>;
 
   /**
-   * gets the transaction with the specefic nonce and address
-   * if there is not such a mined transaction, it returns null
-   * @param address the input address in string
-   * @param nonce the input nonce in bigint
-   * @returns a transaction of type Transaction or null
+   * gets all transactions in mempool (returns empty list if the chain has no mempool)
+   * Note: we ignore getting mempool txs in Evm, as it doesn't affect us
+   * @returns empty list
    */
-  abstract getTransactionViaAddressNonce: (
-    address: string,
-    nonce: bigint
-  ) => Promise<Transaction | null>;
+  getMempoolTransactions = async (): Promise<Array<Transaction>> => {
+    return [];
+  };
 }
 
 export default AbstractEvmNetwork;

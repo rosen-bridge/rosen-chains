@@ -45,6 +45,13 @@ export const mockHasLockAddressEnoughAssets = (
   spyOn(chain, 'hasLockAddressEnoughAssets').mockResolvedValue(value);
 };
 
+export const mockGetAddressBalanceForNativeToken = (
+  network: AbstractEvmNetwork,
+  value: bigint
+) => {
+  spyOn(network, 'getAddressBalanceForNativeToken').mockResolvedValue(value);
+};
+
 export const mockGetMaxFeePerGas = (
   network: AbstractEvmNetwork,
   value: bigint
@@ -56,7 +63,7 @@ export const mockGetGasRequired = (
   network: AbstractEvmNetwork,
   value: bigint
 ) => {
-  spyOn(network, 'getGasRequired').mockReturnValue(value);
+  spyOn(network, 'getGasRequired').mockResolvedValue(value);
 };
 
 export const mockGetAddressNextAvailableNonce = (
