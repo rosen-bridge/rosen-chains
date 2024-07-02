@@ -48,15 +48,9 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
   getHeight = async (): Promise<number> => {
     try {
       return this.provider.getBlockNumber();
-    } catch (e: any) {
+    } catch (e: unknown) {
       const baseError = `Failed to fetch current height from ${this.chain} RPC: `;
-      if (e.response) {
-        throw new FailedError(baseError + `${e.response.data}`);
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
+      throw new UnexpectedApiError(baseError + `${e}`);
     }
   };
 
@@ -85,15 +79,9 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
         return -1;
       }
       return await tx.confirmations();
-    } catch (e: any) {
+    } catch (e: unknown) {
       const baseError = `Failed to get transaction [${transactionId}] from ${this.chain} RPC: `;
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data);
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
+      throw new UnexpectedApiError(baseError + `${e}`);
     }
   };
 
@@ -123,14 +111,8 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
           this.chain
         } RPC for blockId [${blockId}]. res: ${JsonBigInt.stringify(block)}`
       );
-    } catch (e: any) {
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data);
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
+    } catch (e: unknown) {
+      throw new UnexpectedApiError(baseError + `${e}`);
     }
     if (block) return [...block.transactions];
     throw new FailedError(baseError + 'Block not found');
@@ -151,14 +133,8 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
           this.chain
         } RPC for blockId [${blockId}]. res: ${JsonBigInt.stringify(block)}`
       );
-    } catch (e: any) {
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data);
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
+    } catch (e: unknown) {
+      throw new UnexpectedApiError(baseError + `${e}`);
     }
     if (block)
       return {
@@ -188,14 +164,8 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
           this.chain
         } RPC with id [${transactionId}]. res: ${JsonBigInt.stringify(tx)}`
       );
-    } catch (e: any) {
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data);
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
+    } catch (e: unknown) {
+      throw new UnexpectedApiError(baseError + `${e}`);
     }
     if (!tx) throw new FailedError(baseError + 'Transaction not found');
     else if (tx.blockHash !== blockId)
@@ -218,7 +188,6 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
    * @param tokenId
    */
   getTokenDetail = async (tokenId: string): Promise<TokenDetail> => {
-    const baseError = `Failed to get token [${tokenId}] details from ${this.chain} RPC: `;
     try {
       const contract = new ethers.Contract(tokenId, ERC20ABI, this.provider);
       const name = await contract.name();
@@ -228,14 +197,9 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
         name: name,
         decimals: decimals,
       };
-    } catch (e: any) {
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data);
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
+    } catch (e: unknown) {
+      const baseError = `Failed to get token [${tokenId}] details from ${this.chain} RPC: `;
+      throw new UnexpectedApiError(baseError + `${e}`);
     }
   };
 
@@ -249,7 +213,6 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
     address: string,
     tokenId: string
   ): Promise<bigint> => {
-    const baseError = `Failed to get address [${address}] token [${tokenId}] balance from ${this.chain} RPC: `;
     try {
       const contract = new ethers.Contract(tokenId, ERC20ABI, this.provider);
       const balance = await contract.balanceOf(address);
@@ -259,14 +222,9 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
         } RPC. res: ${JsonBigInt.stringify(balance)}`
       );
       return balance;
-    } catch (e: any) {
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data);
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
+    } catch (e: unknown) {
+      const baseError = `Failed to get address [${address}] token [${tokenId}] balance from ${this.chain} RPC: `;
+      throw new UnexpectedApiError(baseError + `${e}`);
     }
   };
 
@@ -278,7 +236,6 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
   getAddressBalanceForNativeToken = async (
     address: string
   ): Promise<bigint> => {
-    const baseError = `Failed to get address [${address}] native token balance from ${this.chain} RPC: `;
     try {
       const balance = await this.provider.getBalance(address);
       this.logger.debug(
@@ -287,14 +244,9 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
         } RPC with address [${address}]. res: ${JsonBigInt.stringify(balance)}`
       );
       return balance;
-    } catch (e: any) {
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data);
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
+    } catch (e: unknown) {
+      const baseError = `Failed to get address [${address}] native token balance from ${this.chain} RPC: `;
+      throw new UnexpectedApiError(baseError + `${e}`);
     }
   };
 
@@ -304,7 +256,6 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
    * @returns an integer indicating next nonce
    */
   getAddressNextAvailableNonce = async (address: string): Promise<number> => {
-    const baseError = `Failed to get address [${address}] nonce from ${this.chain} RPC: `;
     try {
       const nonce = await this.provider.getTransactionCount(address);
       this.logger.debug(
@@ -313,14 +264,9 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
         } RPC with address [${address}]. res: ${JsonBigInt.stringify(nonce)}`
       );
       return nonce;
-    } catch (e: any) {
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data);
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
+    } catch (e: unknown) {
+      const baseError = `Failed to get address [${address}] nonce from ${this.chain} RPC: `;
+      throw new UnexpectedApiError(baseError + `${e}`);
     }
   };
 
@@ -330,7 +276,6 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
    * @returns gas required in bigint
    */
   getGasRequired = async (transaction: Transaction): Promise<bigint> => {
-    const baseError = `Failed to get required Gas from ${this.chain} RPC: `;
     try {
       const gas = await this.provider.estimateGas(transaction);
       this.logger.debug(
@@ -339,14 +284,9 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
         } RPC. res: ${JsonBigInt.stringify(gas)}`
       );
       return gas;
-    } catch (e: any) {
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data);
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
+    } catch (e: unknown) {
+      const baseError = `Failed to get required Gas from ${this.chain} RPC: `;
+      throw new UnexpectedApiError(baseError + `${e}`);
     }
   };
 
@@ -365,14 +305,8 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
           this.chain
         } RPC. res: ${JsonBigInt.stringify(feeData)}`
       );
-    } catch (e: any) {
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data);
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
+    } catch (e: unknown) {
+      throw new UnexpectedApiError(baseError + `${e}`);
     }
     if (feeData.maxPriorityFeePerGas === null)
       throw new UnexpectedApiError(baseError + `maxPriorityFeePerGas is null`);
@@ -394,14 +328,8 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
           this.chain
         } RPC. res: ${JsonBigInt.stringify(feeData)}`
       );
-    } catch (e: any) {
-      if (e.response) {
-        throw new FailedError(baseError + e.response.data);
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
+    } catch (e: unknown) {
+      throw new UnexpectedApiError(baseError + `${e}`);
     }
     if (feeData.maxFeePerGas === null)
       throw new UnexpectedApiError(baseError + `maxFeePerGas is null`);
