@@ -1,6 +1,7 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ChainMinimumFee } from '@rosen-bridge/minimum-fee';
 import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
+import { RosenTokens, TokenMap } from '@rosen-bridge/tokens';
 import { blake2b } from 'blakejs';
 import ChainUtils from './ChainUtils';
 import {
@@ -27,19 +28,23 @@ import {
 import PaymentTransaction from './PaymentTransaction';
 
 abstract class AbstractChain<TxType> {
-  protected abstract CHAIN: string;
+  abstract readonly CHAIN: string;
+  abstract readonly NATIVE_TOKEN_ID: string;
   protected abstract extractor: AbstractRosenDataExtractor<string> | undefined;
   protected network: AbstractChainNetwork<TxType>;
   protected configs: ChainConfigs;
+  protected tokenMap: TokenMap;
   logger: AbstractLogger;
 
   constructor(
     network: AbstractChainNetwork<TxType>,
     configs: ChainConfigs,
+    tokens: RosenTokens,
     logger?: AbstractLogger
   ) {
     this.network = network;
     this.configs = configs;
+    this.tokenMap = new TokenMap(tokens);
     this.logger = logger ? logger : new DummyLogger();
   }
 
@@ -345,7 +350,20 @@ abstract class AbstractChain<TxType> {
       this.logger.debug(`returning empty assets for address [${address}]`);
       return { nativeToken: 0n, tokens: [] };
     }
-    return await this.network.getAddressAssets(address);
+    const rawBalance = await this.network.getAddressAssets(address);
+    const wrappedNativeToken = this.tokenMap.wrapAmount(
+      this.NATIVE_TOKEN_ID,
+      rawBalance.nativeToken,
+      this.CHAIN
+    ).amount;
+    const wrappedAssets = rawBalance.tokens.map((token) => ({
+      id: token.id,
+      value: this.tokenMap.wrapAmount(token.id, token.value, this.CHAIN).amount,
+    }));
+    return {
+      nativeToken: wrappedNativeToken,
+      tokens: wrappedAssets,
+    };
   };
 
   /**

@@ -13,32 +13,14 @@ import {
   TransactionType,
 } from '@rosen-chains/abstract-chain';
 import * as testUtils from './TestUtils';
-import TestChain from './TestChain';
 import Serializer from '../lib/Serializer';
 import { Transaction, TransactionLike } from 'ethers';
-import { TssSignFunction } from '../lib';
 import { mockGetAddressBalanceForNativeToken } from './TestUtils';
 
 describe('EvmChain', () => {
   const network = new TestEvmNetwork();
 
-  const generateChainObject = (
-    network: TestEvmNetwork,
-    signFn: TssSignFunction = testUtils.mockedSignFn
-  ) => {
-    return new TestChain(
-      network,
-      testUtils.configs,
-      {
-        idKeys: {},
-        tokens: [],
-      },
-      'eth',
-      TestData.supportedTokens,
-      signFn
-    );
-  };
-  const evmChain = generateChainObject(network);
+  const evmChain = testUtils.generateChainObject(network);
 
   describe('generateMultipleTransactions', () => {
     /**
@@ -1780,7 +1762,7 @@ describe('EvmChain', () => {
           signatureRecovery: TestData.transaction2SignatureRecovery,
         };
       };
-      const evmChain = generateChainObject(network, signFunction);
+      const evmChain = testUtils.generateChainObject(network, signFunction);
 
       // mock PaymentTransaction of unsigned transaction
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
@@ -1823,7 +1805,7 @@ describe('EvmChain', () => {
       const signFunction = async (txHash: Uint8Array) => {
         throw Error(`TestError: sign failed`);
       };
-      const evmChain = generateChainObject(network, signFunction);
+      const evmChain = testUtils.generateChainObject(network, signFunction);
 
       // mock PaymentTransaction of unsigned transaction
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';

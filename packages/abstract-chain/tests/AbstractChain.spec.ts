@@ -763,7 +763,7 @@ describe('AbstractChain', () => {
     const network = new TestChainNetwork();
 
     /**
-     * @target ErgoChain.getTxConfirmationStatus should return
+     * @target AbstractChain.getTxConfirmationStatus should return
      * ConfirmedEnough when tx confirmation is more than required number
      * @dependencies
      * @scenario
@@ -789,7 +789,7 @@ describe('AbstractChain', () => {
     });
 
     /**
-     * @target ErgoChain.getTxConfirmationStatus should return
+     * @target AbstractChain.getTxConfirmationStatus should return
      * NotConfirmedEnough when payment tx confirmation is less than required number
      * @dependencies
      * @scenario
@@ -816,7 +816,7 @@ describe('AbstractChain', () => {
     });
 
     /**
-     * @target ErgoChain.getTxConfirmationStatus should return
+     * @target AbstractChain.getTxConfirmationStatus should return
      * NotFound when tx confirmation is -1
      * @dependencies
      * @scenario
@@ -837,6 +837,33 @@ describe('AbstractChain', () => {
 
       // check returned value
       expect(result).toEqual(ConfirmationStatus.NotFound);
+    });
+  });
+
+  describe('getAddressAssets', () => {
+    const network = new TestChainNetwork();
+
+    /**
+     * @target AbstractChain.getAddressAssets should return wrapped values
+     * @dependencies
+     * @scenario
+     * - mock a network object to return actual values for the assets
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the wrapped values
+     */
+    it('should return wrapped values', async () => {
+      // mock a network object to return actual values for the assets
+      const getAddressAssetsSpy = spyOn(network, 'getAddressAssets');
+      getAddressAssetsSpy.mockResolvedValueOnce(testData.actualBalance);
+
+      // run test
+      const chain = generateChainObject(network);
+      const result = await chain.getAddressAssets('address');
+
+      // check returned value
+      expect(result).toEqual(testData.wrappedBalance);
     });
   });
 

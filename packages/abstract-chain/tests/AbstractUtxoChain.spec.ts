@@ -1,31 +1,11 @@
-import TestUtxoChain from './TestUtxoChain';
-import TestUtxoChainNetwork from './network/TestUtxoChainNetwork';
-import { AssetBalance, ChainConfigs } from '../lib';
 import { when } from 'jest-when';
+import TestUtxoChainNetwork from './network/TestUtxoChainNetwork';
+import { AssetBalance } from '../lib';
+import { generateUtxoChainObject } from './testUtils';
 
 const spyOn = jest.spyOn;
 
 describe('AbstractUtxoChain', () => {
-  const generateChainObject = (network: TestUtxoChainNetwork) => {
-    const config: ChainConfigs = {
-      fee: 100n,
-      confirmations: {
-        observation: 5,
-        payment: 6,
-        cold: 7,
-        manual: 8,
-      },
-      addresses: {
-        lock: 'lock_addr',
-        cold: 'cold_addr',
-        permit: 'permit_addr',
-        fraud: 'fraud_addr',
-      },
-      rwtId: 'rwt',
-    };
-    return new TestUtxoChain(network, config);
-  };
-
   describe('getCoveringBoxes', () => {
     const emptyMap = new Map<string, string>();
 
@@ -50,7 +30,7 @@ describe('AbstractUtxoChain', () => {
         .mockResolvedValueOnce(['serialized-box-1', 'serialized-box-2']);
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = generateChainObject(network);
+      const chain = generateUtxoChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
@@ -111,7 +91,7 @@ describe('AbstractUtxoChain', () => {
         .mockResolvedValueOnce(['serialized-box-1', 'serialized-box-2']);
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = generateChainObject(network);
+      const chain = generateUtxoChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
@@ -174,7 +154,7 @@ describe('AbstractUtxoChain', () => {
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
       //  (second box doesn't contain required token)
-      const chain = generateChainObject(network);
+      const chain = generateUtxoChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
@@ -240,7 +220,7 @@ describe('AbstractUtxoChain', () => {
         .mockResolvedValueOnce(['serialized-box-11', 'serialized-box-12']);
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = generateChainObject(network);
+      const chain = generateUtxoChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       Array.from({ length: 12 }, (x, i) => i).map((i) => {
         when(getBoxInfoSpy)
@@ -303,7 +283,7 @@ describe('AbstractUtxoChain', () => {
         .mockResolvedValueOnce(['serialized-box-11', 'serialized-box-12']);
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = generateChainObject(network);
+      const chain = generateUtxoChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       Array.from({ length: 12 }, (x, i) => i).map((i) => {
         when(getBoxInfoSpy)
@@ -361,7 +341,7 @@ describe('AbstractUtxoChain', () => {
       };
 
       // Run test
-      const chain = generateChainObject(network);
+      const chain = generateUtxoChainObject(network);
       const result = await chain.getCoveringBoxes(
         '',
         requiredAssets,
@@ -400,7 +380,7 @@ describe('AbstractUtxoChain', () => {
       trackMap.set('box1', 'serialized-tracked-box-1');
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = generateChainObject(network);
+      const chain = generateUtxoChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
@@ -475,7 +455,7 @@ describe('AbstractUtxoChain', () => {
       trackMap.set('box1', 'serialized-tracked-box-1');
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = generateChainObject(network);
+      const chain = generateUtxoChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
@@ -552,7 +532,7 @@ describe('AbstractUtxoChain', () => {
       const forbiddenIds = ['box1'];
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = generateChainObject(network);
+      const chain = generateUtxoChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
@@ -618,7 +598,7 @@ describe('AbstractUtxoChain', () => {
       trackMap.set('box1', undefined);
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = generateChainObject(network);
+      const chain = generateUtxoChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')
@@ -676,7 +656,7 @@ describe('AbstractUtxoChain', () => {
       trackMap.set('box2', 'serialized-tracked-box-1');
 
       // Mock chain 'getBoxInfo' function to return mocked boxes assets
-      const chain = generateChainObject(network);
+      const chain = generateUtxoChainObject(network);
       const getBoxInfoSpy = spyOn(chain, 'getBoxInfo');
       when(getBoxInfoSpy)
         .calledWith('serialized-box-1')

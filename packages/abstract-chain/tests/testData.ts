@@ -1,4 +1,5 @@
-import { EventTrigger } from '../lib';
+import { RosenTokens } from '@rosen-bridge/tokens';
+import { AssetBalance, EventTrigger } from '../lib';
 
 export const paymentTxConfirmation = 6;
 
@@ -60,4 +61,120 @@ export const validEventWithHighFee: EventTrigger = {
     '01a33c00accaa91ebe0c946bffe1ec294280a3a51a90f7f4b011f3f37c29c5ed',
   WIDsHash: 'bb2b2272816e1e9993fc535c0cf57c668f5cd39c67cfcd55b4422b1aa87cd0c3',
   WIDsCount: 2,
+};
+
+export const testTokenMap: RosenTokens = {
+  idKeys: {
+    test: 'tokenId',
+    'test-utxo': 'tokenId',
+  },
+  tokens: [
+    {
+      test: {
+        tokenId: 'test-native-token',
+        name: 'test-native-token',
+        decimals: 2,
+        metaData: {
+          type: 'native',
+          residency: 'native',
+        },
+      },
+      'test-utxo': {
+        tokenId: 'wrapped-native-token',
+        name: 'wrapped-test-native-token',
+        decimals: 2,
+        metaData: {
+          type: 'ANY',
+          residency: 'wrapped',
+        },
+      },
+    },
+    {
+      test: {
+        tokenId: 'wrapped-test-utxo-native-token',
+        name: 'wrapped-test-utxo-native-token',
+        decimals: 3,
+        metaData: {
+          type: 'ANY',
+          residency: 'wrapped',
+        },
+      },
+      'test-utxo': {
+        tokenId: 'test-utxo-native-token',
+        name: 'test-utxo-native-token',
+        decimals: 3,
+        metaData: {
+          type: 'native',
+          residency: 'native',
+        },
+      },
+    },
+    {
+      test: {
+        tokenId: 'multi-decimal-token1',
+        name: 'multi-decimal-token1',
+        decimals: 4,
+        metaData: {
+          type: 'ANY',
+          residency: 'native',
+        },
+      },
+      'test-utxo': {
+        tokenId: 'wrapped-multi-decimal-token1',
+        name: 'wrapped-multi-decimal-token1',
+        decimals: 1,
+        metaData: {
+          type: 'ANY',
+          residency: 'wrapped',
+        },
+      },
+    },
+    {
+      test: {
+        tokenId: 'wrapped-multi-decimal-token2',
+        name: 'wrapped-multi-decimal-token2',
+        decimals: 4,
+        metaData: {
+          type: 'ANY',
+          residency: 'wrapped',
+        },
+      },
+      'test-utxo': {
+        tokenId: 'multi-decimal-token2',
+        name: 'multi-decimal-token2',
+        decimals: 0,
+        metaData: {
+          type: 'ANY',
+          residency: 'native',
+        },
+      },
+    },
+  ],
+};
+
+export const actualBalance: AssetBalance = {
+  nativeToken: 10000n,
+  tokens: [
+    {
+      id: 'multi-decimal-token1',
+      value: 44123n,
+    },
+    {
+      id: 'wrapped-multi-decimal-token2',
+      value: 556600n,
+    },
+  ],
+};
+export const wrappedBalance: AssetBalance = {
+  nativeToken: 10000n,
+  tokens: [
+    {
+      id: 'multi-decimal-token1',
+      value: 44n,
+    },
+    {
+      id: 'wrapped-multi-decimal-token2',
+      value: 55n,
+    },
+  ],
 };

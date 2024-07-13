@@ -3,8 +3,15 @@ import {
   RosenData,
 } from '@rosen-bridge/rosen-extractor';
 
-export class TestRosenDataExtractor extends AbstractRosenDataExtractor<string> {
-  get = (transaction: string): RosenData | undefined => {
+class TestRosenDataExtractor extends AbstractRosenDataExtractor<string> {
+  readonly chain = 'test';
+  constructor() {
+    super('', { idKeys: {}, tokens: [] });
+  }
+
+  extractRawData = (tx: string): RosenData | undefined => {
     throw Error(`not mocked`);
   };
 }
+
+export default TestRosenDataExtractor;

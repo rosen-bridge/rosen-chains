@@ -24,7 +24,7 @@ import JSONBigInt from '@rosen-bridge/json-bigint';
 import CardanoTransaction from './CardanoTransaction';
 import CardanoUtils from './CardanoUtils';
 import cardanoUtils from './CardanoUtils';
-import { CARDANO_CHAIN } from './constants';
+import { ADA, CARDANO_CHAIN } from './constants';
 import AbstractCardanoNetwork from './network/AbstractCardanoNetwork';
 import Serializer from './Serializer';
 import {
@@ -41,6 +41,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
   declare network: AbstractCardanoNetwork;
   declare configs: CardanoConfigs;
   CHAIN = CARDANO_CHAIN;
+  NATIVE_TOKEN_ID = ADA;
   extractor: CardanoRosenExtractor;
   protected signFunction: (txHash: Uint8Array) => Promise<string>;
 
@@ -51,7 +52,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
     signFunction: (txHash: Uint8Array) => Promise<string>,
     logger?: AbstractLogger
   ) {
-    super(network, configs, logger);
+    super(network, configs, tokens, logger);
     this.extractor = new CardanoRosenExtractor(
       configs.addresses.lock,
       tokens,
