@@ -25,11 +25,11 @@ import { EvmConfigs, TssSignFunction } from './types';
 import { Signature, Transaction } from 'ethers';
 import Serializer from './Serializer';
 import * as EvmUtils from './EvmUtils';
+import { AbstractLogger } from '@rosen-bridge/abstract-logger';
 
 abstract class EvmChain extends AbstractChain<Transaction> {
   declare network: AbstractEvmNetwork;
   declare configs: EvmConfigs;
-  abstract CHAIN: string;
   abstract CHAIN_ID: bigint;
   extractor: EvmRosenExtractor | undefined;
 
@@ -38,17 +38,16 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
   constructor(
     network: AbstractEvmNetwork,
-    configs: any,
+    configs: EvmConfigs,
     tokens: RosenTokens,
-    nativeToken: string,
     supportedTokens: Array<string>,
     signFunction: TssSignFunction,
-    logger?: any
+    logger?: AbstractLogger
   ) {
-    super(network, configs, logger);
+    super(network, configs, tokens, logger);
     this.supportedTokens = supportedTokens;
     this.signFunction = signFunction;
-    this.initExtractor(tokens, nativeToken, logger);
+    this.initExtractor(tokens, logger);
   }
 
   /**
@@ -57,16 +56,12 @@ abstract class EvmChain extends AbstractChain<Transaction> {
    * @param nativeToken
    * @param logger
    */
-  protected initExtractor = (
-    tokens: RosenTokens,
-    nativeToken: string,
-    logger?: any
-  ) => {
+  protected initExtractor = (tokens: RosenTokens, logger?: any) => {
     this.extractor = new EvmRosenExtractor(
       this.configs.addresses.lock,
       tokens,
       this.CHAIN,
-      nativeToken,
+      this.NATIVE_TOKEN_ID,
       logger
     );
   };

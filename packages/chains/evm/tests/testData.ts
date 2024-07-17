@@ -3,6 +3,7 @@ import {
   TransactionType,
 } from '@rosen-chains/abstract-chain';
 import { PaymentOrder, AssetBalance } from '@rosen-chains/abstract-chain';
+import { RosenTokens } from '@rosen-bridge/tokens';
 import { Transaction } from 'ethers';
 
 export const lockAddress = '0xedee4752e5a2f595151c94762fb38e5730357785';
@@ -457,3 +458,8 @@ export const transaction2Signature =
 export const transaction2SignatureRecovery = '01';
 export const transaction2TxId =
   '0x73c9ff5665d84067d98afbbeb2d9ff316c4b5bf885f9f3d31fa56eb1b13b3b90';
+
+export const testTokenMap: RosenTokens = {
+  idKeys: {},
+  tokens: [],
+};

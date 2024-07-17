@@ -1,8 +1,10 @@
 import * as testData from './testData';
-import { EvmConfigs } from '../lib/types';
+import { EvmConfigs, TssSignFunction } from '../lib/types';
 import EvmChain from '../lib/EvmChain';
 import { vi } from 'vitest';
 import { AbstractEvmNetwork } from '../lib';
+import TestEvmNetwork from './network/TestEvmNetwork';
+import TestChain from './TestChain';
 
 const spyOn = vi.spyOn;
 const observationTxConfirmation = 5;
@@ -78,4 +80,17 @@ export const mockGetMaxPriorityFeePerGas = (
   value: bigint
 ) => {
   spyOn(network, 'getMaxPriorityFeePerGas').mockResolvedValue(value);
+};
+
+export const generateChainObject = (
+  network: TestEvmNetwork,
+  signFn: TssSignFunction = mockedSignFn
+) => {
+  return new TestChain(
+    network,
+    configs,
+    testData.testTokenMap,
+    testData.supportedTokens,
+    signFn
+  );
 };

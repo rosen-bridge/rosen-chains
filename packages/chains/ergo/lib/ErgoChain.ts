@@ -16,7 +16,7 @@ import {
   TransactionType,
 } from '@rosen-chains/abstract-chain';
 import * as wasm from 'ergo-lib-wasm-nodejs';
-import { ERGO_CHAIN, NUMBER_OF_BLOCKS_PER_YEAR } from './constants';
+import { ERG, ERGO_CHAIN, NUMBER_OF_BLOCKS_PER_YEAR } from './constants';
 import ErgoTransaction from './ErgoTransaction';
 import ErgoUtils from './ErgoUtils';
 import AbstractErgoNetwork from './network/AbstractErgoNetwork';
@@ -29,6 +29,7 @@ import { RosenTokens } from '@rosen-bridge/tokens';
 
 class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
   CHAIN = ERGO_CHAIN;
+  NATIVE_TOKEN_ID = ERG;
   extractor: ErgoRosenExtractor;
   static feeBoxErgoTree =
     '1005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304';
@@ -53,7 +54,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
     ) => Promise<wasm.Transaction>,
     logger?: AbstractLogger
   ) {
-    super(network, configs, logger);
+    super(network, configs, tokens, logger);
     this.extractor = new ErgoRosenExtractor(
       configs.addresses.lock,
       tokens,

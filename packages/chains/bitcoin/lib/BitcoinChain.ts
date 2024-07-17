@@ -28,7 +28,7 @@ import Serializer from './Serializer';
 import { Psbt, Transaction, address, payments, script } from 'bitcoinjs-lib';
 import JsonBigInt from '@rosen-bridge/json-bigint';
 import { estimateTxFee, getPsbtTxInputBoxId } from './bitcoinUtils';
-import { BITCOIN_CHAIN, SEGWIT_INPUT_WEIGHT_UNIT } from './constants';
+import { BITCOIN_CHAIN, BTC, SEGWIT_INPUT_WEIGHT_UNIT } from './constants';
 import { selectBitcoinUtxos } from '@rosen-bridge/bitcoin-utxo-selection';
 import { BitcoinRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import { RosenTokens } from '@rosen-bridge/tokens';
@@ -37,6 +37,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
   declare network: AbstractBitcoinNetwork;
   declare configs: BitcoinConfigs;
   CHAIN = BITCOIN_CHAIN;
+  NATIVE_TOKEN_ID = BTC;
   extractor: BitcoinRosenExtractor;
   protected signFunction: TssSignFunction;
   protected lockScript: string;
@@ -49,7 +50,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
     signFunction: TssSignFunction,
     logger?: AbstractLogger
   ) {
-    super(network, configs, logger);
+    super(network, configs, tokens, logger);
     this.extractor = new BitcoinRosenExtractor(
       configs.addresses.lock,
       tokens,

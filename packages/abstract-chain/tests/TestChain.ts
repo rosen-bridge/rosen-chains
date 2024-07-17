@@ -5,10 +5,11 @@ import {
   TransactionAssetBalance,
   TransactionType,
 } from '../lib';
-import TestRosenDataExtractor from './TestRosenDataExtractor';
+import TestRosenDataExtractor from './extractor/TestRosenDataExtractor';
 
 class TestChain extends AbstractChain<string> {
-  protected CHAIN = 'test';
+  NATIVE_TOKEN_ID = 'test-native-token';
+  CHAIN = 'test';
   protected extractor = new TestRosenDataExtractor();
 
   notImplemented = () => {

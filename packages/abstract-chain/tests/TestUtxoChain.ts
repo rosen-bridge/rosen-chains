@@ -1,8 +1,9 @@
 import { AbstractUtxoChain, BoxInfo } from '../lib';
-import TestRosenDataExtractor from './TestRosenDataExtractor';
+import TestRosenDataExtractor from './extractor/TestRosenDataExtractor';
 
 class TestUtxoChain extends AbstractUtxoChain<string, string> {
-  protected CHAIN = 'test-utxo';
+  NATIVE_TOKEN_ID = 'test-utxo-native-token';
+  CHAIN = 'test-utxo';
   protected extractor = new TestRosenDataExtractor();
 
   notImplemented = () => {

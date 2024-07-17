@@ -1,5 +1,5 @@
-import { AbstractChainNetwork, BlockInfo } from '../../lib';
-import TestRosenDataExtractor from '../TestRosenDataExtractor';
+import { AbstractChainNetwork, AssetBalance, BlockInfo } from '../../lib';
+import TestRosenDataExtractor from '../extractor/TestRosenDataExtractor';
 
 class TestUtxoChainNetwork extends AbstractChainNetwork<string> {
   extractor = new TestRosenDataExtractor();
@@ -9,11 +9,13 @@ class TestUtxoChainNetwork extends AbstractChainNetwork<string> {
   };
 
   getHeight = this.notImplemented;
-  getAddressAssets = this.notImplemented;
   submitTransaction = this.notImplemented;
   getMempoolTransactions = this.notImplemented;
   getTokenDetail = this.notImplemented;
 
+  getAddressAssets = (address: string): Promise<AssetBalance> => {
+    throw Error('Not mocked');
+  };
   getBlockTransactionIds = (blockId: string): Promise<Array<string>> => {
     throw Error('Not mocked');
   };
