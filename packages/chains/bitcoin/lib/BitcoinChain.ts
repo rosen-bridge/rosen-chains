@@ -123,16 +123,22 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
     );
 
     // fetch input boxes
+    const unwrappedRequiredAssets = ChainUtils.unwrapAssetBalance(
+      requiredAssets,
+      this.tokenMap,
+      this.NATIVE_TOKEN_ID,
+      this.CHAIN
+    );
     const coveredBoxes = await this.getCoveringBoxes(
       this.configs.addresses.lock,
-      requiredAssets,
+      unwrappedRequiredAssets,
       forbiddenBoxIds,
       trackMap
     );
     if (!coveredBoxes.covered) {
-      const neededBtc = this.unwrapBtc(requiredAssets.nativeToken);
+      const neededBtc = unwrappedRequiredAssets.nativeToken;
       throw new NotEnoughValidBoxesError(
-        `Available boxes didn't cover required assets. BTC: ${neededBtc.amount.toString()}`
+        `Available boxes didn't cover required assets. BTC: ${neededBtc.toString()}`
       );
     }
 
@@ -144,14 +150,12 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
         index: box.index,
         witnessUtxo: {
           script: Buffer.from(this.lockScript, 'hex'),
-          value: Number(this.unwrapBtc(box.value).amount),
+          value: Number(box.value),
         },
       });
     });
     // calculate input boxes assets
-    let remainingBtc = this.unwrapBtc(
-      coveredBoxes.boxes.reduce((a, b) => a + b.value, 0n)
-    ).amount;
+    let remainingBtc = coveredBoxes.boxes.reduce((a, b) => a + b.value, 0n);
     this.logger.debug(`Input BTC: ${remainingBtc}`);
 
     // add outputs
@@ -537,14 +541,15 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
 
   /**
    * extracts box id and assets of a box
+   * Note: it returns the actual value
    * @param box the box
    * @returns an object containing the box id and assets
    */
-  getBoxInfo = (box: BitcoinUtxo): BoxInfo => {
+  protected getBoxInfo = (box: BitcoinUtxo): BoxInfo => {
     return {
       id: this.getBoxId(box),
       assets: {
-        nativeToken: this.wrapBtc(box.value).amount,
+        nativeToken: box.value,
         tokens: [],
       },
     };
@@ -639,13 +644,14 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
 
   /**
    * gets useful, allowable and last boxes for an address until required assets are satisfied
+   * Note: it returns the actual value
    * @param address the address
-   * @param requiredAssets the required assets
+   * @param requiredAssets the required assets (actual values)
    * @param forbiddenBoxIds the id of forbidden boxes
    * @param trackMap the mapping of a box id to it's next box
    * @returns an object containing the selected boxes with a boolean showing if requirements covered or not
    */
-  getCoveringBoxes = async (
+  protected getCoveringBoxes = async (
     address: string,
     requiredAssets: AssetBalance,
     forbiddenBoxIds: Array<string>,

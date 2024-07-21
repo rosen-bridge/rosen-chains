@@ -58,7 +58,7 @@ describe('AbstractUtxoChain', () => {
       };
 
       // Run test
-      const result = await chain.getCoveringBoxes(
+      const result = await chain.callGetCoveringBoxes(
         '',
         requiredAssets,
         [],
@@ -119,7 +119,7 @@ describe('AbstractUtxoChain', () => {
       };
 
       // Run test
-      const result = await chain.getCoveringBoxes(
+      const result = await chain.callGetCoveringBoxes(
         '',
         requiredAssets,
         [],
@@ -182,7 +182,7 @@ describe('AbstractUtxoChain', () => {
       };
 
       // Run test
-      const result = await chain.getCoveringBoxes(
+      const result = await chain.callGetCoveringBoxes(
         '',
         requiredAssets,
         [],
@@ -241,7 +241,7 @@ describe('AbstractUtxoChain', () => {
       };
 
       // Run test
-      const result = await chain.getCoveringBoxes(
+      const result = await chain.callGetCoveringBoxes(
         '',
         requiredAssets,
         [],
@@ -301,7 +301,7 @@ describe('AbstractUtxoChain', () => {
       };
 
       // Run test
-      const result = await chain.getCoveringBoxes(
+      const result = await chain.callGetCoveringBoxes(
         '',
         requiredAssets,
         [],
@@ -342,7 +342,7 @@ describe('AbstractUtxoChain', () => {
 
       // Run test
       const chain = generateUtxoChainObject(network);
-      const result = await chain.getCoveringBoxes(
+      const result = await chain.callGetCoveringBoxes(
         '',
         requiredAssets,
         [],
@@ -417,7 +417,7 @@ describe('AbstractUtxoChain', () => {
       };
 
       // Run test
-      const result = await chain.getCoveringBoxes(
+      const result = await chain.callGetCoveringBoxes(
         '',
         requiredAssets,
         [],
@@ -492,7 +492,7 @@ describe('AbstractUtxoChain', () => {
       };
 
       // Run test
-      const result = await chain.getCoveringBoxes(
+      const result = await chain.callGetCoveringBoxes(
         '',
         requiredAssets,
         [],
@@ -560,7 +560,7 @@ describe('AbstractUtxoChain', () => {
       };
 
       // Run test
-      const result = await chain.getCoveringBoxes(
+      const result = await chain.callGetCoveringBoxes(
         '',
         requiredAssets,
         forbiddenIds,
@@ -617,7 +617,7 @@ describe('AbstractUtxoChain', () => {
       };
 
       // Run test
-      const result = await chain.getCoveringBoxes(
+      const result = await chain.callGetCoveringBoxes(
         '',
         requiredAssets,
         [],
@@ -693,7 +693,7 @@ describe('AbstractUtxoChain', () => {
       };
 
       // Run test
-      const result = await chain.getCoveringBoxes(
+      const result = await chain.callGetCoveringBoxes(
         '',
         requiredAssets,
         [],

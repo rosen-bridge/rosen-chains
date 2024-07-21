@@ -51,7 +51,7 @@ describe('BitcoinChain', () => {
 
       // mock getCoveringBoxes, hasLockAddressEnoughAssets
       const bitcoinChain = testUtils.generateChainObject(network);
-      const getCovBoxesSpy = vi.spyOn(bitcoinChain, 'getCoveringBoxes');
+      const getCovBoxesSpy = vi.spyOn(bitcoinChain as any, 'getCoveringBoxes');
       getCovBoxesSpy.mockResolvedValue({
         covered: true,
         boxes: testData.lockAddressUtxos,
@@ -143,7 +143,7 @@ describe('BitcoinChain', () => {
     it('should throw error when bank boxes can not cover order assets', async () => {
       // mock getCoveringBoxes, hasLockAddressEnoughAssets
       const bitcoinChain = testUtils.generateChainObject(network);
-      const getCovBoxesSpy = vi.spyOn(bitcoinChain, 'getCoveringBoxes');
+      const getCovBoxesSpy = vi.spyOn(bitcoinChain as any, 'getCoveringBoxes');
       getCovBoxesSpy.mockResolvedValue({
         covered: false,
         boxes: testData.lockAddressUtxos,
@@ -194,7 +194,7 @@ describe('BitcoinChain', () => {
       // mock getCoveringBoxes, hasLockAddressEnoughAssets
       const bitcoinChain =
         testUtils.generateChainObjectWithMultiDecimalTokenMap(network);
-      const getCovBoxesSpy = vi.spyOn(bitcoinChain, 'getCoveringBoxes');
+      const getCovBoxesSpy = vi.spyOn(bitcoinChain as any, 'getCoveringBoxes');
       getCovBoxesSpy.mockResolvedValue({
         covered: true,
         boxes: testData.lockAddressUtxos,
@@ -242,7 +242,12 @@ describe('BitcoinChain', () => {
       ).amount;
       expect(getCovBoxesSpy).toHaveBeenCalledWith(
         testUtils.configs.addresses.lock,
-        expectedRequiredAssets,
+        ChainUtils.unwrapAssetBalance(
+          expectedRequiredAssets,
+          tokenMap,
+          bitcoinChain.NATIVE_TOKEN_ID,
+          bitcoinChain.CHAIN
+        ),
         testData.transaction1InputIds,
         new Map()
       );
@@ -716,7 +721,7 @@ describe('BitcoinChain', () => {
      * @expected
      * - it should return constructed BoxInfo
      */
-    it('should get box info successfully', async () => {
+    it('should get box info successfully', () => {
       // mock a BitcoinUtxo with assets
       const rawBox = testData.lockUtxo;
 
@@ -724,7 +729,7 @@ describe('BitcoinChain', () => {
       const bitcoinChain = testUtils.generateChainObject(network);
 
       // check returned value
-      const result = await bitcoinChain.getBoxInfo(rawBox);
+      const result = (bitcoinChain as any).getBoxInfo(rawBox);
       expect(result.id).toEqual(rawBox.txId + '.' + rawBox.index);
       expect(result.assets.nativeToken.toString()).toEqual(
         rawBox.value.toString()

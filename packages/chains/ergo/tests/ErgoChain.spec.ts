@@ -6,6 +6,7 @@ import {
   AssetBalance,
   BlockInfo,
   BoxInfo,
+  CoveringBoxes,
   NotEnoughAssetsError,
   NotEnoughValidBoxesError,
   TransactionType,
@@ -144,7 +145,7 @@ describe('ErgoChain', () => {
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );
-      const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
+      const getCoveringBoxesSpy = spyOn(ergoChain as any, 'getCoveringBoxes');
       getCoveringBoxesSpy.mockResolvedValue({
         covered: true,
         boxes: paymentTx.inputBoxes
@@ -422,7 +423,7 @@ describe('ErgoChain', () => {
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );
-      const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
+      const getCoveringBoxesSpy = spyOn(ergoChain as any, 'getCoveringBoxes');
       getCoveringBoxesSpy.mockResolvedValue({
         covered: false,
         boxes: paymentTx.inputBoxes
@@ -547,7 +548,19 @@ describe('ErgoChain', () => {
         ergoTestUtils.testTokenMap,
         ergoTestUtils.defaultSignFunction
       );
-      const getCoveringBoxesSpy = spyOn(ergoChain, 'getCoveringBoxes');
+      const getCoveringBoxesSpy = spyOn(
+        ergoChain as any,
+        'getCoveringBoxes'
+      ) as jest.SpyInstance<
+        Promise<CoveringBoxes<wasm.ErgoBox>>,
+        [
+          address: string,
+          requiredAssets: AssetBalance,
+          forbiddenBoxIds: string[],
+          trackMap: Map<string, wasm.ErgoBox | undefined>
+        ],
+        any
+      >;
       getCoveringBoxesSpy.mockImplementation(
         async (
           address: string,
@@ -1402,7 +1415,7 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = ergoTestUtils.generateChainObject(network);
-      const result = ergoChain.getBoxInfo(box);
+      const result = (ergoChain as any).getBoxInfo(box);
 
       // check returned value
       expect(result).toEqual(boxInfo);
