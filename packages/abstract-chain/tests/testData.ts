@@ -194,11 +194,11 @@ export const wrappedBalance: AssetBalance = {
   tokens: [
     {
       id: 'multi-decimal-token1',
-      value: 44n,
+      value: 45n,
     },
     {
       id: 'wrapped-multi-decimal-token2',
-      value: 55n,
+      value: 56n,
     },
     {
       id: 'fixed-decimal-token',
@@ -211,11 +211,11 @@ export const unwrappedBalance: AssetBalance = {
   tokens: [
     {
       id: 'multi-decimal-token1',
-      value: 44000n,
+      value: 45000n,
     },
     {
       id: 'wrapped-multi-decimal-token2',
-      value: 550000n,
+      value: 560000n,
     },
     {
       id: 'fixed-decimal-token',
