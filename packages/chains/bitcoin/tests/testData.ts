@@ -12,6 +12,49 @@ export const testTokenMap: RosenTokens = JSON.parse(`
 }
 `);
 
+export const multiDecimalTokenMap: RosenTokens = JSON.parse(`
+{
+  "idKeys" : {
+    "ergo" : "tokenId",
+    "cardano" : "tokenId",
+    "bitcoin" : "tokenId"
+  },
+  "tokens" : [
+    {
+      "ergo": {
+        "tokenId": "1c7435e608ab710c56bbe0f635e2a5e86ddf856f7d3d2d1d4dfefa62fbbfb9b4",
+        "name": "testBTC",
+        "decimals": 3,
+        "metaData": {
+          "type": "EIP-004",
+          "residency": "wrapped"
+        }
+      },
+      "cardano": {
+        "tokenId": "6d7cc9577a04be165cc4f2cf36f580dbeaf88f68e78f790805430940.72734254432d6c6f656e",
+        "policyId": "6d7cc9577a04be165cc4f2cf36f580dbeaf88f68e78f790805430940",
+        "assetName": "72734254432d6c6f656e",
+        "name": "rsBTC-loen",
+        "decimals": 6,
+        "metaData": {
+          "type": "CIP26",
+          "residency": "wrapped"
+        }
+      },
+      "bitcoin": {
+        "tokenId": "btc",
+        "name": "BTC",
+        "decimals": 8,
+        "metaData": {
+          "type": "native",
+          "residency": "native"
+        }
+      }
+    }
+  ]
+}
+`);
+
 export const transaction0PaymentTransaction = `{
   "network": "bitcoin",
   "eventId": "",
@@ -62,11 +105,30 @@ export const transaction2Assets = {
     tokens: [],
   },
 };
+export const transaction2WrappedAssets = {
+  inputAssets: {
+    nativeToken: 30000n,
+    tokens: [],
+  },
+  outputAssets: {
+    nativeToken: 30000n,
+    tokens: [],
+  },
+};
 export const transaction2Order: PaymentOrder = [
   {
     address: 'bc1qs2qr0j7ta5pvdkv53egm38zymgarhq0ugr7x8j',
     assets: {
       nativeToken: 670000000n,
+      tokens: [],
+    },
+  },
+];
+export const transaction2WrappedOrder: PaymentOrder = [
+  {
+    address: 'bc1qs2qr0j7ta5pvdkv53egm38zymgarhq0ugr7x8j',
+    assets: {
+      nativeToken: 6700n,
       tokens: [],
     },
   },
