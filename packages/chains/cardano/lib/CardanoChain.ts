@@ -80,9 +80,16 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
       )
         continue;
 
+      const assetBalance = CardanoUtils.getBoxAssets(output);
+      const wrappedBalance = ChainUtils.wrapAssetBalance(
+        assetBalance,
+        this.tokenMap,
+        this.NATIVE_TOKEN_ID,
+        this.CHAIN
+      );
       const payment: SinglePayment = {
         address: output.address().to_bech32(),
-        assets: CardanoUtils.getBoxAssets(output),
+        assets: wrappedBalance,
       };
       order.push(payment);
     }
@@ -109,19 +116,29 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
       `Generating Cardano transaction for Order: ${JsonBigInt.stringify(order)}`
     );
     // calculate required assets
+    const fee = this.configs.fee;
     const requiredAssets = order
       .map((order) => order.assets)
       .reduce(ChainUtils.sumAssetBalance, {
-        nativeToken: this.getMinimumNativeToken() + this.configs.fee,
+        nativeToken:
+          this.getMinimumNativeToken() +
+          this.tokenMap.wrapAmount(this.NATIVE_TOKEN_ID, fee, this.CHAIN)
+            .amount,
         tokens: [],
       });
     this.logger.debug(
       `Required assets: ${JsonBigInt.stringify(requiredAssets)}`
     );
+    const unwrappedRequiredAssets = ChainUtils.unwrapAssetBalance(
+      requiredAssets,
+      this.tokenMap,
+      this.NATIVE_TOKEN_ID,
+      this.CHAIN
+    );
 
     if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
-      const neededADA = requiredAssets.nativeToken.toString();
-      const neededTokens = JSONBigInt.stringify(requiredAssets.tokens);
+      const neededADA = unwrappedRequiredAssets.nativeToken.toString();
+      const neededTokens = JSONBigInt.stringify(unwrappedRequiredAssets.tokens);
       throw new NotEnoughAssetsError(
         `Locked assets cannot cover required assets. ADA: ${neededADA}, Tokens: ${neededTokens}`
       );
@@ -144,20 +161,25 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
 
     const coveredBoxes = await this.getCoveringBoxes(
       this.configs.addresses.lock,
-      requiredAssets,
+      unwrappedRequiredAssets,
       forbiddenBoxIds,
       trackMap
     );
     if (!coveredBoxes.covered) {
-      const neededAdas = requiredAssets.nativeToken.toString();
-      const neededTokens = JSONBigInt.stringify(requiredAssets.tokens);
+      const neededAdas = unwrappedRequiredAssets.nativeToken.toString();
+      const neededTokens = JSONBigInt.stringify(unwrappedRequiredAssets.tokens);
       throw new NotEnoughValidBoxesError(
         `Available boxes didn't cover required assets. ADA: ${neededAdas}, Tokens: ${neededTokens}`
       );
     }
     const bankBoxes = coveredBoxes.boxes;
     // calculate input boxes assets
-    let remainingAssets = CardanoUtils.calculateUtxoAssets(bankBoxes);
+    let remainingAssets = ChainUtils.wrapAssetBalance(
+      CardanoUtils.calculateUtxoAssets(bankBoxes),
+      this.tokenMap,
+      this.NATIVE_TOKEN_ID,
+      this.CHAIN
+    );
     this.logger.debug(`Input assets: ${JsonBigInt.stringify(remainingAssets)}`);
 
     const txBuilder = CardanoWasm.TransactionBuilder.new(
@@ -171,8 +193,13 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
         throw Error('Cardano does not support extra data in payment order');
       }
       // accumulate value
+      const orderLovelace = this.tokenMap.unwrapAmount(
+        this.NATIVE_TOKEN_ID,
+        order.assets.nativeToken,
+        this.CHAIN
+      ).amount;
       orderValue = orderValue.checked_add(
-        CardanoUtils.bigIntToBigNum(order.assets.nativeToken)
+        CardanoUtils.bigIntToBigNum(orderLovelace)
       );
 
       // reduce order value from remaining assets
@@ -184,7 +211,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
       // create order output
       const address = CardanoWasm.Address.from_bech32(order.address);
       const value = CardanoWasm.Value.new(
-        CardanoUtils.bigIntToBigNum(order.assets.nativeToken)
+        CardanoUtils.bigIntToBigNum(orderLovelace)
       );
       // inserting assets
       const orderMultiAsset = CardanoWasm.MultiAsset.new();
@@ -198,7 +225,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
         orderMultiAsset.set_asset(
           policyId,
           assetName,
-          CardanoUtils.bigIntToBigNum(asset.value)
+          CardanoUtils.bigIntToBigNum(
+            this.tokenMap.unwrapAmount(asset.id, asset.value, this.CHAIN).amount
+          )
         );
       });
       value.set_multiasset(orderMultiAsset);
@@ -223,16 +252,25 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
     );
 
     // create change output
-    remainingAssets.nativeToken -= this.configs.fee;
+    remainingAssets.nativeToken -= this.tokenMap.wrapAmount(
+      this.NATIVE_TOKEN_ID,
+      fee,
+      this.CHAIN
+    ).amount;
     const changeBox = CardanoUtils.createTransactionOutput(
-      remainingAssets,
+      ChainUtils.unwrapAssetBalance(
+        remainingAssets,
+        this.tokenMap,
+        this.NATIVE_TOKEN_ID,
+        this.CHAIN
+      ),
       this.configs.addresses.lock
     );
     txBuilder.add_output(changeBox);
 
     // set ttl and fee
     txBuilder.set_ttl((await this.network.currentSlot()) + this.configs.txTtl);
-    txBuilder.set_fee(CardanoUtils.bigIntToBigNum(this.configs.fee));
+    txBuilder.set_fee(CardanoUtils.bigIntToBigNum(fee));
 
     // create the transaction
     const txBody = txBuilder.build();
@@ -366,8 +404,18 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
     }
 
     return {
-      inputAssets,
-      outputAssets,
+      inputAssets: ChainUtils.wrapAssetBalance(
+        inputAssets,
+        this.tokenMap,
+        this.NATIVE_TOKEN_ID,
+        this.CHAIN
+      ),
+      outputAssets: ChainUtils.wrapAssetBalance(
+        outputAssets,
+        this.tokenMap,
+        this.NATIVE_TOKEN_ID,
+        this.CHAIN
+      ),
     };
   };
 
@@ -544,7 +592,11 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
    * @returns the minimum amount
    */
   getMinimumNativeToken = () => {
-    return this.configs.minBoxValue;
+    return this.tokenMap.wrapAmount(
+      this.NATIVE_TOKEN_ID,
+      this.configs.minBoxValue,
+      this.CHAIN
+    ).amount;
   };
 
   /**

@@ -245,6 +245,81 @@ describe('CardanoChain', () => {
         );
       }).rejects.toThrow(NotEnoughValidBoxesError);
     });
+
+    /**
+     * @target CardanoChain.generateTransaction should generate payment
+     * transaction with wrapped order successfully
+     * @dependencies
+     * @scenario
+     * - mock transaction order, currentSlot
+     * - mock getCoveringBoxes, hasLockAddressEnoughAssets
+     * - call the function
+     * - check returned value
+     * @expected
+     * - PaymentTransaction txType, eventId, network and inputUtxos should be as
+     *   expected
+     * - extracted order of generated transaction should be the same as input
+     *   order
+     * - transaction fee and ttl should be the same as config fee
+     * - tokens with same policyId and should put correctly
+     */
+    it('should generate payment transaction with wrapped order successfully', async () => {
+      // mock transaction order, currentSlot
+      const order = TestData.transaction4WrappedOrder;
+      const payment = CardanoTransaction.fromJson(
+        TestData.transaction4PaymentTransaction
+      );
+      const getSlotSpy = spyOn(network, 'currentSlot');
+      getSlotSpy.mockResolvedValue(200);
+
+      // mock getCoveringBoxes, hasLockAddressEnoughAssets
+      const cardanoChain =
+        TestUtils.generateChainObjectWithMultiDecimalTokenMap(network);
+      const getCovBoxesSpy = spyOn(cardanoChain as any, 'getCoveringBoxes');
+      getCovBoxesSpy.mockResolvedValue({
+        covered: true,
+        boxes: bankBoxes.slice(2),
+      });
+      const hasLockAddressEnoughAssetsSpy = spyOn(
+        cardanoChain,
+        'hasLockAddressEnoughAssets'
+      );
+      hasLockAddressEnoughAssetsSpy.mockResolvedValue(true);
+
+      // call the function
+      const result = await cardanoChain.generateTransaction(
+        '2bedc6e54ede7748e5efc7df689a0a89b281ac1d92d09054650d5f27a25d5b85',
+        TransactionType.payment,
+        order,
+        [],
+        []
+      );
+      const cardanoTx = result as CardanoTransaction;
+
+      // check returned value
+      expect(cardanoTx.txType).toEqual(payment.txType);
+      expect(cardanoTx.eventId).toEqual(payment.eventId);
+      expect(cardanoTx.network).toEqual(payment.network);
+      expect(cardanoTx.inputUtxos).toEqual(
+        bankBoxes.slice(2).map((utxo) => JsonBI.stringify(utxo))
+      );
+
+      // extracted order of generated transaction should be the same as input order
+      const extractedOrder = cardanoChain.extractTransactionOrder(cardanoTx);
+      expect(extractedOrder).toEqual(order);
+
+      // transaction fee and ttl should be the same as input configs
+      const tx = Transaction.from_bytes(cardanoTx.txBytes);
+      expect(tx.body().fee().to_str()).toEqual(
+        TestUtils.configs.fee.toString()
+      );
+      expect(tx.body().ttl()).toEqual(264);
+
+      // tokens with same policyId and should put correctly
+      expect(
+        tx.body().outputs().get(1).amount().multiasset()!.to_json()
+      ).toEqual(TestData.transaction4ChangeBoxMultiAssets.trim());
+    });
   });
 
   describe('extractTransactionOrder', () => {
@@ -270,6 +345,33 @@ describe('CardanoChain', () => {
 
       // call the function
       const cardanoChain = TestUtils.generateChainObject(network);
+      const result = cardanoChain.extractTransactionOrder(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(expectedOrder);
+    });
+
+    /**
+     * @target CardanoChain.extractTransactionOrder should wrap transaction
+     * order successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction order
+     */
+    it('should wrap transaction order successfully', () => {
+      // mock PaymentTransaction
+      const paymentTx = CardanoTransaction.fromJson(
+        TestData.transaction1PaymentTransaction
+      );
+      const expectedOrder = TestData.transaction1WrappedOrder;
+
+      // call the function
+      const cardanoChain =
+        TestUtils.generateChainObjectWithMultiDecimalTokenMap(network);
       const result = cardanoChain.extractTransactionOrder(paymentTx);
 
       // check returned value
@@ -426,6 +528,35 @@ describe('CardanoChain', () => {
       const result = await cardanoChain.getTransactionAssets(paymentTx);
       expect(result.inputAssets).toEqual(TestData.transaction6InputAssets);
     });
+
+    /**
+     * @target CardanoChain.getTransactionAssets should wrap transaction assets
+     * successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction assets (both input and output assets)
+     */
+    it('should wrap transaction assets successfully', async () => {
+      // mock PaymentTransaction
+      const paymentTx = CardanoTransaction.fromJson(
+        TestData.transaction1PaymentTransaction
+      );
+
+      // call the function
+      const cardanoChain =
+        TestUtils.generateChainObjectWithMultiDecimalTokenMap(network);
+
+      // check returned value
+      const result = await cardanoChain.getTransactionAssets(paymentTx);
+      expect(result.inputAssets).toEqual(
+        TestData.transaction1WrappedInputAssets
+      );
+      expect(result.outputAssets).toEqual(TestData.transaction1WrappedAssets);
+    });
   });
 
   describe('getMempoolBoxMapping', () => {
@@ -562,7 +693,7 @@ describe('CardanoChain', () => {
     const testInstance = new TestCardanoChain(
       network,
       TestUtils.configs,
-      TestUtils.rosenTokens,
+      TestData.testTokenMap,
       null as any
     );
 
@@ -1028,7 +1159,7 @@ describe('CardanoChain', () => {
       const cardanoChain = new CardanoChain(
         network,
         newConfigs,
-        TestUtils.rosenTokens,
+        TestData.testTokenMap,
         TestUtils.mockedSignFn
       );
 
