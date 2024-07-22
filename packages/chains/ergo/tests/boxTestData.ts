@@ -156,6 +156,23 @@ export const box1Assets: AssetBalance = {
     },
   ],
 };
+export const box1WrappedAssets: AssetBalance = {
+  nativeToken: 269997000000n,
+  tokens: [
+    {
+      id: '25bcbb2381e2569221737f12e06215c59cef8bb1403225084aaf6cf61f500bff',
+      value: 100n,
+    },
+    {
+      id: '3688bf4dbfa9e77606446ca0189546621097cee6979e2befc8ef56825ba82580',
+      value: 77n,
+    },
+    {
+      id: '7b0cc1b9c6e3dbf41a8cd0fe059a545dfbd0dfafc4093d0555a9851f06662dff',
+      value: 1000000n,
+    },
+  ],
+};
 
 export const guardConfigBox = `{
   "boxId": "6eccf30dc9e6d40e20f8dddc3d66e7ee45c82216906a2bacf14be9da8a811309",

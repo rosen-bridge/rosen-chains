@@ -107,10 +107,19 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
             wasm.ErgoBox.sigma_parse_bytes(Buffer.from(serializedBox, 'hex'))
           ).assets
       )
+      .map((balance) =>
+        ChainUtils.wrapAssetBalance(
+          balance,
+          this.tokenMap,
+          this.NATIVE_TOKEN_ID,
+          this.CHAIN
+        )
+      )
       .reduce(ChainUtils.sumAssetBalance, { nativeToken: 0n, tokens: [] });
     this.logger.debug(
       `Pre-selected boxes assets: ${JsonBigInt.stringify(inputAssets)}`
     );
+    const fee = this.configs.fee;
     const requiredAssets = ChainUtils.sumAssetBalance(
       ChainUtils.subtractAssetBalance(
         orderRequiredAssets,
@@ -119,7 +128,10 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
         true
       ),
       {
-        nativeToken: 2n * this.getMinimumNativeToken() + this.configs.fee,
+        nativeToken:
+          2n * this.getMinimumNativeToken() +
+          this.tokenMap.wrapAmount(this.NATIVE_TOKEN_ID, fee, this.CHAIN)
+            .amount,
         tokens: [],
       }
     );
@@ -128,9 +140,15 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
     );
 
     // check if there are enough assets in address
+    const unwrappedRequiredAssets = ChainUtils.unwrapAssetBalance(
+      requiredAssets,
+      this.tokenMap,
+      this.NATIVE_TOKEN_ID,
+      this.CHAIN
+    );
     if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
-      const neededErgs = requiredAssets.nativeToken.toString();
-      const neededTokens = JsonBI.stringify(requiredAssets.tokens);
+      const neededErgs = unwrappedRequiredAssets.nativeToken.toString();
+      const neededTokens = JsonBI.stringify(unwrappedRequiredAssets.tokens);
       throw new NotEnoughAssetsError(
         `Locked assets cannot cover required assets. Erg: ${neededErgs}, Tokens: ${neededTokens}`
       );
@@ -160,15 +178,15 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
     // call getCovering to get enough boxes
     const coveredBoxes = await this.getCoveringBoxes(
       this.configs.addresses.lock,
-      requiredAssets,
+      unwrappedRequiredAssets,
       forbiddenBoxIds,
       trackMap
     );
 
     // check if boxes covered requirements
     if (!coveredBoxes.covered) {
-      const neededErgs = requiredAssets.nativeToken.toString();
-      const neededTokens = JsonBI.stringify(requiredAssets.tokens);
+      const neededErgs = unwrappedRequiredAssets.nativeToken.toString();
+      const neededTokens = JsonBI.stringify(unwrappedRequiredAssets.tokens);
       throw new NotEnoughValidBoxesError(
         `Available boxes didn't cover required assets. Erg: ${neededErgs}, Tokens: ${neededTokens}`
       );
@@ -215,10 +233,13 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
     const currentHeight = await this.network.getHeight();
     order.forEach((order) => {
       // create box
+      const orderNanoErg = this.tokenMap.unwrapAmount(
+        this.NATIVE_TOKEN_ID,
+        order.assets.nativeToken,
+        this.CHAIN
+      ).amount;
       const boxBuilder = new wasm.ErgoBoxCandidateBuilder(
-        wasm.BoxValue.from_i64(
-          wasm.I64.from_str(order.assets.nativeToken.toString())
-        ),
+        wasm.BoxValue.from_i64(wasm.I64.from_str(orderNanoErg.toString())),
         wasm.Contract.new(
           wasm.Address.from_base58(order.address).to_ergo_tree()
         ),
@@ -228,7 +249,13 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
       order.assets.tokens.forEach((token) =>
         boxBuilder.add_token(
           wasm.TokenId.from_str(token.id),
-          wasm.TokenAmount.from_i64(wasm.I64.from_str(token.value.toString()))
+          wasm.TokenAmount.from_i64(
+            wasm.I64.from_str(
+              this.tokenMap
+                .unwrapAmount(token.id, token.value, this.CHAIN)
+                .amount.toString()
+            )
+          )
         )
       );
       // add extra data to box R4 as coll_coll_byte
@@ -254,7 +281,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
     );
 
     // split remaining assets to each change box (also reduce fee from it)
-    remainingAssets.nativeToken -= this.configs.fee;
+    remainingAssets.nativeToken -= fee;
     const changeBox1Assets = structuredClone(remainingAssets);
     changeBox1Assets.nativeToken /= 2n;
     changeBox1Assets.tokens = changeBox1Assets.tokens
@@ -322,7 +349,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
       inBoxSelection,
       outBoxCandidates,
       currentHeight,
-      wasm.BoxValue.from_i64(wasm.I64.from_str(this.configs.fee.toString())),
+      wasm.BoxValue.from_i64(wasm.I64.from_str(fee.toString())),
       wasm.Address.from_base58(this.configs.addresses.lock)
     );
     txCandidate.set_data_inputs(inData);
@@ -404,8 +431,18 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
     }
 
     return {
-      inputAssets,
-      outputAssets,
+      inputAssets: ChainUtils.wrapAssetBalance(
+        inputAssets,
+        this.tokenMap,
+        this.NATIVE_TOKEN_ID,
+        this.CHAIN
+      ),
+      outputAssets: ChainUtils.wrapAssetBalance(
+        outputAssets,
+        this.tokenMap,
+        this.NATIVE_TOKEN_ID,
+        this.CHAIN
+      ),
     };
   };
 
@@ -436,13 +473,19 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
       if (addBox === false) continue;
 
       const assets = ErgoUtils.getBoxAssets(output);
+      const wrappedAssets = ChainUtils.wrapAssetBalance(
+        assets,
+        this.tokenMap,
+        this.NATIVE_TOKEN_ID,
+        this.CHAIN
+      );
       const r4Value = output.register_value(4)?.to_byte_array();
 
       const payment: SinglePayment = {
         address: wasm.Address.recreate_from_ergo_tree(
           output.ergo_tree()
         ).to_base58(wasm.NetworkPrefix.Mainnet),
-        assets: assets,
+        assets: wrappedAssets,
       };
       if (r4Value !== undefined)
         payment.extra = Buffer.from(r4Value).toString('hex');
@@ -684,7 +727,11 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
    * @returns the minimum amount
    */
   getMinimumNativeToken = (): bigint => {
-    return this.configs.minBoxValue;
+    return this.tokenMap.wrapAmount(
+      this.NATIVE_TOKEN_ID,
+      this.configs.minBoxValue,
+      this.CHAIN
+    ).amount;
   };
 
   /**
@@ -710,6 +757,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
 
   /**
    * extracts box id and assets of a box
+   * Note: it returns the actual value
    * @param box the box
    * @returns an object containing the box id and assets
    */
@@ -772,7 +820,12 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
         `failed to read amount of RWT from box [${boxId}]: Box has no token`
       );
     }
-    return BigInt(box.tokens().get(0).amount().as_i64().to_str());
+    const token = box.tokens().get(0);
+    return this.tokenMap.wrapAmount(
+      token.id().to_str(),
+      BigInt(token.amount().as_i64().to_str()),
+      this.CHAIN
+    ).amount;
   };
 
   /**
@@ -787,7 +840,14 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
     );
 
     // get box info
-    return this.getBoxInfo(box);
+    const info = this.getBoxInfo(box);
+    info.assets = ChainUtils.wrapAssetBalance(
+      info.assets,
+      this.tokenMap,
+      this.NATIVE_TOKEN_ID,
+      this.CHAIN
+    );
+    return info;
   };
 
   /**
