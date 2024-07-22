@@ -291,6 +291,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
 
   /**
    * extracts box id and assets of a box
+   * Note: it returns the actual value
    * @param box the box
    * @returns an object containing the box id and assets
    */
