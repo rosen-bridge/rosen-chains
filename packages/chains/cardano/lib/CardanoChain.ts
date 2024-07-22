@@ -174,12 +174,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
     }
     const bankBoxes = coveredBoxes.boxes;
     // calculate input boxes assets
-    let remainingAssets = ChainUtils.wrapAssetBalance(
-      CardanoUtils.calculateUtxoAssets(bankBoxes),
-      this.tokenMap,
-      this.NATIVE_TOKEN_ID,
-      this.CHAIN
-    );
+    let remainingAssets = CardanoUtils.calculateUtxoAssets(bankBoxes);
     this.logger.debug(`Input assets: ${JsonBigInt.stringify(remainingAssets)}`);
 
     const txBuilder = CardanoWasm.TransactionBuilder.new(
@@ -205,7 +200,12 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
       // reduce order value from remaining assets
       remainingAssets = ChainUtils.subtractAssetBalance(
         remainingAssets,
-        order.assets
+        ChainUtils.unwrapAssetBalance(
+          order.assets,
+          this.tokenMap,
+          this.NATIVE_TOKEN_ID,
+          this.CHAIN
+        )
       );
 
       // create order output
@@ -252,18 +252,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
     );
 
     // create change output
-    remainingAssets.nativeToken -= this.tokenMap.wrapAmount(
-      this.NATIVE_TOKEN_ID,
-      fee,
-      this.CHAIN
-    ).amount;
+    remainingAssets.nativeToken -= fee;
     const changeBox = CardanoUtils.createTransactionOutput(
-      ChainUtils.unwrapAssetBalance(
-        remainingAssets,
-        this.tokenMap,
-        this.NATIVE_TOKEN_ID,
-        this.CHAIN
-      ),
+      remainingAssets,
       this.configs.addresses.lock
     );
     txBuilder.add_output(changeBox);
