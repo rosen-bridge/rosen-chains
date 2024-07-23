@@ -597,7 +597,7 @@ describe('ChainUtils', () => {
 
   describe('wrapAssetBalance', () => {
     /**
-     * @target ChainUtils.wrapAssetBalance should unwrap all values successfully
+     * @target ChainUtils.wrapAssetBalance should wrap all values successfully
      * @dependencies
      * @scenario
      * - generate tokenMap object with multi decimals
@@ -606,7 +606,7 @@ describe('ChainUtils', () => {
      * @expected
      * - it should return the expected wrapped values
      */
-    it('should unwrap all values successfully', () => {
+    it('should wrap all values successfully', () => {
       // mock an AssetBalance
       const tokenMap = new TokenMap(testTokenMap);
 
@@ -632,7 +632,7 @@ describe('ChainUtils', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return the expected wrapped values
+     * - it should return the expected unwrapped values
      */
     it('should unwrap all values successfully', () => {
       // mock an AssetBalance
