@@ -94,3 +94,16 @@ export const generateChainObject = (
     signFn
   );
 };
+
+export const generateChainObjectWithMultiDecimalTokenMap = (
+  network: TestEvmNetwork,
+  signFn: TssSignFunction = mockedSignFn
+) => {
+  return new TestChain(
+    network,
+    configs,
+    testData.multiDecimalTokenMap,
+    testData.supportedTokens,
+    signFn
+  );
+};

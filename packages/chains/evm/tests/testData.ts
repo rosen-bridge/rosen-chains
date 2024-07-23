@@ -24,6 +24,16 @@ export const nativePaymentOrder: PaymentOrder = [
   },
 ];
 
+export const nativePaymentWrappedOrder: PaymentOrder = [
+  {
+    address: '0x6a6a84990fe4d261c6c7c701ea2ce64c0c32b1c7',
+    assets: {
+      nativeToken: 10n,
+      tokens: [],
+    },
+  },
+];
+
 export const testLockAddress = '0x4606d11ff65b17d29e8c5e4085f9a868a8e5e4f2';
 
 export const transaction0PaymentTransaction = new PaymentTransaction(
@@ -275,6 +285,16 @@ export const transaction1Assets: AssetBalance = {
   ],
 };
 
+export const transaction1WrappedAssets: AssetBalance = {
+  nativeToken: BigInt(210) * BigInt(48978500000),
+  tokens: [
+    {
+      id: '0xedee4752e5a2f595151c94762fb38e5730357785',
+      value: BigInt(3810110000),
+    },
+  ],
+};
+
 export const paralelTransactions = [
   Transaction.from({
     type: 2,
@@ -462,4 +482,47 @@ export const transaction2TxId =
 export const testTokenMap: RosenTokens = {
   idKeys: {},
   tokens: [],
+};
+
+export const multiDecimalTokenMap: RosenTokens = {
+  idKeys: {
+    ergo: 'tokenId',
+    cardano: 'tokenId',
+    test: 'tokenId',
+  },
+  tokens: [
+    {
+      ergo: {
+        tokenId:
+          '1c7435e608ab710c56bbe0f635e2a5e86ddf856f7d3d2d1d4dfefa62fbbfb9b4',
+        name: 'testETHER',
+        decimals: 1,
+        metaData: {
+          type: 'EIP-004',
+          residency: 'wrapped',
+        },
+      },
+      cardano: {
+        tokenId:
+          '6d7cc9577a04be165cc4f2cf36f580dbeaf88f68e78f790805430940.727345544845522d6c6f656e',
+        policyId: '6d7cc9577a04be165cc4f2cf36f580dbeaf88f68e78f790805430940',
+        assetName: '727345544845522d6c6f656e',
+        name: 'rsETHER-loen',
+        decimals: 1,
+        metaData: {
+          type: 'CIP26',
+          residency: 'wrapped',
+        },
+      },
+      test: {
+        tokenId: 'test-native-token',
+        name: 'ETHER',
+        decimals: 3,
+        metaData: {
+          type: 'native',
+          residency: 'native',
+        },
+      },
+    },
+  ],
 };
