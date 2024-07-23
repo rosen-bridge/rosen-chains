@@ -1,5 +1,6 @@
 import { AssetBalance, TokenInfo } from './types';
 import { ValueError } from './errors';
+import { TokenMap } from '@rosen-bridge/tokens';
 
 class ChainUtils {
   /**
@@ -101,6 +102,62 @@ class ChainUtils {
       nativeToken,
       tokens,
     };
+  };
+
+  /**
+   * wraps amount of the native token and all tokens in AssetBalance
+   * @param a the AssetBalance object
+   * @param tokenMap
+   * @param nativeTokenId
+   * @param chain
+   */
+  static wrapAssetBalance = (
+    a: AssetBalance,
+    tokenMap: TokenMap,
+    nativeTokenId: string,
+    chain: string
+  ): AssetBalance => {
+    const result = structuredClone(a);
+    result.nativeToken = tokenMap.wrapAmount(
+      nativeTokenId,
+      result.nativeToken,
+      chain
+    ).amount;
+    result.tokens.forEach(
+      (token) =>
+        (token.value = tokenMap.wrapAmount(token.id, token.value, chain).amount)
+    );
+    return result;
+  };
+
+  /**
+   * unwraps amount of the native token and all tokens in AssetBalance
+   * @param a the AssetBalance object
+   * @param tokenMap
+   * @param nativeTokenId
+   * @param chain
+   */
+  static unwrapAssetBalance = (
+    a: AssetBalance,
+    tokenMap: TokenMap,
+    nativeTokenId: string,
+    chain: string
+  ): AssetBalance => {
+    const result = structuredClone(a);
+    result.nativeToken = tokenMap.unwrapAmount(
+      nativeTokenId,
+      result.nativeToken,
+      chain
+    ).amount;
+    result.tokens.forEach(
+      (token) =>
+        (token.value = tokenMap.unwrapAmount(
+          token.id,
+          token.value,
+          chain
+        ).amount)
+    );
+    return result;
   };
 }
 

@@ -22,6 +22,7 @@ abstract class AbstractUtxoChain<
 
   /**
    * extracts box id and assets of a box
+   * Note: it returns the actual value
    * @param box the box
    * @returns an object containing the box id and assets
    */
@@ -29,13 +30,14 @@ abstract class AbstractUtxoChain<
 
   /**
    * gets useful, allowable and last boxes for an address until required assets are satisfied
+   * Note: it returns the actual value
    * @param address the address
    * @param requiredAssets the required assets
    * @param forbiddenBoxIds the id of forbidden boxes
    * @param trackMap the mapping of a box id to it's next box
    * @returns an object containing the selected boxes with a boolean showing if requirements covered or not
    */
-  getCoveringBoxes = async (
+  protected getCoveringBoxes = async (
     address: string,
     requiredAssets: AssetBalance,
     forbiddenBoxIds: Array<string>,

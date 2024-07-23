@@ -31,7 +31,7 @@ import { estimateTxFee, getPsbtTxInputBoxId } from './bitcoinUtils';
 import { BITCOIN_CHAIN, BTC, SEGWIT_INPUT_WEIGHT_UNIT } from './constants';
 import { selectBitcoinUtxos } from '@rosen-bridge/bitcoin-utxo-selection';
 import { BitcoinRosenExtractor } from '@rosen-bridge/rosen-extractor';
-import { RosenTokens } from '@rosen-bridge/tokens';
+import { RosenAmount, RosenTokens } from '@rosen-bridge/tokens';
 
 class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
   declare network: AbstractBitcoinNetwork;
@@ -87,10 +87,13 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
     const feeRatio = await this.network.getFeeRatio();
 
     // calculate required assets
+    const minUtxoValue = this.wrapBtc(
+      this.minimumMeaningfulSatoshi(feeRatio)
+    ).amount;
     const requiredAssets = order
       .map((order) => order.assets)
       .reduce(ChainUtils.sumAssetBalance, {
-        nativeToken: this.minimumMeaningfulSatoshi(feeRatio),
+        nativeToken: minUtxoValue,
         tokens: [],
       });
     this.logger.debug(
@@ -98,9 +101,9 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
     );
 
     if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
-      const neededBtc = requiredAssets.nativeToken.toString();
+      const neededBtc = this.unwrapBtc(requiredAssets.nativeToken);
       throw new NotEnoughAssetsError(
-        `Locked assets cannot cover required assets. BTC: ${neededBtc}`
+        `Locked assets cannot cover required assets. BTC: ${neededBtc.amount.toString()}`
       );
     }
 
@@ -120,16 +123,22 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
     );
 
     // fetch input boxes
+    const unwrappedRequiredAssets = ChainUtils.unwrapAssetBalance(
+      requiredAssets,
+      this.tokenMap,
+      this.NATIVE_TOKEN_ID,
+      this.CHAIN
+    );
     const coveredBoxes = await this.getCoveringBoxes(
       this.configs.addresses.lock,
-      requiredAssets,
+      unwrappedRequiredAssets,
       forbiddenBoxIds,
       trackMap
     );
     if (!coveredBoxes.covered) {
-      const neededBtc = requiredAssets.nativeToken.toString();
+      const neededBtc = unwrappedRequiredAssets.nativeToken;
       throw new NotEnoughValidBoxesError(
-        `Available boxes didn't cover required assets. BTC: ${neededBtc}`
+        `Available boxes didn't cover required assets. BTC: ${neededBtc.toString()}`
       );
     }
 
@@ -160,14 +169,15 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
       if (order.address.slice(0, 4) !== 'bc1q') {
         throw Error('Bitcoin does not support payment to non-segwit addresses');
       }
+      const orderBtc = this.unwrapBtc(order.assets.nativeToken).amount;
 
       // reduce order value from remaining assets
-      remainingBtc -= order.assets.nativeToken;
+      remainingBtc -= orderBtc;
 
       // create order output
       psbt.addOutput({
         script: address.toOutputScript(order.address),
-        value: Number(order.assets.nativeToken),
+        value: Number(orderBtc),
       });
     });
 
@@ -221,13 +231,14 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
     }
 
     // no need to calculate outBtc, because: inBtc = outBtc + fee
+    const wrappedValue = this.wrapBtc(txBtc).amount;
     return {
       inputAssets: {
-        nativeToken: txBtc,
+        nativeToken: wrappedValue,
         tokens: [],
       },
       outputAssets: {
-        nativeToken: txBtc,
+        nativeToken: wrappedValue,
         tokens: [],
       },
     };
@@ -255,7 +266,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
       const payment: SinglePayment = {
         address: address.fromOutputScript(output.script),
         assets: {
-          nativeToken: BigInt(output.value),
+          nativeToken: this.wrapBtc(BigInt(output.value)).amount,
           tokens: [],
         },
       };
@@ -530,10 +541,11 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
 
   /**
    * extracts box id and assets of a box
+   * Note: it returns the actual value
    * @param box the box
    * @returns an object containing the box id and assets
    */
-  getBoxInfo = (box: BitcoinUtxo): BoxInfo => {
+  protected getBoxInfo = (box: BitcoinUtxo): BoxInfo => {
     return {
       id: this.getBoxId(box),
       assets: {
@@ -619,6 +631,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
   /**
    * gets the minimum amount of satoshi for a utxo that can cover
    * additional fee for adding it to a tx
+   * Note: it returns the actual value
    * @returns the minimum amount
    */
   minimumMeaningfulSatoshi = (feeRatio: number): bigint => {
@@ -631,13 +644,14 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
 
   /**
    * gets useful, allowable and last boxes for an address until required assets are satisfied
+   * Note: it returns the actual value
    * @param address the address
-   * @param requiredAssets the required assets
+   * @param requiredAssets the required assets (actual values)
    * @param forbiddenBoxIds the id of forbidden boxes
    * @param trackMap the mapping of a box id to it's next box
    * @returns an object containing the selected boxes with a boolean showing if requirements covered or not
    */
-  getCoveringBoxes = async (
+  protected getCoveringBoxes = async (
     address: string,
     requiredAssets: AssetBalance,
     forbiddenBoxIds: Array<string>,
@@ -679,6 +693,20 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
    * serializes the transaction of this chain into string
    */
   protected serializeTx = (tx: BitcoinTx): string => JsonBigInt.stringify(tx);
+
+  /**
+   * wraps btc amount
+   * @param amount
+   */
+  protected wrapBtc = (amount: bigint): RosenAmount =>
+    this.tokenMap.wrapAmount(this.NATIVE_TOKEN_ID, amount, this.CHAIN);
+
+  /**
+   * unwraps btc amount
+   * @param amount
+   */
+  protected unwrapBtc = (amount: bigint): RosenAmount =>
+    this.tokenMap.unwrapAmount(this.NATIVE_TOKEN_ID, amount, this.CHAIN);
 }
 
 export default BitcoinChain;

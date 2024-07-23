@@ -51,7 +51,7 @@ describe('CardanoChain', () => {
 
       // mock getCoveringBoxes, hasLockAddressEnoughAssets
       const cardanoChain = TestUtils.generateChainObject(network);
-      const getCovBoxesSpy = spyOn(cardanoChain, 'getCoveringBoxes');
+      const getCovBoxesSpy = spyOn(cardanoChain as any, 'getCoveringBoxes');
       getCovBoxesSpy.mockResolvedValue({
         covered: true,
         boxes: bankBoxes,
@@ -133,7 +133,7 @@ describe('CardanoChain', () => {
 
       // mock getCoveringBoxes, hasLockAddressEnoughAssets
       const cardanoChain = TestUtils.generateChainObject(network);
-      const getCovBoxesSpy = spyOn(cardanoChain, 'getCoveringBoxes');
+      const getCovBoxesSpy = spyOn(cardanoChain as any, 'getCoveringBoxes');
       getCovBoxesSpy.mockResolvedValue({
         covered: true,
         boxes: bankBoxes.slice(2),
@@ -223,7 +223,7 @@ describe('CardanoChain', () => {
     it('should throw error when bank boxes can not cover order assets', async () => {
       // mock getCoveringBoxes, hasLockAddressEnoughAssets
       const cardanoChain = TestUtils.generateChainObject(network);
-      const getCovBoxesSpy = spyOn(cardanoChain, 'getCoveringBoxes');
+      const getCovBoxesSpy = spyOn(cardanoChain as any, 'getCoveringBoxes');
       getCovBoxesSpy.mockResolvedValue({
         covered: false,
         boxes: bankBoxes,
@@ -290,7 +290,7 @@ describe('CardanoChain', () => {
      * @expected
      * - it should return constructed BoxInfo
      */
-    it('should get box info successfully', async () => {
+    it('should get box info successfully', () => {
       // mock a CardanoBox with assets
       const rawBox = bankBoxes[0];
 
@@ -298,7 +298,7 @@ describe('CardanoChain', () => {
       const cardanoChain = TestUtils.generateChainObject(network);
 
       // check returned value
-      const result = await cardanoChain.getBoxInfo(rawBox);
+      const result = (cardanoChain as any).getBoxInfo(rawBox);
       expect(result.id).toEqual(rawBox.txId + '.' + rawBox.index);
       expect(result.assets.nativeToken.toString()).toEqual(
         rawBox.value.toString()

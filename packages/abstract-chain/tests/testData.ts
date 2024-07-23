@@ -82,7 +82,7 @@ export const testTokenMap: RosenTokens = {
       'test-utxo': {
         tokenId: 'wrapped-native-token',
         name: 'wrapped-test-native-token',
-        decimals: 2,
+        decimals: 1,
         metaData: {
           type: 'ANY',
           residency: 'wrapped',
@@ -149,6 +149,26 @@ export const testTokenMap: RosenTokens = {
         },
       },
     },
+    {
+      test: {
+        tokenId: 'fixed-decimal-token',
+        name: 'fixed-decimal-token',
+        decimals: 4,
+        metaData: {
+          type: 'ANY',
+          residency: 'native',
+        },
+      },
+      'test-utxo': {
+        tokenId: 'wrapped-fixed-decimal-token',
+        name: 'wrapped-fixed-decimal-token',
+        decimals: 4,
+        metaData: {
+          type: 'ANY',
+          residency: 'wrapped',
+        },
+      },
+    },
   ],
 };
 
@@ -163,18 +183,43 @@ export const actualBalance: AssetBalance = {
       id: 'wrapped-multi-decimal-token2',
       value: 556600n,
     },
+    {
+      id: 'fixed-decimal-token',
+      value: 123n,
+    },
   ],
 };
 export const wrappedBalance: AssetBalance = {
+  nativeToken: 1000n,
+  tokens: [
+    {
+      id: 'multi-decimal-token1',
+      value: 45n,
+    },
+    {
+      id: 'wrapped-multi-decimal-token2',
+      value: 56n,
+    },
+    {
+      id: 'fixed-decimal-token',
+      value: 123n,
+    },
+  ],
+};
+export const unwrappedBalance: AssetBalance = {
   nativeToken: 10000n,
   tokens: [
     {
       id: 'multi-decimal-token1',
-      value: 44n,
+      value: 45000n,
     },
     {
       id: 'wrapped-multi-decimal-token2',
-      value: 55n,
+      value: 560000n,
+    },
+    {
+      id: 'fixed-decimal-token',
+      value: 123n,
     },
   ],
 };

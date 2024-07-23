@@ -1,4 +1,11 @@
+import { TokenMap } from '@rosen-bridge/tokens';
 import { AssetBalance, ChainUtils, ValueError } from '../lib';
+import {
+  actualBalance,
+  testTokenMap,
+  unwrappedBalance,
+  wrappedBalance,
+} from './testData';
 
 describe('ChainUtils', () => {
   describe('isEqualAssetBalance', () => {
@@ -585,6 +592,62 @@ describe('ChainUtils', () => {
           },
         ],
       });
+    });
+  });
+
+  describe('wrapAssetBalance', () => {
+    /**
+     * @target ChainUtils.wrapAssetBalance should wrap all values successfully
+     * @dependencies
+     * @scenario
+     * - generate tokenMap object with multi decimals
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the expected wrapped values
+     */
+    it('should wrap all values successfully', () => {
+      // mock an AssetBalance
+      const tokenMap = new TokenMap(testTokenMap);
+
+      // run test
+      const result = ChainUtils.wrapAssetBalance(
+        actualBalance,
+        tokenMap,
+        'test-native-token',
+        'test'
+      );
+
+      // check returned value
+      expect(result).toEqual(wrappedBalance);
+    });
+  });
+
+  describe('unwrapAssetBalance', () => {
+    /**
+     * @target ChainUtils.unwrapAssetBalance should unwrap all values successfully
+     * @dependencies
+     * @scenario
+     * - generate tokenMap object with multi decimals
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return the expected unwrapped values
+     */
+    it('should unwrap all values successfully', () => {
+      // mock an AssetBalance
+      const tokenMap = new TokenMap(testTokenMap);
+
+      // run test
+      const result = ChainUtils.unwrapAssetBalance(
+        wrappedBalance,
+        tokenMap,
+        'test-native-token',
+        'test'
+      );
+
+      // check returned value
+      expect(result).toEqual(unwrappedBalance);
     });
   });
 });

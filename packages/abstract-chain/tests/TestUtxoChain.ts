@@ -1,4 +1,4 @@
-import { AbstractUtxoChain, BoxInfo } from '../lib';
+import { AbstractUtxoChain, AssetBalance, BoxInfo } from '../lib';
 import TestRosenDataExtractor from './extractor/TestRosenDataExtractor';
 
 class TestUtxoChain extends AbstractUtxoChain<string, string> {
@@ -31,6 +31,13 @@ class TestUtxoChain extends AbstractUtxoChain<string, string> {
   };
 
   serializeTx = (tx: string) => tx;
+  callGetCoveringBoxes = async (
+    address: string,
+    requiredAssets: AssetBalance,
+    forbiddenBoxIds: Array<string>,
+    trackMap: Map<string, string | undefined>
+  ) =>
+    this.getCoveringBoxes(address, requiredAssets, forbiddenBoxIds, trackMap);
 }
 
 export default TestUtxoChain;

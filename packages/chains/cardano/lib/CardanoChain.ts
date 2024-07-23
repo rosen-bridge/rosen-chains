@@ -265,7 +265,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
    * @param box the box
    * @returns an object containing the box id and assets
    */
-  getBoxInfo = (box: CardanoUtxo): BoxInfo => {
+  protected getBoxInfo = (box: CardanoUtxo): BoxInfo => {
     return {
       id: CardanoUtils.getBoxId(box),
       assets: {

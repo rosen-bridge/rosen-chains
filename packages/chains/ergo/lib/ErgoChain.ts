@@ -713,7 +713,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
    * @param box the box
    * @returns an object containing the box id and assets
    */
-  getBoxInfo = (box: wasm.ErgoBox): BoxInfo => {
+  protected getBoxInfo = (box: wasm.ErgoBox): BoxInfo => {
     return {
       id: box.box_id().to_str(),
       assets: ErgoUtils.getBoxAssets(box),
