@@ -40,6 +40,6 @@
     "ethers": "^6.11.1"
   },
   "peerDependencies": {
-    "@rosen-chains/abstract-chain": "^7.0.2"
+    "@rosen-chains/abstract-chain": "^8.0.0"
   }
 }

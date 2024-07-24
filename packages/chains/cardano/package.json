@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/cardano",
-  "version": "7.0.2",
+  "version": "8.0.0",
   "description": "this project contains cardano chain for Rosen-bridge",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
@@ -44,7 +44,7 @@
     "typescript": "^4.9.5"
   },
   "peerDependencies": {
-    "@rosen-chains/abstract-chain": "^7.0.2"
+    "@rosen-chains/abstract-chain": "^8.0.0"
   },
   "directories": {
     "lib": "lib",

@@ -1,5 +1,19 @@
 # @rosen-chains/bitcoin
 
+## 4.0.0
+
+### Major Changes
+
+- consider decimals drop
+- change `getBoxInfo` and `getCoveringBoxes` functions to protected
+
+### Patch Changes
+
+- export bitcoin native token id var
+- add NATIVE_TOKEN_ID variable to BitcoinChain
+- Updated dependencies
+  - @rosen-chains/abstract-chain@8.0.0
+
 ## 3.0.1
 
 ### Patch Changes
