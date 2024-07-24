@@ -1,5 +1,17 @@
 # @rosen-chains/cardano
 
+## 8.0.0
+
+### Major Changes
+
+- consider decimals drop
+- change `getBoxInfo` and `getCoveringBoxes` functions to protected
+
+### Patch Changes
+
+- Updated dependencies
+  - @rosen-chains/abstract-chain@8.0.0
+
 ## 7.0.2
 
 ### Patch Changes

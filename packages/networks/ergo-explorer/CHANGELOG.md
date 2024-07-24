@@ -1,5 +1,13 @@
 # @rosen-chains/ergo-explorer-network
 
+## 8.0.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @rosen-chains/abstract-chain@8.0.0
+  - @rosen-chains/ergo@8.0.0
+
 ## 7.0.1
 
 ### Patch Changes
