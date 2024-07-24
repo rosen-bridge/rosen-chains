@@ -10,6 +10,7 @@
 ### Patch Changes
 
 - export bitcoin native token id var
+- add NATIVE_TOKEN_ID variable to BitcoinChain
 - Updated dependencies
   - @rosen-chains/abstract-chain@8.0.0
 

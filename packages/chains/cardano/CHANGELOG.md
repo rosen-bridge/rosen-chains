@@ -9,6 +9,7 @@
 
 ### Patch Changes
 
+- add NATIVE_TOKEN_ID variable to CardanoChain
 - Updated dependencies
   - @rosen-chains/abstract-chain@8.0.0
 
