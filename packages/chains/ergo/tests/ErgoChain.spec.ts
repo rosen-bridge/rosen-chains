@@ -2235,6 +2235,58 @@ describe('ErgoChain', () => {
       // check returned value
       expect(result).toEqual(expectedOrder);
     });
+
+    /**
+     * @target ErgoChain.extractSignedTransactionOrder should wrap transaction
+     * order successfully
+     * @dependencies
+     * @scenario
+     * - mock serialized transaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction order
+     */
+    it('should wrap transaction order successfully', () => {
+      // mock serialized transaction
+      const serializedTx = Buffer.from(
+        ergoTestUtils
+          .toTransaction(transactionTestData.transaction6)
+          .sigma_serialize_bytes()
+      ).toString('hex');
+
+      const expectedOrder = transactionTestData.transaction6WrappedOrder;
+      const config: ErgoConfigs = {
+        fee: 1100000n,
+        confirmations: {
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
+        },
+        addresses: {
+          lock: transactionTestData.transaction6InAddress,
+          cold: 'cold_addr',
+          permit: 'permit_addr',
+          fraud: 'fraud',
+        },
+        rwtId: ergoTestUtils.rwtId,
+        minBoxValue: 1000000n,
+        eventTxConfirmation: 18,
+      };
+
+      // run test
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        ergoTestUtils.multiDecimalTokenMap,
+        ergoTestUtils.defaultSignFunction
+      );
+      const result = ergoChain.extractSignedTransactionOrder(serializedTx);
+
+      // check returned value
+      expect(result).toEqual(expectedOrder);
+    });
   });
 
   describe('rawTxToPaymentTransaction', () => {

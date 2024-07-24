@@ -1032,13 +1032,19 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
       if (addBox === false) continue;
 
       const assets = ErgoUtils.getBoxAssets(output);
+      const wrappedAssets = ChainUtils.wrapAssetBalance(
+        assets,
+        this.tokenMap,
+        this.NATIVE_TOKEN_ID,
+        this.CHAIN
+      );
       const r4Value = output.register_value(4)?.to_byte_array();
 
       const payment: SinglePayment = {
         address: wasm.Address.recreate_from_ergo_tree(
           output.ergo_tree()
         ).to_base58(wasm.NetworkPrefix.Mainnet),
-        assets: assets,
+        assets: wrappedAssets,
       };
       if (r4Value !== undefined)
         payment.extra = Buffer.from(r4Value).toString('hex');
