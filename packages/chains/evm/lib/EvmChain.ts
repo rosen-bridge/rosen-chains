@@ -185,18 +185,14 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
     // check the balance in the lock address
     const requiredAssets: AssetBalance = orders.reduce(
-      (sum: AssetBalance, order: SinglePayment) => {
-        const wrappedBalance = ChainUtils.sumAssetBalance(sum, order.assets);
-        // TODO: is it okay to do this? other chains use wrapped value in requiredAssets
-        return ChainUtils.unwrapAssetBalance(
-          wrappedBalance,
-          this.tokenMap,
-          this.NATIVE_TOKEN_ID,
-          this.CHAIN
-        );
-      },
+      (sum: AssetBalance, order: SinglePayment) =>
+        ChainUtils.sumAssetBalance(sum, order.assets),
       {
-        nativeToken: totalGas * gasPrice,
+        nativeToken: this.tokenMap.wrapAmount(
+          this.NATIVE_TOKEN_ID,
+          totalGas * gasPrice,
+          this.CHAIN
+        ).amount,
         tokens: [],
       }
     );
