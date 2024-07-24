@@ -603,6 +603,203 @@ describe('ErgoChain', () => {
         );
       }).rejects.toThrow(NotEnoughValidBoxesError);
     });
+
+    /**
+     * @target ErgoChain.generateTransaction should generate payment
+     * transaction with wrapped order successfully
+     * @dependencies
+     * @scenario
+     * - mock transaction order, input and data input boxes
+     * - mock an AssetBalance as lock address assets with enough assets
+     * - mock a network object
+     *   - mock 'getHeight'
+     *   - mock 'getStateContext'
+     *   - mock 'getAddressAssets' to return mocked assets
+     *   - mock 'getMempoolTransactions' to return empty list
+     * - mock chain config
+     * - mock getCoveringBoxes
+     * - mock getMempoolBoxMapping
+     * - run test
+     * - check attributes of returned value
+     * @expected
+     * - PaymentTransaction inputs, dataInputs, eventId and txType should be as
+     *   expected
+     * - extracted order of generated transaction should be the same as input
+     *   order
+     * - transaction fee should be the same as config fee
+     * - two change boxes should be as expected
+     */
+    it('should generate payment transaction with wrapped order successfully', async () => {
+      // mock transaction order, input and data input boxes
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction3PaymentTransaction
+      );
+      const order = transactionTestData.transaction3WrappedOrder;
+      const inputs = [Buffer.from(paymentTx.inputBoxes[0]).toString('hex')];
+      const dataInputs = paymentTx.dataInputs.map((serializedBox) =>
+        Buffer.from(serializedBox).toString('hex')
+      );
+
+      // mock an AssetBalance as lock address assets with enough assets
+      const mockedLockAssets = {
+        nativeToken: 50000000n,
+        tokens: [
+          {
+            id: '10278c102bf890fdab8ef5111e94053c90b3541bc25b0de2ee8aa6305ccec3de',
+            value: 5000n,
+          },
+          {
+            id: ergoTestUtils.generateRandomId(),
+            value: 100000n,
+          },
+        ],
+      };
+
+      // mock a network object
+      const network = new TestErgoNetwork();
+      // mock 'getHeight'
+      const getHeightSpy = spyOn(network, 'getHeight');
+      getHeightSpy.mockResolvedValue(966000);
+      // mock 'getStateContext'
+      const getStateContextSpy = spyOn(network, 'getStateContext');
+      getStateContextSpy.mockResolvedValue(
+        transactionTestData.mockedStateContext
+      );
+      // mock 'getAddressAssets' to return mocked assets
+      const getAddressAssetsSpy = spyOn(network, 'getAddressAssets');
+      getAddressAssetsSpy.mockResolvedValue(mockedLockAssets);
+      // mock 'getMempoolTransactions'
+      const getMempoolTransactionsSpy = spyOn(
+        network,
+        'getMempoolTransactions'
+      );
+      getMempoolTransactionsSpy.mockResolvedValue([]);
+
+      // mock chain config
+      const config: ErgoConfigs = {
+        fee: 1100000n,
+        confirmations: {
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
+        },
+        addresses: {
+          lock: 'nB3L2PD3LG4ydEj62n9aymRyPCEbkBdzaubgvCWDH2oxHxFBfAUy9GhWDvteDbbUh5qhXxnW8R46qmEiZfkej8gt4kZYvbeobZJADMrWXwFJTsZ17euEcoAp3KDk31Q26okFpgK9SKdi4',
+          cold: 'cold_addr',
+          permit: 'permit_addr',
+          fraud: 'fraud_addr',
+        },
+        rwtId: ergoTestUtils.rwtId,
+        minBoxValue: 300000n,
+        eventTxConfirmation: 18,
+      };
+
+      // mock getCoveringBoxes
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        ergoTestUtils.multiDecimalTokenMap,
+        ergoTestUtils.defaultSignFunction
+      );
+      const getCoveringBoxesSpy = spyOn(ergoChain as any, 'getCoveringBoxes');
+      getCoveringBoxesSpy.mockResolvedValue({
+        covered: true,
+        boxes: paymentTx.inputBoxes
+          .slice(1)
+          .map((serializedBox) =>
+            wasm.ErgoBox.sigma_parse_bytes(serializedBox)
+          ),
+      });
+
+      // mock getMempoolBoxMapping (the box itself doesn't matter)
+      const mempoolTrackMap = new Map<string, wasm.ErgoBox | undefined>();
+      mempoolTrackMap.set(
+        'boxId',
+        ergoTestUtils.toErgoBox(boxTestData.ergoBox2)
+      );
+      const getMempoolBoxMappingSpy = spyOn(ergoChain, 'getMempoolBoxMapping');
+      getMempoolBoxMappingSpy.mockResolvedValue(mempoolTrackMap);
+
+      // run test
+      const result = await ergoChain.generateTransaction(
+        paymentTx.eventId,
+        paymentTx.txType,
+        order,
+        [],
+        [],
+        inputs,
+        dataInputs
+      );
+
+      // check returned value
+      //  PaymentTransaction inputs, dataInputs, eventId and txType should be as expected
+      const ergoTx = result as ErgoTransaction;
+      expect(ergoTx.inputBoxes).toEqual(paymentTx.inputBoxes);
+      expect(ergoTx.dataInputs).toEqual(paymentTx.dataInputs);
+      expect(ergoTx.eventId).toEqual(paymentTx.eventId);
+      expect(ergoTx.txType).toEqual(paymentTx.txType);
+      //  extracted order of generated transaction should be the same as input order
+      const extractedOrder = ergoChain.extractTransactionOrder(result);
+      expect(extractedOrder).toEqual(order);
+      //  transaction fee should be the same as config fee
+      const tx = wasm.ReducedTransaction.sigma_parse_bytes(
+        result.txBytes
+      ).unsigned_tx();
+      let boxChecked = false;
+      for (let i = 0; i < tx.output_candidates().len(); i++) {
+        if (
+          tx.output_candidates().get(i).ergo_tree().to_base16_bytes() ===
+          ErgoChain.feeBoxErgoTree
+        ) {
+          expect(
+            BigInt(tx.output_candidates().get(i).value().as_i64().to_str())
+          ).toEqual(config.fee);
+          boxChecked = true;
+        }
+      }
+      expect(boxChecked).toEqual(true);
+      // two change boxes should be as expected
+      const outputsLength = tx.output_candidates().len();
+      const changeBox1 = tx.output_candidates().get(outputsLength - 3);
+      expect(changeBox1.value().as_i64().to_str()).toEqual(
+        transactionTestData.transaction3ChangeBox1Assets.nativeToken.toString()
+      );
+      const changeBox1Tokens = changeBox1.tokens();
+      expect(changeBox1Tokens.len()).toEqual(
+        transactionTestData.transaction3ChangeBox1Assets.tokens.length
+      );
+      for (let i = 0; i < changeBox1Tokens.len(); i++) {
+        const token = changeBox1Tokens.get(i);
+        expect(token.id().to_str()).toEqual(
+          transactionTestData.transaction3ChangeBox1Assets.tokens[i].id
+        );
+        expect(token.amount().as_i64().to_str()).toEqual(
+          transactionTestData.transaction3ChangeBox1Assets.tokens[
+            i
+          ].value.toString()
+        );
+      }
+      const changeBox2 = tx.output_candidates().get(outputsLength - 2);
+      expect(changeBox2.value().as_i64().to_str()).toEqual(
+        transactionTestData.transaction3ChangeBox2Assets.nativeToken.toString()
+      );
+      const changeBox2Tokens = changeBox2.tokens();
+      expect(changeBox2Tokens.len()).toEqual(
+        transactionTestData.transaction3ChangeBox2Assets.tokens.length
+      );
+      for (let i = 0; i < changeBox2Tokens.len(); i++) {
+        const token = changeBox2Tokens.get(i);
+        expect(token.id().to_str()).toEqual(
+          transactionTestData.transaction3ChangeBox2Assets.tokens[i].id
+        );
+        expect(token.amount().as_i64().to_str()).toEqual(
+          transactionTestData.transaction3ChangeBox2Assets.tokens[
+            i
+          ].value.toString()
+        );
+      }
+    });
   });
 
   describe('getTransactionAssets', () => {
@@ -628,6 +825,35 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = ergoTestUtils.generateChainObject(network);
+      const result = await ergoChain.getTransactionAssets(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(expectedAssets);
+    });
+
+    /**
+     * @target ErgoChain.getTransactionAssets should wrap transaction assets
+     * successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction assets
+     */
+    it('should wrap transaction assets successfully', async () => {
+      // mock PaymentTransaction
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction3PaymentTransaction
+      );
+      const expectedAssets = transactionTestData.transaction3WrappedAssets;
+
+      // run test
+      const ergoChain = ergoTestUtils.generateDefaultChainObjectWithTokenMap(
+        network,
+        ergoTestUtils.multiDecimalTokenMap
+      );
       const result = await ergoChain.getTransactionAssets(paymentTx);
 
       // check returned value
@@ -679,6 +905,55 @@ describe('ErgoChain', () => {
         network,
         config,
         ergoTestUtils.testTokenMap,
+        ergoTestUtils.defaultSignFunction
+      );
+      const result = ergoChain.extractTransactionOrder(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(expectedOrder);
+    });
+
+    /**
+     * @target ErgoChain.extractTransactionOrder should wrap transaction
+     * order successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction order
+     */
+    it('should wrap transaction order successfully', () => {
+      // mock PaymentTransaction
+      const paymentTx = ErgoTransaction.fromJson(
+        transactionTestData.transaction6PaymentTransaction
+      );
+      const expectedOrder = transactionTestData.transaction6WrappedOrder;
+      const config: ErgoConfigs = {
+        fee: 1100000n,
+        confirmations: {
+          observation: ergoTestUtils.observationTxConfirmation,
+          payment: ergoTestUtils.paymentTxConfirmation,
+          cold: ergoTestUtils.coldTxConfirmation,
+          manual: ergoTestUtils.manualTxConfirmation,
+        },
+        addresses: {
+          lock: transactionTestData.transaction6InAddress,
+          cold: 'cold_addr',
+          permit: 'permit_addr',
+          fraud: 'fraud',
+        },
+        rwtId: ergoTestUtils.rwtId,
+        minBoxValue: 1000000n,
+        eventTxConfirmation: 18,
+      };
+
+      // run test
+      const ergoChain = new ErgoChain(
+        network,
+        config,
+        ergoTestUtils.multiDecimalTokenMap,
         ergoTestUtils.defaultSignFunction
       );
       const result = ergoChain.extractTransactionOrder(paymentTx);
@@ -1533,6 +1808,33 @@ describe('ErgoChain', () => {
     });
 
     /**
+     * @target ErgoChain.getBoxRWT should wrap RWT amount successfully
+     * @dependencies
+     * @scenario
+     * - mock an ErgoBox with RWT and construct serialized box
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return RWT amount
+     */
+    it('should wrap RWT amount successfully', () => {
+      // mock an ErgoBox with RWT and construct serialized box
+      const serializedBox = Buffer.from(
+        ergoTestUtils.toErgoBox(boxTestData.eventBox1).sigma_serialize_bytes()
+      ).toString('hex');
+
+      // run test
+      const ergoChain = ergoTestUtils.generateDefaultChainObjectWithTokenMap(
+        network,
+        ergoTestUtils.wrappedRwtTokenMap
+      );
+      const result = ergoChain.getBoxRWT(serializedBox);
+
+      // check returned value
+      expect(result).toEqual(1n);
+    });
+
+    /**
      * @target ErgoChain.getBoxRWT should throw Error when box has no token
      * @dependencies
      * @scenario
@@ -1582,6 +1884,39 @@ describe('ErgoChain', () => {
 
       // run test
       const ergoChain = ergoTestUtils.generateChainObject(network);
+      const result = ergoChain.getSerializedBoxInfo(serializedBox);
+
+      // check returned value
+      expect(result).toEqual(boxInfo);
+    });
+
+    /**
+     * @target ErgoChain.getSerializedBoxInfo should wrap assets successfully
+     * @dependencies
+     * @scenario
+     * - mock an ErgoBox with assets
+     * - construct serialized box and BoxInfo
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return constructed BoxInfo
+     */
+    it('should wrap assets successfully', () => {
+      // mock an ErgoBox with assets
+      const box = ergoTestUtils.toErgoBox(boxTestData.ergoBox1);
+      const serializedBox = Buffer.from(box.sigma_serialize_bytes()).toString(
+        'hex'
+      );
+      const boxInfo: BoxInfo = {
+        id: box.box_id().to_str(),
+        assets: boxTestData.box1WrappedAssets,
+      };
+
+      // run test
+      const ergoChain = ergoTestUtils.generateDefaultChainObjectWithTokenMap(
+        network,
+        ergoTestUtils.multiDecimalTokenMap
+      );
       const result = ergoChain.getSerializedBoxInfo(serializedBox);
 
       // check returned value
