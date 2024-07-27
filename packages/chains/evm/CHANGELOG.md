@@ -1,5 +1,17 @@
 # @rosen-chains/evm
 
+## 1.0.0
+
+### Major Changes
+
+- consider decimals drop
+
+### Patch Changes
+
+- add NATIVE_TOKEN_ID variable to ErgoChain
+- Updated dependencies
+  - @rosen-chains/abstract-chain@8.0.0
+
 ## 0.1.3
 
 ### Patch Changes
