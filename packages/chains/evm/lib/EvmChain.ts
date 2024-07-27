@@ -127,6 +127,11 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     for (const singleOrder of orders) {
       let trx;
       if (singleOrder.assets.nativeToken !== 0n) {
+        const value = this.tokenMap.unwrapAmount(
+          this.NATIVE_TOKEN_ID,
+          singleOrder.assets.nativeToken,
+          this.CHAIN
+        ).amount;
         trx = Transaction.from({
           type: 2,
           to: singleOrder.address,
@@ -134,15 +139,20 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           maxPriorityFeePerGas: maxPriorityFeePerGas,
           maxFeePerGas: gasPrice,
           data: '0x' + eventId,
-          value: singleOrder.assets.nativeToken,
+          value: value,
           chainId: this.CHAIN_ID,
         });
       } else {
         const token = singleOrder.assets.tokens[0];
+        const tokenValue = this.tokenMap.unwrapAmount(
+          token.id,
+          token.value,
+          this.CHAIN
+        ).amount;
         const data = EvmUtils.encodeTransferCallData(
           token.id,
           singleOrder.address,
-          token.value
+          tokenValue
         );
 
         trx = Transaction.from({
@@ -175,11 +185,14 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
     // check the balance in the lock address
     const requiredAssets: AssetBalance = orders.reduce(
-      (sum: AssetBalance, order: SinglePayment) => {
-        return ChainUtils.sumAssetBalance(sum, order.assets);
-      },
+      (sum: AssetBalance, order: SinglePayment) =>
+        ChainUtils.sumAssetBalance(sum, order.assets),
       {
-        nativeToken: totalGas * gasPrice,
+        nativeToken: this.tokenMap.wrapAmount(
+          this.NATIVE_TOKEN_ID,
+          totalGas * gasPrice,
+          this.CHAIN
+        ).amount,
         tokens: [],
       }
     );
@@ -246,10 +259,16 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       });
     }
 
+    const wrappedAssets = ChainUtils.wrapAssetBalance(
+      assets,
+      this.tokenMap,
+      this.NATIVE_TOKEN_ID,
+      this.CHAIN
+    );
     // no need to calculate outputAssets separately, they are always equal in account-based
     return {
-      inputAssets: assets,
-      outputAssets: structuredClone(assets),
+      inputAssets: wrappedAssets,
+      outputAssets: structuredClone(wrappedAssets),
     };
   };
 
@@ -306,7 +325,15 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         }
       }
     }
-    return payment;
+    return payment.map((singleOrder) => {
+      singleOrder.assets = ChainUtils.wrapAssetBalance(
+        singleOrder.assets,
+        this.tokenMap,
+        this.NATIVE_TOKEN_ID,
+        this.CHAIN
+      );
+      return singleOrder;
+    });
   };
 
   /**
@@ -480,7 +507,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
    * checks the following conditions before:
    * - transaction must of of type 2
    * - fees are set appropriately according to the current network's condition
-   * - lock address stil have enough funds
+   * - lock address still have enough funds
    * @param transaction the transaction
    */
   submitTransaction = async (
@@ -723,10 +750,16 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         };
       })
     );
-    return {
-      nativeToken: nativeTokenBalance,
-      tokens: tokens,
-    };
+    const wrappedAssets = ChainUtils.wrapAssetBalance(
+      {
+        nativeToken: nativeTokenBalance,
+        tokens: tokens,
+      },
+      this.tokenMap,
+      this.NATIVE_TOKEN_ID,
+      this.CHAIN
+    );
+    return wrappedAssets;
   };
 }
 

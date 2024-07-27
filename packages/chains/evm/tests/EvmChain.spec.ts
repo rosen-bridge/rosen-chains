@@ -334,6 +334,79 @@ describe('EvmChain', () => {
         );
       }).not.rejects;
     });
+
+    /**
+     * @target EvmChain.generateMultipleTransactions should generate payment
+     * transaction successfully for wrapped order
+     * @dependencies
+     * @scenario
+     * - mock hasLockAddressEnoughAssets, getMaxFeePerGas
+     * - mock getGasRequired, getAddressNextNonce
+     * - mock getMaxPriorityFeePerGas
+     * - call the function
+     * - check returned value
+     * @expected
+     * - PaymentTransaction txType, eventId and network should be as
+     *   expected
+     * - extracted order of generated transaction should be the same as input
+     *   order
+     * - eventId should be properly in the transaction data
+     * - no extra data should be found in the transaction data
+     * - transaction must be of type 2 and has no blobs
+     * - nonce must be the same as the next available nonce
+     */
+    it('should generate payment transaction successfully for wrapped order', async () => {
+      const evmChain =
+        testUtils.generateChainObjectWithMultiDecimalTokenMap(network);
+
+      const order = TestData.nativePaymentWrappedOrder;
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const nonce = 54;
+
+      // mock hasLockAddressEnoughAssets, getMaxFeePerGas,
+      // getGasRequired, getAddressNextNonce, getMaxPriorityFeePerGas
+      testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
+      testUtils.mockGetMaxFeePerGas(network, 10n);
+      testUtils.mockGetGasRequired(network, 21000n);
+      testUtils.mockGetAddressNextAvailableNonce(network, nonce);
+      testUtils.mockGetMaxPriorityFeePerGas(network, 10n);
+
+      // run test
+      const evmTx = await evmChain.generateMultipleTransactions(
+        eventId,
+        txType,
+        order,
+        [],
+        []
+      );
+
+      // check returned value
+      expect(evmTx[0].txType).toEqual(txType);
+      expect(evmTx[0].eventId).toEqual(eventId);
+      expect(evmTx[0].network).toEqual(evmChain.CHAIN);
+
+      // extracted order of generated transaction should be the same as input order
+      const extractedOrder = evmChain.extractTransactionOrder(evmTx[0]);
+      expect(extractedOrder).toEqual(order);
+
+      const tx = Serializer.deserialize(evmTx[0].txBytes);
+
+      // check eventId encoded at the end of the data
+      expect(tx.data.substring(2, 34)).toEqual(eventId);
+
+      // check there is no more data
+      expect(tx.data.length).toEqual(34);
+
+      // check transaction type
+      expect(tx.type).toEqual(2);
+
+      // check blobs zero
+      expect(tx.maxFeePerBlobGas).toEqual(null);
+
+      // check nonce
+      expect(tx.nonce).toEqual(nonce);
+    });
   });
 
   describe('rawTxToPaymentTransaction', () => {
@@ -512,6 +585,45 @@ describe('EvmChain', () => {
       expect(async () => {
         await evmChain.getTransactionAssets(paymentTx);
       }).rejects.toThrowError(TransactionFormatError);
+    });
+
+    /**
+     * @target EvmChain.getTransactionAssets should wrap transaction assets
+     * successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction assets (both input and output assets)
+     */
+    it('should wrap transaction assets successfully', async () => {
+      const evmChain =
+        testUtils.generateChainObjectWithMultiDecimalTokenMap(network);
+
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      // mock PaymentTransaction
+      const trx = { ...TestData.transaction1Json };
+      trx.data = '0x';
+      const tx = Transaction.from(trx);
+      const assets = { ...TestData.transaction1WrappedAssets };
+      assets.tokens = [];
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // check returned value
+      const result = await evmChain.getTransactionAssets(paymentTx);
+
+      // check returned value
+      expect(result.inputAssets).toEqual(assets);
+      expect(result.outputAssets).toEqual(assets);
     });
   });
 
@@ -1101,6 +1213,52 @@ describe('EvmChain', () => {
       expect(async () =>
         evmChain.extractTransactionOrder(paymentTx)
       ).rejects.toThrowError(TransactionFormatError);
+    });
+
+    /**
+     * @target EvmChain.extractTransactionOrder should wrap transaction
+     * order successfully
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return mocked transaction order
+     */
+    it('should wrap transaction order successfully', () => {
+      const evmChain =
+        testUtils.generateChainObjectWithMultiDecimalTokenMap(network);
+
+      // mock PaymentTransaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const tx = Transaction.from({
+        ...(TestData.erc20transaction as TransactionLike),
+      });
+      tx.data = '0x';
+      tx.value = 100n;
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test
+      const result = evmChain.extractTransactionOrder(paymentTx);
+
+      // check returned value
+      expect(result).toEqual([
+        {
+          address: '0xedee4752e5a2f595151c94762fb38e5730357785',
+          assets: {
+            nativeToken: 1n,
+            tokens: [],
+          },
+        },
+      ]);
     });
   });
 
@@ -1885,6 +2043,51 @@ describe('EvmChain', () => {
 
       // check returned value
       expect(result).toEqual({ nativeToken: 0n, tokens: [] });
+    });
+
+    /**
+     * @target EvmChain.getAddressAssets should wrap address assets successfully
+     * @dependencies
+     * @scenario
+     * - mock getAddressBalanceForNativeToken
+     * - mock getAddressBalanceForERC20Asset for each supported tokens
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return mocked address assets (both input and output assets)
+     */
+    it('should wrap address assets successfully', async () => {
+      const evmChain =
+        testUtils.generateChainObjectWithMultiDecimalTokenMap(network);
+
+      mockGetAddressBalanceForNativeToken(evmChain.network, 1000n);
+      vi.spyOn(network, 'getAddressBalanceForERC20Asset').mockImplementation(
+        async (address, tokenId) => {
+          if (tokenId === '0xedee4752e5a2f595151c94762fb38e5730357785')
+            return 0n;
+          else if (tokenId === '0x12345752e5a2f595151c94762fb38e5730357785')
+            return 10n;
+          else if (tokenId === '0xedee4752e5a2f595151c94762fb38e5730357786')
+            return 30n;
+          else if (tokenId === '0xedee4752e5a2f595151c94762fb38e5730357787')
+            return 40n;
+          else return 0n;
+        }
+      );
+
+      // run test
+      const result = await evmChain.getAddressAssets(TestData.lockAddress);
+
+      // check returned value
+      expect(result).toEqual({
+        nativeToken: 10n,
+        tokens: [
+          { id: '0xedee4752e5a2f595151c94762fb38e5730357785', value: 0n },
+          { id: '0x12345752e5a2f595151c94762fb38e5730357785', value: 10n },
+          { id: '0xedee4752e5a2f595151c94762fb38e5730357786', value: 30n },
+          { id: '0xedee4752e5a2f595151c94762fb38e5730357787', value: 40n },
+        ],
+      });
     });
   });
 });
