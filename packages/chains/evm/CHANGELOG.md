@@ -1,5 +1,16 @@
 # @rosen-chains/evm
 
+## 1.0.0
+
+### Major Changes
+
+- consider decimals drop
+
+### Patch Changes
+
+- Updated dependencies
+  - @rosen-chains/abstract-chain@8.0.0
+
 ## 0.1.3
 
 ### Patch Changes
