@@ -24,6 +24,7 @@ import {
   TokenDetail,
   TransactionAssetBalance,
   TransactionType,
+  ValidityStatus,
 } from './types';
 import PaymentTransaction from './PaymentTransaction';
 
@@ -280,6 +281,8 @@ abstract class AbstractChain<TxType> {
 
   /**
    * checks if a transaction is still valid and can be sent to the network
+   * Note: the `unexpected` field of the details should be true when reason of
+   * being invalid is unexpected and repetition should be prevented
    * @param transaction the transaction
    * @param signingStatus
    * @returns true if the transaction is still valid
@@ -287,7 +290,7 @@ abstract class AbstractChain<TxType> {
   abstract isTxValid: (
     transaction: PaymentTransaction,
     signingStatus: SigningStatus
-  ) => Promise<boolean>;
+  ) => Promise<ValidityStatus>;
 
   /**
    * requests the corresponding signer service to sign the transaction

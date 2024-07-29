@@ -1835,7 +1835,7 @@ describe('EvmChain', () => {
      * - call the function
      * - check returned value
      * @expected
-     * - it should return true
+     * - it should return true with no details
      */
     it('should return true when nonce is not used', async () => {
       // mock PaymentTransaction
@@ -1858,7 +1858,10 @@ describe('EvmChain', () => {
       const result = await evmChain.isTxValid(paymentTx, SigningStatus.Signed);
 
       // check returned value
-      expect(result).toEqual(true);
+      expect(result).toEqual({
+        isValid: true,
+        details: undefined,
+      });
     });
 
     /**
@@ -1870,7 +1873,7 @@ describe('EvmChain', () => {
      * - call the function
      * - check returned value
      * @expected
-     * - it should return false
+     * - it should return false and as expected invalidation
      */
     it('should return false when nonce is already used', async () => {
       // mock PaymentTransaction
@@ -1893,7 +1896,13 @@ describe('EvmChain', () => {
       const result = await evmChain.isTxValid(paymentTx, SigningStatus.Signed);
 
       // check returned value
-      expect(result).toEqual(false);
+      expect(result).toEqual({
+        isValid: false,
+        details: {
+          reason: expect.any(String),
+          unexpected: false,
+        },
+      });
     });
   });
 

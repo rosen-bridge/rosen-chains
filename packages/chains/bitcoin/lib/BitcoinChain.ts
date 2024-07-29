@@ -15,6 +15,7 @@ import {
   SinglePayment,
   TransactionAssetBalance,
   TransactionType,
+  ValidityStatus,
 } from '@rosen-chains/abstract-chain';
 import AbstractBitcoinNetwork from './network/AbstractBitcoinNetwork';
 import BitcoinTransaction from './BitcoinTransaction';
@@ -376,7 +377,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
   isTxValid = async (
     transaction: PaymentTransaction,
     signingStatus: SigningStatus = SigningStatus.Signed
-  ): Promise<boolean> => {
+  ): Promise<ValidityStatus> => {
     const tx = Serializer.deserialize(transaction.txBytes);
     for (let i = 0; i < tx.txInputs.length; i++) {
       const boxId = getPsbtTxInputBoxId(tx.txInputs[i]);
@@ -384,10 +385,19 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
         this.logger.debug(
           `Tx [${transaction.txId}] is invalid due to spending invalid input box [${boxId}] at index [${i}]`
         );
-        return false;
+        return {
+          isValid: false,
+          details: {
+            reason: `input [${i}] is spent or invalid`,
+            unexpected: false,
+          },
+        };
       }
     }
-    return true;
+    return {
+      isValid: true,
+      details: undefined,
+    };
   };
 
   /**

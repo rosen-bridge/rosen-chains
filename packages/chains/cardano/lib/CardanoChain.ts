@@ -19,6 +19,7 @@ import {
   SinglePayment,
   TransactionAssetBalance,
   TransactionType,
+  ValidityStatus,
 } from '@rosen-chains/abstract-chain';
 import JSONBigInt from '@rosen-bridge/json-bigint';
 import CardanoTransaction from './CardanoTransaction';
@@ -487,31 +488,59 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
   isTxValid = async (
     transaction: PaymentTransaction,
     _signingStatus: SigningStatus = SigningStatus.Signed
-  ): Promise<boolean> => {
+  ): Promise<ValidityStatus> => {
     const tx = Serializer.deserialize(transaction.txBytes);
     const txBody = tx.body();
 
     // check ttl
     const ttl = txBody.ttl();
     if (ttl && ttl < (await this.network.currentSlot())) {
-      return false;
+      return {
+        isValid: false,
+        details: {
+          reason: `tx ttl, [${ttl}], is past`,
+          unexpected: false,
+        },
+      };
     }
 
     // let valid = true;
     for (let i = 0; i < txBody.inputs().len(); i++) {
-      const box = txBody.inputs().get(i);
-      if (
-        !(await this.network.isBoxUnspentAndValid(CardanoUtils.getBoxId(box)))
-      )
-        return false;
+      const boxId = CardanoUtils.getBoxId(txBody.inputs().get(i));
+      if (!(await this.network.isBoxUnspentAndValid(boxId))) {
+        this.logger.debug(
+          `Tx [${transaction.txId}] is invalid due to spending invalid input box [${boxId}] at index [${i}]`
+        );
+        return {
+          isValid: false,
+          details: {
+            reason: `input [${i}] is spent or invalid`,
+            unexpected: false,
+          },
+        };
+      }
     }
 
     // check if input and output assets match
     const txAssets = await this.getTransactionAssets(transaction);
-    return ChainUtils.isEqualAssetBalance(
+    const isValid = ChainUtils.isEqualAssetBalance(
       txAssets.inputAssets,
       txAssets.outputAssets
     );
+    if (isValid) {
+      return {
+        isValid: true,
+        details: undefined,
+      };
+    } else {
+      return {
+        isValid: false,
+        details: {
+          reason: `input and output assets are not equal`,
+          unexpected: false,
+        },
+      };
+    }
   };
 
   /**

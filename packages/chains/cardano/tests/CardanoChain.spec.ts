@@ -886,7 +886,7 @@ describe('CardanoChain', () => {
      * - call the function
      * - check returned value
      * @expected
-     * - it should return true
+     * - it should return true with no details
      */
     it('should return true when all tx inputs are valid and ttl is less than current slot', async () => {
       // mock PaymentTransaction
@@ -912,7 +912,10 @@ describe('CardanoChain', () => {
       const result = await cardanoChain.isTxValid(payment1);
 
       // check returned value
-      expect(result).toEqual(true);
+      expect(result).toEqual({
+        isValid: true,
+        details: undefined,
+      });
     });
 
     /**
@@ -924,7 +927,7 @@ describe('CardanoChain', () => {
      * - call the function
      * - check returned value
      * @expected
-     * - it should return false
+     * - it should return false and as expected invalidation
      */
     it('should return false when ttl is expired', async () => {
       // mock PaymentTransaction
@@ -941,7 +944,13 @@ describe('CardanoChain', () => {
       const result = await cardanoChain.isTxValid(payment1);
 
       // check returned value
-      expect(result).toEqual(false);
+      expect(result).toEqual({
+        isValid: false,
+        details: {
+          reason: expect.any(String),
+          unexpected: false,
+        },
+      });
     });
 
     /**
@@ -956,7 +965,7 @@ describe('CardanoChain', () => {
      * - call the function
      * - check returned value
      * @expected
-     * - it should return false
+     * - it should return false and as expected invalidation
      */
     it('should return false when at least one input is invalid', async () => {
       // mock PaymentTransaction
@@ -983,7 +992,13 @@ describe('CardanoChain', () => {
       const result = await cardanoChain.isTxValid(payment1);
 
       // check returned value
-      expect(result).toEqual(false);
+      expect(result).toEqual({
+        isValid: false,
+        details: {
+          reason: expect.any(String),
+          unexpected: false,
+        },
+      });
     });
 
     /**
@@ -998,7 +1013,7 @@ describe('CardanoChain', () => {
      * - call the function
      * - check returned value
      * @expected
-     * - it should return false
+     * - it should return false and as expected invalidation
      */
     it('should return false when input and output assets do not match', async () => {
       // mock PaymentTransaction
@@ -1024,7 +1039,13 @@ describe('CardanoChain', () => {
       const result = await cardanoChain.isTxValid(payment1);
 
       // check returned value
-      expect(result).toEqual(false);
+      expect(result).toEqual({
+        isValid: false,
+        details: {
+          reason: expect.any(String),
+          unexpected: false,
+        },
+      });
     });
   });
 
