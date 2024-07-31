@@ -1268,7 +1268,7 @@ describe('ErgoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return true
+     * - it should return true with no details
      */
     it('should return true when all inputs are valid', async () => {
       // mock a network object to return as valid for all inputs of a mocked transaction
@@ -1297,7 +1297,10 @@ describe('ErgoChain', () => {
       const result = await ergoChain.isTxValid(paymentTx);
 
       // check returned value
-      expect(result).toEqual(true);
+      expect(result).toEqual({
+        isValid: true,
+        details: undefined,
+      });
     });
 
     /**
@@ -1311,7 +1314,7 @@ describe('ErgoChain', () => {
      * - run test
      * - check returned value
      * @expected
-     * - it should return false
+     * - it should return false and as expected invalidation
      */
     it('should return false when at least one input is invalid', async () => {
       // mock a network object to return as valid for all inputs of a mocked transaction except for the first one
@@ -1342,7 +1345,13 @@ describe('ErgoChain', () => {
       const result = await ergoChain.isTxValid(paymentTx);
 
       // check returned value
-      expect(result).toEqual(false);
+      expect(result).toEqual({
+        isValid: false,
+        details: {
+          reason: expect.any(String),
+          unexpected: false,
+        },
+      });
     });
   });
 

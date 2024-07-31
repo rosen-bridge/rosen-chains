@@ -108,6 +108,16 @@ interface TokenDetail {
   decimals: number;
 }
 
+interface ValidityStatus {
+  isValid: boolean;
+  details:
+    | undefined
+    | {
+        reason: string;
+        unexpected: boolean;
+      };
+}
+
 export {
   ConfirmationConfigs,
   ChainConfigs,
@@ -125,4 +135,5 @@ export {
   TransactionType,
   SigningStatus,
   TokenDetail,
+  ValidityStatus,
 };

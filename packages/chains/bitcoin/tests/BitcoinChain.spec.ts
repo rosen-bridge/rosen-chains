@@ -9,7 +9,6 @@ import JsonBigInt from '@rosen-bridge/json-bigint';
 import { Psbt } from 'bitcoinjs-lib';
 import {
   BitcoinChain,
-  BitcoinConfigs,
   BitcoinTransaction,
   BitcoinUtxo,
   SEGWIT_INPUT_WEIGHT_UNIT,
@@ -522,7 +521,7 @@ describe('BitcoinChain', () => {
      * - check returned value
      * - check if function got called
      * @expected
-     * - it should return true
+     * - it should return true with no details
      * - `isBoxUnspentAndValidSpy` should have been called with tx input ids
      */
     it('should return true when all tx inputs are valid and ttl is less than current slot', async () => {
@@ -536,7 +535,10 @@ describe('BitcoinChain', () => {
       const bitcoinChain = testUtils.generateChainObject(network);
       const result = await bitcoinChain.isTxValid(payment1);
 
-      expect(result).toEqual(true);
+      expect(result).toEqual({
+        isValid: true,
+        details: undefined,
+      });
       expect(isBoxUnspentAndValidSpy).toHaveBeenCalledWith(
         testData.transaction0Input0BoxId
       );
@@ -554,7 +556,7 @@ describe('BitcoinChain', () => {
      * - check returned value
      * - check if function got called
      * @expected
-     * - it should return false
+     * - it should return false and as expected invalidation
      */
     it('should return false when at least one input is invalid', async () => {
       const payment1 = BitcoinTransaction.fromJson(
@@ -569,7 +571,13 @@ describe('BitcoinChain', () => {
       const bitcoinChain = testUtils.generateChainObject(network);
       const result = await bitcoinChain.isTxValid(payment1);
 
-      expect(result).toEqual(false);
+      expect(result).toEqual({
+        isValid: false,
+        details: {
+          reason: expect.any(String),
+          unexpected: false,
+        },
+      });
       expect(isBoxUnspentAndValidSpy).toHaveBeenCalledWith(
         testData.transaction0Input0BoxId
       );

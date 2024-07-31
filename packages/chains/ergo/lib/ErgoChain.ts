@@ -14,6 +14,7 @@ import {
   SinglePayment,
   TransactionAssetBalance,
   TransactionType,
+  ValidityStatus,
 } from '@rosen-chains/abstract-chain';
 import * as wasm from 'ergo-lib-wasm-nodejs';
 import { ERG, ERGO_CHAIN, NUMBER_OF_BLOCKS_PER_YEAR } from './constants';
@@ -601,7 +602,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
   isTxValid = async (
     transaction: PaymentTransaction,
     signingStatus: SigningStatus = SigningStatus.Signed
-  ): Promise<boolean> => {
+  ): Promise<ValidityStatus> => {
     // deserialize transaction
     let tx: wasm.Transaction | wasm.UnsignedTransaction;
     try {
@@ -613,15 +614,26 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
       tx = Serializer.deserialize(transaction.txBytes).unsigned_tx();
     }
     // check if any input is spent or invalid
-    let valid = true;
     const inputs = tx.inputs();
     for (let i = 0; i < inputs.len(); i++) {
-      const box = inputs.get(i);
-      valid =
-        valid &&
-        (await this.network.isBoxUnspentAndValid(box.box_id().to_str()));
+      const boxId = inputs.get(i).box_id().to_str();
+      if (!(await this.network.isBoxUnspentAndValid(boxId))) {
+        this.logger.debug(
+          `Tx [${transaction.txId}] is invalid due to spending invalid input box [${boxId}] at index [${i}]`
+        );
+        return {
+          isValid: false,
+          details: {
+            reason: `input [${i}] is spent or invalid`,
+            unexpected: false,
+          },
+        };
+      }
     }
-    return valid;
+    return {
+      isValid: true,
+      details: undefined,
+    };
   };
 
   /**

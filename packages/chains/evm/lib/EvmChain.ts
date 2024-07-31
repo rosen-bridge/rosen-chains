@@ -18,6 +18,7 @@ import {
   TransactionFormatError,
   SinglePayment,
   TokenInfo,
+  ValidityStatus,
 } from '@rosen-chains/abstract-chain';
 import { EvmRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
@@ -441,14 +442,22 @@ abstract class EvmChain extends AbstractChain<Transaction> {
   isTxValid = async (
     transaction: PaymentTransaction,
     signingStatus: SigningStatus
-  ): Promise<boolean> => {
+  ): Promise<ValidityStatus> => {
     let trx: Transaction;
 
     try {
       trx = Serializer.deserialize(transaction.txBytes);
     } catch (error) {
-      this.logger.debug(`Tx [${transaction.txId}] invalid: ${error}`);
-      return false;
+      this.logger.debug(
+        `Tx [${transaction.txId}] invalid: failed to deserialized due to error: ${error}`
+      );
+      return {
+        isValid: false,
+        details: {
+          reason: `tx is failed in deserialization`,
+          unexpected: false,
+        },
+      };
     }
 
     // check the nonce wasn't increased
@@ -457,12 +466,21 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     );
     if (nextNonce > trx.nonce) {
       this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction's nonce ${trx.nonce} is not available anymore according to address's current nonce ${nextNonce}`
+        `Tx [${transaction.txId}] invalid: Transaction's nonce [${trx.nonce}] is not available anymore according to address's current nonce [${nextNonce}]`
       );
-      return false;
+      return {
+        isValid: false,
+        details: {
+          reason: `nonce [${trx.nonce}] is not available anymore`,
+          unexpected: false,
+        },
+      };
     }
 
-    return true;
+    return {
+      isValid: true,
+      details: undefined,
+    };
   };
 
   /**
