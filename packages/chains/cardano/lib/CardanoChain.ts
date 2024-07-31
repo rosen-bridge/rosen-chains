@@ -527,20 +527,15 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
       txAssets.inputAssets,
       txAssets.outputAssets
     );
-    if (isValid) {
-      return {
-        isValid: true,
-        details: undefined,
-      };
-    } else {
-      return {
-        isValid: false,
-        details: {
-          reason: `input and output assets are not equal`,
-          unexpected: false,
-        },
-      };
-    }
+    return {
+      isValid: isValid,
+      details: isValid
+        ? undefined
+        : {
+            reason: `input and output assets are not equal`,
+            unexpected: false,
+          },
+    };
   };
 
   /**

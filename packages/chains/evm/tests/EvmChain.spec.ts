@@ -1,8 +1,6 @@
-import { expect } from 'vitest';
+import { expect, vi } from 'vitest';
 import TestEvmNetwork from './network/TestEvmNetwork';
 import * as TestData from './testData';
-import { vi } from 'vitest';
-
 import {
   AssetNotSupportedError,
   MaxParallelTxError,

@@ -1,4 +1,4 @@
-import { expect, vi } from 'vitest';
+import { vi } from 'vitest';
 import {
   ChainUtils,
   NotEnoughAssetsError,
@@ -9,7 +9,6 @@ import JsonBigInt from '@rosen-bridge/json-bigint';
 import { Psbt } from 'bitcoinjs-lib';
 import {
   BitcoinChain,
-  BitcoinConfigs,
   BitcoinTransaction,
   BitcoinUtxo,
   SEGWIT_INPUT_WEIGHT_UNIT,
