@@ -11,3 +11,10 @@ export type TssSignFunction = (txHash: Uint8Array) => Promise<{
   signature: string;
   signatureRecovery: string;
 }>;
+
+export enum EvmTxStatus {
+  failed = 'failed',
+  succeed = 'succeed',
+  mempool = 'mempool',
+  notFound = 'not-found',
+}

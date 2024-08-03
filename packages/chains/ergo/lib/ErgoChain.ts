@@ -534,10 +534,10 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
    * @param blockInfo
    * @returns true if the transaction is verified
    */
-  verifyLockTransactionExtraConditions = (
+  verifyLockTransactionExtraConditions = async (
     transaction: wasm.Transaction,
     blockInfo: BlockInfo
-  ): boolean => {
+  ): Promise<boolean> => {
     const outputs = transaction.outputs();
     for (let i = 0; i < outputs.len(); i++) {
       const box = outputs.get(i);

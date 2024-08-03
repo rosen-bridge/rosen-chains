@@ -14,6 +14,7 @@ import * as testUtils from './TestUtils';
 import Serializer from '../lib/Serializer';
 import { Transaction, TransactionLike } from 'ethers';
 import { mockGetAddressBalanceForNativeToken } from './TestUtils';
+import { EvmTxStatus } from '../lib';
 
 describe('EvmChain', () => {
   const network = new TestEvmNetwork();
@@ -1825,7 +1826,7 @@ describe('EvmChain', () => {
   describe('isTxValid', () => {
     /**
      * @target EvmChain.isTxValid should return true when
-     * nonce is not used
+     * tx is not found and nonce is not used
      * @dependencies
      * @scenario
      * - mock PaymentTransaction
@@ -1835,7 +1836,7 @@ describe('EvmChain', () => {
      * @expected
      * - it should return true with no details
      */
-    it('should return true when nonce is not used', async () => {
+    it('should return true when tx is not found and nonce is not used', async () => {
       // mock PaymentTransaction
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
@@ -1848,6 +1849,9 @@ describe('EvmChain', () => {
         Serializer.serialize(tx),
         txType
       );
+
+      // mock getTransactionStatus
+      testUtils.mockGetTransactionStatus(network, EvmTxStatus.notFound);
 
       // mock getAddressNextAvailableNonce
       testUtils.mockGetAddressNextAvailableNonce(network, tx.nonce);
@@ -1867,6 +1871,7 @@ describe('EvmChain', () => {
      * @dependencies
      * @scenario
      * - mock PaymentTransaction
+     * - mock getTransactionStatus
      * - mock getAddressNextAvailableNonce
      * - call the function
      * - check returned value
@@ -1887,6 +1892,9 @@ describe('EvmChain', () => {
         txType
       );
 
+      // mock getTransactionStatus
+      testUtils.mockGetTransactionStatus(network, EvmTxStatus.succeed);
+
       // mock getAddressNextAvailableNonce
       testUtils.mockGetAddressNextAvailableNonce(network, tx.nonce + 1);
 
@@ -1899,6 +1907,52 @@ describe('EvmChain', () => {
         details: {
           reason: expect.any(String),
           unexpected: false,
+        },
+      });
+    });
+
+    /**
+     * @target EvmChain.isTxValid should return false when
+     * tx is failed
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - mock getTransactionStatus
+     * - mock getAddressNextAvailableNonce
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return false and as unexpected invalidation
+     */
+    it('should return false when tx is failed', async () => {
+      // mock PaymentTransaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const tx = Transaction.from(TestData.erc20transaction as TransactionLike);
+
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // mock getTransactionStatus
+      testUtils.mockGetTransactionStatus(network, EvmTxStatus.failed);
+
+      // mock getAddressNextAvailableNonce
+      testUtils.mockGetAddressNextAvailableNonce(network, tx.nonce);
+
+      // run test
+      const result = await evmChain.isTxValid(paymentTx, SigningStatus.Signed);
+
+      // check returned value
+      expect(result).toEqual({
+        isValid: false,
+        details: {
+          reason: expect.any(String),
+          unexpected: true,
         },
       });
     });
@@ -2095,6 +2149,66 @@ describe('EvmChain', () => {
           { id: '0xedee4752e5a2f595151c94762fb38e5730357787', value: 40n },
         ],
       });
+    });
+  });
+
+  describe('verifyLockTransactionExtraConditions', () => {
+    /**
+     * @target EvmChain.verifyLockTransactionExtraConditions should return true when
+     * tx is succeed
+     * @dependencies
+     * @scenario
+     * - mock transaction
+     * - mock getTransactionStatus
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return true
+     */
+    it('should return true when tx is succeed', async () => {
+      // mock transaction
+      const tx = Transaction.from(TestData.erc20transaction as TransactionLike);
+
+      // mock getTransactionStatus
+      testUtils.mockGetTransactionStatus(network, EvmTxStatus.succeed);
+
+      // run test
+      const result = await evmChain.verifyLockTransactionExtraConditions(
+        tx,
+        {} as any
+      );
+
+      // check returned value
+      expect(result).toEqual(true);
+    });
+
+    /**
+     * @target EvmChain.verifyLockTransactionExtraConditions should return false when
+     * tx is failed
+     * @dependencies
+     * @scenario
+     * - mock transaction
+     * - mock getTransactionStatus
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when tx is failed', async () => {
+      // mock transaction
+      const tx = Transaction.from(TestData.erc20transaction as TransactionLike);
+
+      // mock getTransactionStatus
+      testUtils.mockGetTransactionStatus(network, EvmTxStatus.failed);
+
+      // run test
+      const result = await evmChain.verifyLockTransactionExtraConditions(
+        tx,
+        {} as any
+      );
+
+      // check returned value
+      expect(result).toEqual(false);
     });
   });
 });

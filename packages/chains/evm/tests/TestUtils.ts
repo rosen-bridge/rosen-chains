@@ -1,5 +1,5 @@
 import * as testData from './testData';
-import { EvmConfigs, TssSignFunction } from '../lib/types';
+import { EvmConfigs, EvmTxStatus, TssSignFunction } from '../lib/types';
 import EvmChain from '../lib/EvmChain';
 import { vi } from 'vitest';
 import { AbstractEvmNetwork } from '../lib';
@@ -106,4 +106,11 @@ export const generateChainObjectWithMultiDecimalTokenMap = (
     testData.supportedTokens,
     signFn
   );
+};
+
+export const mockGetTransactionStatus = (
+  network: AbstractEvmNetwork,
+  result: EvmTxStatus
+) => {
+  spyOn(network, 'getTransactionStatus').mockResolvedValue(result);
 };

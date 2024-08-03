@@ -22,7 +22,7 @@ import {
 } from '@rosen-chains/abstract-chain';
 import { EvmRosenExtractor } from '@rosen-bridge/rosen-extractor';
 import AbstractEvmNetwork from './network/AbstractEvmNetwork';
-import { EvmConfigs, TssSignFunction } from './types';
+import { EvmConfigs, EvmTxStatus, TssSignFunction } from './types';
 import { Signature, Transaction } from 'ethers';
 import Serializer from './Serializer';
 import * as EvmUtils from './EvmUtils';
@@ -434,6 +434,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
   /**
    * checks if a transaction is still valid and can be sent to the network
+   * - transaction should not be failed in blockchain
    * - transaction's nonce should be still available
    * @param transaction the transaction
    * @param signingStatus
@@ -454,8 +455,23 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       return {
         isValid: false,
         details: {
-          reason: `tx is failed in deserialization`,
+          reason: `failed to deserialize tx`,
           unexpected: false,
+        },
+      };
+    }
+
+    // check if tx is failed
+    const txStatus = await this.network.getTransactionStatus(transaction.txId);
+    if (txStatus === EvmTxStatus.failed) {
+      this.logger.debug(
+        `Tx [${transaction.txId}] invalid: tx is failed in blockchain`
+      );
+      return {
+        isValid: false,
+        details: {
+          reason: `tx is failed in blockchain`,
+          unexpected: true,
         },
       };
     }
@@ -728,14 +744,27 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
   /**
    * verifies additional conditions for a event lock transaction
+   * - the lock transaction should not be failed in the blockchain
    * @param transaction the lock transaction
    * @param blockInfo
    * @returns true if the transaction is verified
    */
-  verifyLockTransactionExtraConditions = (
+  verifyLockTransactionExtraConditions = async (
     transaction: Transaction,
     blockInfo: BlockInfo
-  ): boolean => {
+  ): Promise<boolean> => {
+    // check if tx is failed
+    if (!transaction.hash)
+      throw new ImpossibleBehavior(
+        `failed to get txId of the lock transaction while verifying the event`
+      );
+    const txStatus = await this.network.getTransactionStatus(transaction.hash);
+    if (txStatus !== EvmTxStatus.succeed) {
+      this.logger.debug(
+        `Lock tx [${transaction.hash}] is not succeed (failed or unexpected status)`
+      );
+      return false;
+    }
     return true;
   };
 

@@ -544,10 +544,10 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
    * @param blockInfo
    * @returns true if the transaction is verified
    */
-  verifyLockTransactionExtraConditions = (
+  verifyLockTransactionExtraConditions = async (
     transaction: CardanoTx,
     blockInfo: BlockInfo
-  ): boolean => {
+  ): Promise<boolean> => {
     return true;
   };
 

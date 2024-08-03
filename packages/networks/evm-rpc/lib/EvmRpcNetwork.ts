@@ -7,7 +7,11 @@ import {
   UnexpectedApiError,
 } from '@rosen-chains/abstract-chain';
 import JsonBigInt from '@rosen-bridge/json-bigint';
-import { AbstractEvmNetwork, PartialERC20ABI } from '@rosen-chains/evm';
+import {
+  AbstractEvmNetwork,
+  EvmTxStatus,
+  PartialERC20ABI,
+} from '@rosen-chains/evm';
 import {
   Block,
   JsonRpcProvider,
@@ -15,6 +19,7 @@ import {
   TransactionResponse,
   ethers,
   FeeData,
+  isCallException,
 } from 'ethers';
 import { DataSource } from 'typeorm';
 import AddressTxAction from './AddressTxAction';
@@ -66,20 +71,27 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
     const transactionId = txRecord === null ? hash : txRecord.signedHash;
 
     // get transaction confirmation
+    const baseError = `Failed to get transaction [${transactionId}] from ${this.chain} RPC: `;
+    let tx: TransactionResponse | null;
     try {
-      const tx = await this.provider.getTransaction(transactionId);
+      tx = await this.provider.getTransaction(transactionId);
       this.logger.debug(
         `requested 'getTransaction' of ${
           this.chain
         } RPC with id [${transactionId}]. res: ${JsonBigInt.stringify(tx)}`
       );
-      if (!tx) {
-        this.logger.debug(`Transaction [${transactionId}] is not found`);
-        return -1;
-      }
-      return await tx.confirmations();
     } catch (e: unknown) {
-      const baseError = `Failed to get transaction [${transactionId}] from ${this.chain} RPC: `;
+      throw new UnexpectedApiError(baseError + `${e}`);
+    }
+    if (!tx) {
+      this.logger.debug(`Transaction [${transactionId}] is not found`);
+      return -1;
+    }
+    try {
+      const status = await this.getStatus(tx);
+      if (status === EvmTxStatus.succeed) return await tx.confirmations();
+      else return -1;
+    } catch (e) {
       throw new UnexpectedApiError(baseError + `${e}`);
     }
   };
@@ -341,6 +353,55 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
     if (feeData.maxFeePerGas === null)
       throw new UnexpectedApiError(baseError + `maxFeePerGas is null`);
     return feeData.maxFeePerGas;
+  };
+
+  /**
+   * gets the transaction status (mempool, succeed, failed)
+   * Note: this function considers the hash as unsigned hash
+   *  if the tx was not found, considers it as TxId (signed hash)
+   * @param hash the unsigned hash or ID of the transaction
+   * @returns the transaction status
+   */
+  getTransactionStatus = async (hash: string): Promise<EvmTxStatus> => {
+    // check if hash is representing signed or unsigned version of the tx
+    const txRecord = await this.dbAction.getTxByUnsignedHash(hash);
+    const transactionId = txRecord === null ? hash : txRecord.signedHash;
+
+    const baseError = `Failed to get transaction [${transactionId}] from ${this.chain} RPC: `;
+    let tx: TransactionResponse | null;
+    try {
+      tx = await this.provider.getTransaction(transactionId);
+      this.logger.debug(
+        `requested 'getTransaction' of ${
+          this.chain
+        } RPC with id [${transactionId}]. res: ${JsonBigInt.stringify(tx)}`
+      );
+    } catch (e: unknown) {
+      throw new UnexpectedApiError(baseError + `${e}`);
+    }
+    if (!tx) return EvmTxStatus.notFound;
+    try {
+      return await this.getStatus(tx);
+    } catch (e) {
+      throw new UnexpectedApiError(baseError + `${e}`);
+    }
+  };
+
+  /**
+   * gets the transaction status (mempool, succeed, failed) from TransactionResponse object
+   * @param TransactionResponse
+   */
+  protected getStatus = async (
+    tx: TransactionResponse
+  ): Promise<EvmTxStatus> => {
+    try {
+      const result = await tx.wait(0);
+      if (result) return EvmTxStatus.succeed;
+      else return EvmTxStatus.mempool;
+    } catch (e) {
+      if (isCallException(e)) return EvmTxStatus.failed;
+      else throw e;
+    }
   };
 }
 

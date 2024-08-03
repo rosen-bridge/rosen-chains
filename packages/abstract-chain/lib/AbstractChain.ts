@@ -228,7 +228,7 @@ abstract class AbstractChain<TxType> {
             `Failed in comparing event amount to fees: ${e}`
           );
         }
-        if (this.verifyLockTransactionExtraConditions(tx, blockInfo)) {
+        if (await this.verifyLockTransactionExtraConditions(tx, blockInfo)) {
           this.logger.info(
             `Event [${eventId}] has been successfully validated`
           );
@@ -270,10 +270,10 @@ abstract class AbstractChain<TxType> {
    * @param blockInfo
    * @returns true if the transaction is verified
    */
-  verifyLockTransactionExtraConditions = (
+  verifyLockTransactionExtraConditions = async (
     transaction: TxType,
     blockInfo: BlockInfo
-  ): boolean => {
+  ): Promise<boolean> => {
     throw Error(
       `You must implement 'verifyLockTransactionExtraConditions' or override 'verifyEvent' implementation`
     );
