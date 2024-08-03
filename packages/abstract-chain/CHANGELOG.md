@@ -1,5 +1,12 @@
 # @rosen-chains/abstract-chain
 
+## 0.0.0-9729309a
+
+### Major Changes
+
+- change `verifyLockTransactionExtraConditions` to async
+- add reason and expectation status to isTxValid result
+
 ## 8.0.0
 
 ### Major Changes

@@ -1,5 +1,19 @@
 # @rosen-chains/evm
 
+## 0.0.0-9729309a
+
+### Major Changes
+
+- consider transaction failure
+- change `verifyLockTransactionExtraConditions` to async
+- add reason and expectation status to isTxValid result
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @rosen-chains/abstract-chain@0.0.0-9729309a
+
 ## 1.0.0
 
 ### Major Changes

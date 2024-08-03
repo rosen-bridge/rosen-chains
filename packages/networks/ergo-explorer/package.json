@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/ergo-explorer-network",
-  "version": "8.0.0",
+  "version": "0.0.0-9729309a",
   "description": "ergo explorer network package for rosen ergo chain",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
@@ -40,8 +40,8 @@
     "vitest": "^0.30.1"
   },
   "peerDependencies": {
-    "@rosen-chains/abstract-chain": "^8.0.0",
-    "@rosen-chains/ergo": "^8.0.0"
+    "@rosen-chains/abstract-chain": "0.0.0-9729309a",
+    "@rosen-chains/ergo": "0.0.0-9729309a"
   },
   "directories": {
     "lib": "lib",

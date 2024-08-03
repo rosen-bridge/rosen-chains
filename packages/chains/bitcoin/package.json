@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/bitcoin",
-  "version": "4.0.0",
+  "version": "0.0.0-9729309a",
   "description": "this project contains bitcoin chain for Rosen-bridge",
   "repository": "https://github.com/rosen-bridge/rosen-chains",
   "license": "GPL-3.0",
@@ -41,6 +41,6 @@
     "bitcoinjs-lib": "^6.1.5"
   },
   "peerDependencies": {
-    "@rosen-chains/abstract-chain": "^8.0.0"
+    "@rosen-chains/abstract-chain": "0.0.0-9729309a"
   }
 }

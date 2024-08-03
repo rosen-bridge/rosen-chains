@@ -1,5 +1,14 @@
 # @rosen-chains/ergo-node-network
 
+## 0.0.0-9729309a
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @rosen-chains/abstract-chain@0.0.0-9729309a
+  - @rosen-chains/ergo@0.0.0-9729309a
+
 ## 8.0.0
 
 ### Patch Changes
