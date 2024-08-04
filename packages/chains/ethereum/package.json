@@ -30,5 +30,8 @@
   "peerDependencies": {
     "@rosen-chains/abstract-chain": "^8.0.0",
     "@rosen-chains/evm": "^1.0.0"
+  },
+  "dependencies": {
+    "@rosen-bridge/tokens": "^1.2.1"
   }
 }
