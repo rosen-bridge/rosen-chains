@@ -8,6 +8,7 @@ import { mockDataSource } from './mocked/dataSource.mock';
 import { TestEvmRpcNetwork } from './TestEvmRpcNetwork';
 import * as testData from './testData';
 import { ContractInstance } from './mocked/ethers.mock';
+import { EvmTxStatus } from '@rosen-chains/evm';
 
 describe('EvmRpcNetwork', () => {
   let network: TestEvmRpcNetwork;
@@ -51,9 +52,12 @@ describe('EvmRpcNetwork', () => {
     /**
      * @target `EvmRpcNetwork.getTxConfirmation` should fetch confirmation using unsigned hash successfully
      * @dependencies
+     * - database
      * @scenario
      * - insert transaction with expected unsigned hash into database
-     * - mock provider.`getTransaction`.`confirmations` to return confirmation
+     * - mock provider.`getTransaction`
+     *   - `wait` to return the transaction
+     *   - `confirmations` to return confirmation
      * - run test
      * - check returned value
      * - check function is called
@@ -72,12 +76,15 @@ describe('EvmRpcNetwork', () => {
         address: testData.lockAddress,
         blockId: 'blockId',
         extractor: 'custom-extractor',
+        status: 'succeed',
       });
 
       const mockedConfirmation = 60;
       const transactionInstance = {
+        wait: vi.fn(),
         confirmations: vi.fn(),
       };
+      transactionInstance.wait.mockResolvedValue(testData.transaction0);
       transactionInstance.confirmations.mockResolvedValue(mockedConfirmation);
       const getTransactionSpy = vi.spyOn(
         network.getProvider(),
@@ -94,7 +101,9 @@ describe('EvmRpcNetwork', () => {
      * @target `EvmRpcNetwork.getTxConfirmation` should fetch confirmation using txId successfully
      * @dependencies
      * @scenario
-     * - mock provider.`getTransaction`.`confirmations` to return confirmation
+     * - mock provider.`getTransaction`
+     *   - `wait` to return the transaction
+     *   - `confirmations` to return confirmation
      * - run test
      * - check returned value
      * - check function is called
@@ -107,8 +116,10 @@ describe('EvmRpcNetwork', () => {
 
       const mockedConfirmation = 60;
       const transactionInstance = {
+        wait: vi.fn(),
         confirmations: vi.fn(),
       };
+      transactionInstance.wait.mockResolvedValue(testData.transaction0);
       transactionInstance.confirmations.mockResolvedValue(mockedConfirmation);
       const getTransactionSpy = vi.spyOn(
         network.getProvider(),
@@ -125,7 +136,8 @@ describe('EvmRpcNetwork', () => {
      * @target `EvmRpcNetwork.getTxConfirmation` should return -1 when transaction is not found
      * @dependencies
      * @scenario
-     * - mock provider.`getTransaction` to return null
+     * - mock provider.`getTransaction`
+     *   - `confirmations` to return null
      * - run test
      * - check returned value
      * - check function is called
@@ -141,6 +153,89 @@ describe('EvmRpcNetwork', () => {
         'getTransaction'
       );
       getTransactionSpy.mockResolvedValue(null);
+
+      const result = await network.getTxConfirmation(txId);
+      expect(result).toEqual(-1);
+      expect(getTransactionSpy).toHaveBeenCalledWith(txId);
+    });
+
+    /**
+     * @target `EvmRpcNetwork.getTxConfirmation` should return -1 for failed tx using unsigned hash
+     * @dependencies
+     * - database
+     * @scenario
+     * - insert transaction with expected unsigned hash into database
+     * - mock provider.`getTransaction`
+     *   - `wait` to return null
+     *   - `confirmations` to return confirmation
+     * - run test
+     * - check returned value
+     * - check function is called
+     * @expected
+     * - it should be mocked confirmation
+     * - provider.`getTransaction` should have been called with signedHash
+     */
+    it('should return -1 for failed tx using unsigned hash', async () => {
+      const unsignedHash = generateRandomId();
+      const signedHash = generateRandomId();
+
+      await addressTxRepository.insert({
+        unsignedHash: unsignedHash,
+        signedHash: signedHash,
+        nonce: 0,
+        address: testData.lockAddress,
+        blockId: 'blockId',
+        extractor: 'custom-extractor',
+        status: 'failed',
+      });
+
+      const mockedConfirmation = 60;
+      const transactionInstance = {
+        wait: vi.fn(),
+        confirmations: vi.fn(),
+      };
+      transactionInstance.wait.mockResolvedValue(null);
+      transactionInstance.confirmations.mockResolvedValue(mockedConfirmation);
+      const getTransactionSpy = vi.spyOn(
+        network.getProvider(),
+        'getTransaction'
+      );
+      getTransactionSpy.mockResolvedValue(transactionInstance as any);
+
+      const result = await network.getTxConfirmation(unsignedHash);
+      expect(result).toEqual(-1);
+      expect(getTransactionSpy).toHaveBeenCalledWith(signedHash);
+    });
+
+    /**
+     * @target `EvmRpcNetwork.getTxConfirmation` should return -1 for failed tx using signed hash
+     * @dependencies
+     * @scenario
+     * - mock provider.`getTransaction`
+     *   - `wait` to return null
+     *   - `confirmations` to return confirmation
+     * - run test
+     * - check returned value
+     * - check function is called
+     * @expected
+     * - it should be mocked confirmation
+     * - provider.`getTransaction` should have been called with txId
+     */
+    it('should return -1 for failed tx using signed hash', async () => {
+      const txId = generateRandomId();
+
+      const mockedConfirmation = 60;
+      const transactionInstance = {
+        wait: vi.fn(),
+        confirmations: vi.fn(),
+      };
+      transactionInstance.wait.mockResolvedValue(null);
+      transactionInstance.confirmations.mockResolvedValue(mockedConfirmation);
+      const getTransactionSpy = vi.spyOn(
+        network.getProvider(),
+        'getTransaction'
+      );
+      getTransactionSpy.mockResolvedValue(transactionInstance as any);
 
       const result = await network.getTxConfirmation(txId);
       expect(result).toEqual(-1);
@@ -403,6 +498,125 @@ describe('EvmRpcNetwork', () => {
       const result = await network.getMaxFeePerGas();
 
       expect(result).toEqual(testData.maxFeePerGas);
+    });
+  });
+
+  describe('getTransactionStatus', () => {
+    /**
+     * @target `EvmRpcNetwork.getTransactionStatus` should return not found successfully
+     * @dependencies
+     * @scenario
+     * - mock provider.`getTransaction` to return null
+     * - run test
+     * - check returned value
+     * - check function is called
+     * @expected
+     * - it should be mocked confirmation
+     * - provider.`getTransaction` should have been called with signedHash
+     */
+    it('should return not found successfully', async () => {
+      const hash = generateRandomId();
+
+      const getTransactionSpy = vi.spyOn(
+        network.getProvider(),
+        'getTransaction'
+      );
+      getTransactionSpy.mockResolvedValue(null);
+
+      const result = await network.getTransactionStatus(hash);
+      expect(result).toEqual(EvmTxStatus.notFound);
+    });
+
+    /**
+     * @target `EvmRpcNetwork.getTransactionStatus` should return succeed successfully
+     * @dependencies
+     * @scenario
+     * - mock provider.`getTransaction`.`wait` to return the transaction
+     * - run test
+     * - check returned value
+     * - check function is called
+     * @expected
+     * - it should be mocked confirmation
+     * - provider.`getTransaction` should have been called with signedHash
+     */
+    it('should return succeed successfully', async () => {
+      const hash = generateRandomId();
+
+      const transactionInstance = {
+        wait: vi.fn(),
+        confirmations: vi.fn(),
+      };
+      transactionInstance.wait.mockResolvedValue(testData.transaction0);
+      const getTransactionSpy = vi.spyOn(
+        network.getProvider(),
+        'getTransaction'
+      );
+      getTransactionSpy.mockResolvedValue(transactionInstance as any);
+
+      const result = await network.getTransactionStatus(hash);
+      expect(result).toEqual(EvmTxStatus.succeed);
+    });
+
+    /**
+     * @target `EvmRpcNetwork.getTransactionStatus` should return mempool successfully
+     * @dependencies
+     * @scenario
+     * - mock provider.`getTransaction`.`wait` to return null
+     * - run test
+     * - check returned value
+     * - check function is called
+     * @expected
+     * - it should be mocked confirmation
+     * - provider.`getTransaction` should have been called with signedHash
+     */
+    it('should return mempool successfully', async () => {
+      const hash = generateRandomId();
+
+      const transactionInstance = {
+        wait: vi.fn(),
+        confirmations: vi.fn(),
+      };
+      transactionInstance.wait.mockResolvedValue(null);
+      const getTransactionSpy = vi.spyOn(
+        network.getProvider(),
+        'getTransaction'
+      );
+      getTransactionSpy.mockResolvedValue(transactionInstance as any);
+
+      const result = await network.getTransactionStatus(hash);
+      expect(result).toEqual(EvmTxStatus.mempool);
+    });
+
+    /**
+     * @target `EvmRpcNetwork.getTransactionStatus` should return failed when it throws CallbackException
+     * @dependencies
+     * @scenario
+     * - mock provider.`getTransaction`.`wait` to return null
+     * - run test
+     * - check returned value
+     * - check function is called
+     * @expected
+     * - it should be mocked confirmation
+     * - provider.`getTransaction` should have been called with signedHash
+     */
+    it('should return failed when it throws CallbackException', async () => {
+      const hash = generateRandomId();
+
+      const transactionInstance = {
+        wait: vi.fn(),
+        confirmations: vi.fn(),
+      };
+      transactionInstance.wait.mockRejectedValue({
+        code: 'CALL_EXCEPTION',
+      });
+      const getTransactionSpy = vi.spyOn(
+        network.getProvider(),
+        'getTransaction'
+      );
+      getTransactionSpy.mockResolvedValue(transactionInstance as any);
+
+      const result = await network.getTransactionStatus(hash);
+      expect(result).toEqual(EvmTxStatus.failed);
     });
   });
 });

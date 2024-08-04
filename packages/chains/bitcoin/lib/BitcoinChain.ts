@@ -361,10 +361,10 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
    * @param blockInfo
    * @returns true if the transaction is verified
    */
-  verifyLockTransactionExtraConditions = (
+  verifyLockTransactionExtraConditions = async (
     transaction: BitcoinTx,
     blockInfo: BlockInfo
-  ): boolean => {
+  ): Promise<boolean> => {
     return true;
   };
 

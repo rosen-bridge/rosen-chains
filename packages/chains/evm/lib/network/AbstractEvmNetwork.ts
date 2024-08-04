@@ -1,5 +1,6 @@
 import { AbstractChainNetwork } from '@rosen-chains/abstract-chain';
-import { Transaction } from 'ethers';
+import { Transaction, TransactionResponse } from 'ethers';
+import { EvmTxStatus } from '../types';
 
 abstract class AbstractEvmNetwork extends AbstractChainNetwork<Transaction> {
   /**
@@ -57,6 +58,13 @@ abstract class AbstractEvmNetwork extends AbstractChainNetwork<Transaction> {
   getMempoolTransactions = async (): Promise<Array<Transaction>> => {
     return [];
   };
+
+  /**
+   * gets the transaction status (mempool, succeed, failed)
+   * @param hash the unsigned hash or ID of the transaction
+   * @returns the transaction status
+   */
+  abstract getTransactionStatus: (hash: string) => Promise<EvmTxStatus>;
 }
 
 export default AbstractEvmNetwork;

@@ -1097,7 +1097,7 @@ describe('ErgoChain', () => {
      * @expected
      * - it should return false
      */
-    it('should return false when output box creation height is more than a year ago', () => {
+    it('should return false when output box creation height is more than a year ago', async () => {
       const blockInfo: BlockInfo = {
         hash: ergoTestUtils.generateRandomId(),
         parentHash: ergoTestUtils.generateRandomId(),
@@ -1108,7 +1108,7 @@ describe('ErgoChain', () => {
       );
 
       const ergoChain = ergoTestUtils.generateChainObject(network);
-      const result = ergoChain.verifyLockTransactionExtraConditions(
+      const result = await ergoChain.verifyLockTransactionExtraConditions(
         mockedTx,
         blockInfo
       );
@@ -1127,7 +1127,7 @@ describe('ErgoChain', () => {
      * @expected
      * - it should return true
      */
-    it('should return true when all output boxes creation heights are fresh', () => {
+    it('should return true when all output boxes creation heights are fresh', async () => {
       const blockInfo: BlockInfo = {
         hash: ergoTestUtils.generateRandomId(),
         parentHash: ergoTestUtils.generateRandomId(),
@@ -1138,7 +1138,7 @@ describe('ErgoChain', () => {
       );
 
       const ergoChain = ergoTestUtils.generateChainObject(network);
-      const result = ergoChain.verifyLockTransactionExtraConditions(
+      const result = await ergoChain.verifyLockTransactionExtraConditions(
         mockedTx,
         blockInfo
       );

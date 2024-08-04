@@ -273,7 +273,7 @@ describe('AbstractChain', () => {
         chain,
         'verifyLockTransactionExtraConditions'
       );
-      verifyLockTxSpy.mockReturnValueOnce(true);
+      verifyLockTxSpy.mockResolvedValueOnce(true);
 
       // run test
       const result = await chain.verifyEvent(event, feeConfig);
@@ -517,7 +517,7 @@ describe('AbstractChain', () => {
         chain,
         'verifyLockTransactionExtraConditions'
       );
-      verifyLockTxSpy.mockReturnValueOnce(true);
+      verifyLockTxSpy.mockResolvedValueOnce(true);
 
       // run test
       const result = await chain.verifyEvent(event, feeConfig);
@@ -597,7 +597,7 @@ describe('AbstractChain', () => {
         chain,
         'verifyLockTransactionExtraConditions'
       );
-      verifyLockTxSpy.mockReturnValueOnce(true);
+      verifyLockTxSpy.mockResolvedValueOnce(true);
 
       // run test
       const result = await chain.verifyEvent(event, fee);
@@ -677,7 +677,7 @@ describe('AbstractChain', () => {
         chain,
         'verifyLockTransactionExtraConditions'
       );
-      verifyLockTxSpy.mockReturnValueOnce(true);
+      verifyLockTxSpy.mockResolvedValueOnce(true);
 
       // run test
       const result = await chain.verifyEvent(event, fee);
@@ -746,7 +746,7 @@ describe('AbstractChain', () => {
         chain,
         'verifyLockTransactionExtraConditions'
       );
-      verifyLockTxSpy.mockReturnValueOnce(false);
+      verifyLockTxSpy.mockResolvedValueOnce(false);
 
       // run test
       const result = await chain.verifyEvent(event, feeConfig);
