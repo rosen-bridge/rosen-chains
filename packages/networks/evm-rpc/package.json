@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@rosen-bridge/abstract-logger": "^1.0.0",
-    "@rosen-bridge/evm-address-tx-extractor": "^1.0.0",
+    "@rosen-bridge/evm-address-tx-extractor": "^1.0.1",
     "typeorm": "^0.3.20"
   },
   "peerDependencies": {
