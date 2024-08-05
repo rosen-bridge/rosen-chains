@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/cardano-blockfrost-network",
-  "version": "6.0.0",
+  "version": "7.0.0",
   "description": "a package to be used as network api provider for @rosen-chains/cardano package",
   "repository": "@rosen-chains/cardano-blockfrost-network",
   "license": "GPL-3.0",
@@ -37,7 +37,7 @@
     "@rosen-bridge/abstract-logger": "^1.0.0"
   },
   "peerDependencies": {
-    "@rosen-chains/abstract-chain": "^8.0.0",
-    "@rosen-chains/cardano": "^8.0.0"
+    "@rosen-chains/abstract-chain": "^9.0.0",
+    "@rosen-chains/cardano": "^9.0.0"
   }
 }

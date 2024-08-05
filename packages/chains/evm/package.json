@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/evm",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "this project contains evm chains for Rosen-bridge",
   "repository": "https://github.com/rosen-bridge/rosen-chains",
   "license": "GPL-3.0",
@@ -40,6 +40,6 @@
     "ethers": "^6.11.1"
   },
   "peerDependencies": {
-    "@rosen-chains/abstract-chain": "^8.0.0"
+    "@rosen-chains/abstract-chain": "^9.0.0"
   }
 }
