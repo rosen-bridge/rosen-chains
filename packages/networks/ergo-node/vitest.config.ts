@@ -4,16 +4,18 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    globals: true,
     coverage: {
       all: true,
-      reporter: ['cobertura', 'text', 'text-summary'],
+      provider: 'istanbul',
+      reporter: 'cobertura',
     },
-    deps: {
-      registerNodeLoader: true,
+    passWithNoTests: true,
+    poolOptions: {
+      threads: {
+        singleThread: true,
+      },
     },
-    mockReset: true,
-    watch: false,
-    threads: false,
   },
   plugins: [wasm(), topLevelAwait()],
 });

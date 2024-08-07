@@ -5,10 +5,14 @@ export default defineConfig({
     globals: true,
     coverage: {
       all: true,
-      reporter: ['cobertura', 'text', 'text-summary'],
+      provider: 'istanbul',
+      reporter: 'cobertura',
     },
     passWithNoTests: true,
-    watch: false,
-    threads: false,
+    poolOptions: {
+      threads: {
+        singleThread: true,
+      },
+    },
   },
 });
