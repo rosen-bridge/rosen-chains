@@ -5,7 +5,7 @@
 ### Patch Changes
 
 - Updated dependencies
-  - @rosen-chains/evm@2.0.0
+  - @rosen-chains/evm@2.0.1
 
 ## 2.0.0
 

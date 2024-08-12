@@ -39,6 +39,6 @@
   },
   "peerDependencies": {
     "@rosen-chains/abstract-chain": "^9.0.0",
-    "@rosen-chains/evm": "^2.0.0"
+    "@rosen-chains/evm": "^2.0.1"
   }
 }
