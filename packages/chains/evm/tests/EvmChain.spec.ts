@@ -1968,19 +1968,22 @@ describe('EvmChain', () => {
      * - mock PaymentTransaction of unsigned transaction
      * - call the function
      * - check returned value
+     * - check if function got called
      * @expected
      * - it should return PaymentTransaction of signed transaction (all fields
      *   are same as input object, except txBytes which is signed transaction)
      * - signed tx bytes and hash should be as expected
+     * - `signFunction` should have been called with unsigned hash without '0x'
      */
     it('should return PaymentTransaction of the signed transaction', async () => {
       // mock a sign function to return signature
-      const signFunction = async (txHash: Uint8Array) => {
+      const signFunction = vi.fn();
+      signFunction.mockImplementation(async (txHash: Uint8Array) => {
         return {
           signature: TestData.transaction2Signature,
           signatureRecovery: TestData.transaction2SignatureRecovery,
         };
-      };
+      });
       const evmChain = testUtils.generateChainObject(network, signFunction);
 
       // mock PaymentTransaction of unsigned transaction
@@ -2007,6 +2010,11 @@ describe('EvmChain', () => {
       const signedTx = Serializer.deserialize(result.txBytes);
       expect(signedTx.serialized).toEqual(TestData.transaction2SignedTx);
       expect(signedTx.hash).toEqual(TestData.transaction2TxId);
+
+      // `signFunction` should have been called with unsigned hash without '0x'
+      expect(signFunction).toHaveBeenCalledWith(
+        Buffer.from(tx.unsignedHash.slice(2), 'hex')
+      );
     });
 
     /**

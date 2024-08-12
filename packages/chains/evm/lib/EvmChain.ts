@@ -510,30 +510,32 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     requiredSign: number
   ): Promise<PaymentTransaction> => {
     const tx = Serializer.deserialize(transaction.txBytes);
-    return this.signFunction(Buffer.from(tx.unsignedHash, 'hex')).then(
-      (res) => {
-        const r = '0x' + res.signature.slice(0, 64);
-        const s = '0x' + res.signature.slice(64, 128);
-        const yParity = Number(res.signatureRecovery);
-        if (yParity !== 0 && yParity !== 1)
-          throw new ImpossibleBehavior(
-            `non-binary signature recovery: ${res.signatureRecovery}`
-          );
-        const signature = Signature.from({
-          r,
-          s,
-          yParity: yParity,
-        });
-        tx.signature = signature;
-        return new PaymentTransaction(
-          transaction.network,
-          transaction.txId,
-          transaction.eventId,
-          Serializer.signedSerialize(tx),
-          transaction.txType
+    const hash =
+      tx.unsignedHash.slice(0, 2) === '0x'
+        ? tx.unsignedHash.slice(2)
+        : tx.unsignedHash;
+    return this.signFunction(Buffer.from(hash, 'hex')).then((res) => {
+      const r = '0x' + res.signature.slice(0, 64);
+      const s = '0x' + res.signature.slice(64, 128);
+      const yParity = Number(res.signatureRecovery);
+      if (yParity !== 0 && yParity !== 1)
+        throw new ImpossibleBehavior(
+          `non-binary signature recovery: ${res.signatureRecovery}`
         );
-      }
-    );
+      const signature = Signature.from({
+        r,
+        s,
+        yParity: yParity,
+      });
+      tx.signature = signature;
+      return new PaymentTransaction(
+        transaction.network,
+        transaction.txId,
+        transaction.eventId,
+        Serializer.signedSerialize(tx),
+        transaction.txType
+      );
+    });
   };
 
   /**

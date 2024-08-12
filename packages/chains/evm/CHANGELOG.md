@@ -1,5 +1,11 @@
 # @rosen-chains/evm
 
+## 2.0.1
+
+### Patch Changes
+
+- fix signTransaction
+
 ## 2.0.0
 
 ### Major Changes
