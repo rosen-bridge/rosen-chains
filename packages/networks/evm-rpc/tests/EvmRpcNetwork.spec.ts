@@ -622,7 +622,7 @@ describe('EvmRpcNetwork', () => {
 
   describe('getTransactionByNonce', () => {
     /**
-     * @target `EvmRpcNetwork.getTransactionByNonce` should return hashesh when tx is found in database
+     * @target `EvmRpcNetwork.getTransactionByNonce` should return hashes when tx is found in database
      * @dependencies
      * - database
      * @scenario
@@ -632,7 +632,7 @@ describe('EvmRpcNetwork', () => {
      * @expected
      * - it should be expected hashes
      */
-    it('should return hashesh when tx is found in database', async () => {
+    it('should return hashes when tx is found in database', async () => {
       const unsignedHash = generateRandomId();
       const signedHash = generateRandomId();
 
