@@ -619,4 +619,55 @@ describe('EvmRpcNetwork', () => {
       expect(result).toEqual(EvmTxStatus.failed);
     });
   });
+
+  describe('getTransactionByNonce', () => {
+    /**
+     * @target `EvmRpcNetwork.getTransactionByNonce` should return hashesh when tx is found in database
+     * @dependencies
+     * - database
+     * @scenario
+     * - insert transaction into database
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should be expected hashes
+     */
+    it('should return hashesh when tx is found in database', async () => {
+      const unsignedHash = generateRandomId();
+      const signedHash = generateRandomId();
+
+      const nonce = 10;
+      await addressTxRepository.insert({
+        unsignedHash: unsignedHash,
+        signedHash: signedHash,
+        nonce: nonce,
+        address: testData.lockAddress,
+        blockId: 'blockId',
+        extractor: 'custom-extractor',
+        status: 'succeed',
+      });
+
+      const result = await network.getTransactionByNonce(nonce);
+      expect(result).toEqual({
+        unsignedHash: unsignedHash,
+        txId: signedHash,
+      });
+    });
+
+    /**
+     * @target `EvmRpcNetwork.getTransactionByNonce` should throw Error when tx is not found in database
+     * @dependencies
+     * - database
+     * @scenario
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should throw Error
+     */
+    it('should throw Error when tx is not found in database', async () => {
+      await expect(async () => {
+        await network.getTransactionByNonce(10);
+      }).rejects.toThrow(Error);
+    });
+  });
 });
