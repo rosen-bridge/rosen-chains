@@ -1,5 +1,10 @@
 import * as testData from './testData';
-import { EvmConfigs, EvmTxStatus, TssSignFunction } from '../lib/types';
+import {
+  EvmConfigs,
+  EvmTxStatus,
+  TransactionHashes,
+  TssSignFunction,
+} from '../lib/types';
 import EvmChain from '../lib/EvmChain';
 import { vi } from 'vitest';
 import { AbstractEvmNetwork } from '../lib';
@@ -73,6 +78,13 @@ export const mockGetAddressNextAvailableNonce = (
   value: number
 ) => {
   spyOn(network, 'getAddressNextAvailableNonce').mockResolvedValue(value);
+};
+
+export const mockGetTransactionByNonce = (
+  network: AbstractEvmNetwork,
+  value: TransactionHashes
+) => {
+  spyOn(network, 'getTransactionByNonce').mockResolvedValue(value);
 };
 
 export const mockGetMaxPriorityFeePerGas = (

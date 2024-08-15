@@ -1,5 +1,5 @@
 import { Transaction } from 'ethers';
-import { AbstractEvmNetwork, EvmTxStatus } from '../../lib';
+import { AbstractEvmNetwork, EvmTxStatus, TransactionHashes } from '../../lib';
 import {
   BlockInfo,
   AssetBalance,
@@ -75,6 +75,10 @@ class TestEvmNetwork extends AbstractEvmNetwork {
   };
 
   getTransactionStatus = (hash: string): Promise<EvmTxStatus> => {
+    throw Error('Not mocked');
+  };
+
+  getTransactionByNonce = (nonce: number): Promise<TransactionHashes> => {
     throw Error('Not mocked');
   };
 }
