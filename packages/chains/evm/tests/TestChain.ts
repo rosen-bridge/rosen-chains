@@ -1,6 +1,5 @@
 import { RosenTokens } from '@rosen-bridge/tokens';
 import { AbstractEvmNetwork, EvmChain, TssSignFunction } from '../lib';
-import { EvmRosenExtractor } from '@rosen-bridge/rosen-extractor';
 
 class TestChain extends EvmChain {
   CHAIN = 'test';
@@ -14,7 +13,15 @@ class TestChain extends EvmChain {
     supportedTokens: Array<string>,
     signFunction: TssSignFunction
   ) {
-    super(network, configs, tokens, supportedTokens, signFunction);
+    super(
+      network,
+      configs,
+      tokens,
+      supportedTokens,
+      signFunction,
+      'test',
+      'test-native-token'
+    );
   }
 }
 
