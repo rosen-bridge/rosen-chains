@@ -1890,18 +1890,20 @@ describe('EvmChain', () => {
     });
 
     /**
-     * @target EvmChain.isTxValid should return false when nonce is already used
+     * @target EvmChain.isTxValid should return false when nonce is
+     * already used by another transaction
      * @dependencies
      * @scenario
      * - mock PaymentTransaction
      * - mock getTransactionStatus
      * - mock getAddressNextAvailableNonce
+     * - mock getTransactionByNonce
      * - call the function
      * - check returned value
      * @expected
      * - it should return false and as expected invalidation
      */
-    it('should return false when nonce is already used', async () => {
+    it('should return false when nonce is already used by another transaction', async () => {
       // mock PaymentTransaction
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
@@ -1921,6 +1923,13 @@ describe('EvmChain', () => {
       // mock getAddressNextAvailableNonce
       testUtils.mockGetAddressNextAvailableNonce(network, tx.nonce + 1);
 
+      // mock getTransactionByNonce
+      testUtils.mockGetTransactionByNonce(network, {
+        unsignedHash:
+          'b129a7ff43fa447edcd87dc596cd8788742d9f395a84e4b5863e7e9d266acf9c',
+        txId: '568722d20aabcc3102affe9bcd2637f3b8b46429b93154ec7f42649f9844b85e',
+      });
+
       // run test
       const result = await evmChain.isTxValid(paymentTx, SigningStatus.Signed);
 
@@ -1931,6 +1940,56 @@ describe('EvmChain', () => {
           reason: expect.any(String),
           unexpected: false,
         },
+      });
+    });
+
+    /**
+     * @target EvmChain.isTxValid should return true when nonce is
+     * used by current transaction
+     * @dependencies
+     * @scenario
+     * - mock PaymentTransaction
+     * - mock getTransactionStatus
+     * - mock getAddressNextAvailableNonce
+     * - mock getTransactionByNonce
+     * - call the function
+     * - check returned value
+     * @expected
+     * - it should return true with no details
+     */
+    it('should return true when nonce is used by current transaction', async () => {
+      // mock PaymentTransaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const tx = Transaction.from(TestData.erc20transaction as TransactionLike);
+
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // mock getTransactionStatus
+      testUtils.mockGetTransactionStatus(network, EvmTxStatus.succeed);
+
+      // mock getAddressNextAvailableNonce
+      testUtils.mockGetAddressNextAvailableNonce(network, tx.nonce + 1);
+
+      // mock getTransactionByNonce
+      testUtils.mockGetTransactionByNonce(network, {
+        unsignedHash: tx.unsignedHash,
+        txId: tx.hash!,
+      });
+
+      // run test
+      const result = await evmChain.isTxValid(paymentTx, SigningStatus.Signed);
+
+      // check returned value
+      expect(result).toEqual({
+        isValid: true,
+        details: undefined,
       });
     });
 

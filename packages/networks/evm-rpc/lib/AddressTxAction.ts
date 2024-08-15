@@ -42,6 +42,27 @@ class AddressTxAction {
     }
     return res[0];
   };
+
+  /**
+   * gets transaction by nonce
+   * @param nonce
+   */
+  getTxByNonce = async (nonce: number): Promise<AddressTxsEntity> => {
+    const res = await this.repository.find({
+      where: {
+        address: this.address,
+        nonce: nonce,
+      },
+    });
+    if (res.length === 0) {
+      throw new Error(`No transaction is found with nonce [${nonce}]`);
+    } else if (res.length > 1) {
+      this.logger.warn(
+        `Found [${res.length}] transactions with nonce [${nonce}]. returning the first one...`
+      );
+    }
+    return res[0];
+  };
 }
 
 export default AddressTxAction;

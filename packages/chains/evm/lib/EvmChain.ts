@@ -473,6 +473,13 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       this.configs.addresses.lock
     );
     if (nextNonce > trx.nonce) {
+      const hashes = this.network.getTransactionByNonce(trx.nonce);
+      if ((await hashes).unsignedHash === trx.unsignedHash) {
+        return {
+          isValid: true,
+          details: undefined,
+        };
+      }
       this.logger.debug(
         `Tx [${transaction.txId}] invalid: Transaction's nonce [${trx.nonce}] is not available anymore according to address's current nonce [${nextNonce}]`
       );

@@ -11,6 +11,7 @@ import {
   AbstractEvmNetwork,
   EvmTxStatus,
   PartialERC20ABI,
+  TransactionHashes,
 } from '@rosen-chains/evm';
 import {
   Block,
@@ -385,6 +386,20 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
     } catch (e) {
       throw new UnexpectedApiError(baseError + `${e}`);
     }
+  };
+
+  /**
+   * gets id and unsigned hash of the transaction of the lock address with specific nonce
+   * throws error if NO tx is found for that nonce
+   * @param nonce
+   * @returns the transaction id and unsigned hash
+   */
+  getTransactionByNonce = async (nonce: number): Promise<TransactionHashes> => {
+    const txRecord = await this.dbAction.getTxByNonce(nonce);
+    return {
+      unsignedHash: txRecord.unsignedHash,
+      txId: txRecord.signedHash,
+    };
   };
 
   /**
