@@ -191,7 +191,7 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
    * @param transaction the transaction
    */
   submitTransaction = async (transaction: Transaction): Promise<void> => {
-    await this.provider.broadcastTransaction(transaction.toJSON());
+    await this.provider.broadcastTransaction(transaction.serialized);
   };
 
   /**

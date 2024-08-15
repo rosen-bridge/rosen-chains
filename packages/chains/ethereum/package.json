@@ -32,6 +32,7 @@
     "@rosen-chains/evm": "^2.0.1"
   },
   "dependencies": {
+    "@rosen-bridge/abstract-logger": "^1.0.0",
     "@rosen-bridge/tokens": "^1.2.1"
   }
 }
