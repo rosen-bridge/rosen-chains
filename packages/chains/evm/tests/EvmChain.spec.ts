@@ -1,6 +1,4 @@
 import { expect, vi } from 'vitest';
-import TestEvmNetwork from './network/TestEvmNetwork';
-import * as TestData from './testData';
 import {
   AssetNotSupportedError,
   MaxParallelTxError,
@@ -10,16 +8,41 @@ import {
   TransactionFormatError,
   TransactionType,
 } from '@rosen-chains/abstract-chain';
+import TestEvmNetwork from './network/TestEvmNetwork';
+import * as TestData from './testData';
 import * as testUtils from './TestUtils';
 import Serializer from '../lib/Serializer';
 import { Transaction, TransactionLike } from 'ethers';
 import { mockGetAddressBalanceForNativeToken } from './TestUtils';
 import { EvmTxStatus } from '../lib';
+import TestChain from './TestChain';
 
 describe('EvmChain', () => {
   const network = new TestEvmNetwork();
 
   const evmChain = testUtils.generateChainObject(network);
+
+  describe(`constructor`, () => {
+    /**
+     * @target EvmChain.constructor should initialize rosen-extractor successfully
+     * @dependencies
+     * @scenario
+     * - initialize EvmChain
+     * - check CHAIN variable in rosen-extractor
+     * @expected
+     * - CHAIN variable should be the same as the one defined EvmChain
+     */
+    it('should initialize rosen-extractor successfully', async () => {
+      const chain = new TestChain(
+        network,
+        testUtils.configs,
+        TestData.testTokenMap,
+        TestData.supportedTokens,
+        testUtils.mockedSignFn
+      );
+      expect(chain.extractor?.chain).toEqual(chain.CHAIN);
+    });
+  });
 
   describe('generateMultipleTransactions', () => {
     /**

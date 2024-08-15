@@ -43,29 +43,21 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     tokens: RosenTokens,
     supportedTokens: Array<string>,
     signFunction: TssSignFunction,
+    CHAIN: string,
+    NATIVE_TOKEN_ID: string,
     logger?: AbstractLogger
   ) {
     super(network, configs, tokens, logger);
     this.supportedTokens = supportedTokens;
     this.signFunction = signFunction;
-    this.initExtractor(tokens, logger);
-  }
-
-  /**
-   * initializes rosen extractor
-   * @param tokens
-   * @param nativeToken
-   * @param logger
-   */
-  protected initExtractor = (tokens: RosenTokens, logger?: any) => {
     this.extractor = new EvmRosenExtractor(
       this.configs.addresses.lock,
       tokens,
-      this.CHAIN,
-      this.NATIVE_TOKEN_ID,
+      CHAIN,
+      NATIVE_TOKEN_ID,
       logger
     );
-  };
+  }
 
   /**
    * generates single or multiple unsigned PaymentTransactions for a payment order
@@ -773,7 +765,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
   /**
    * serializes the transaction of this chain into string
    */
-  protected serializeTx = (tx: Transaction): string => tx.toJSON();
+  protected serializeTx = (tx: Transaction): string =>
+    tx.serialized.substring(2);
 
   /**
    * gets the address balance for native token and all supported tokens
