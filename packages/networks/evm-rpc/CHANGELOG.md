@@ -1,5 +1,19 @@
 # @rosen-chains/evm-rpc
 
+## 2.1.0
+
+### Minor Changes
+
+- add getTransactionByNonce
+
+### Patch Changes
+
+- update evm-address-tx-extractor version
+- fix transaction submission
+- Updated dependencies
+  - @rosen-chains/evm@3.0.0
+  - @rosen-chains/abstract-chain@9.0.1
+
 ## 2.0.1
 
 ### Patch Changes

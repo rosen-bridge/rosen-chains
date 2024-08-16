@@ -1,5 +1,20 @@
 # @rosen-chains/evm
 
+## 3.0.0
+
+### Major Changes
+
+- add chain name and native token id to constructor to fix extractor intialization
+- add getAddressTransactionByNonce to AbstractEvmNetwork
+
+### Patch Changes
+
+- fix tx serialization for rosen-extractor
+- update rosen-extractor version
+- improve isTxValid to not invalid the tx when tx is not found
+- Updated dependencies
+  - @rosen-chains/abstract-chain@9.0.1
+
 ## 2.0.1
 
 ### Patch Changes
