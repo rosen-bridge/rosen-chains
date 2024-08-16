@@ -1,5 +1,13 @@
 # @rosen-chains/bitcoin
 
+## 5.0.1
+
+### Patch Changes
+
+- update rosen-extractor version
+- Updated dependencies
+  - @rosen-chains/abstract-chain@9.0.1
+
 ## 5.0.0
 
 ### Major Changes
