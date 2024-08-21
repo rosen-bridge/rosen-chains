@@ -37,6 +37,7 @@ export const configs: EvmConfigs = {
   gasPriceSlippage: 15n,
   gasLimitSlippage: 25n,
   gasLimitMultiplier: 3n,
+  gasLimitCap: 100000n,
 };
 
 export const mockedSignFn = () =>
