@@ -159,9 +159,14 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           chainId: this.CHAIN_ID,
         });
       }
-      trx.gasLimit =
-        (await this.network.getGasRequired(trx)) *
-        this.configs.gasLimitMultiplier;
+      let estimatedRequiredGas = await this.network.getGasRequired(trx);
+      if (estimatedRequiredGas > this.configs.gasLimitCap) {
+        this.logger.warn(
+          `Estimated required gas is more than gas limit cap config and cap is used for the tx [${estimatedRequiredGas} > ${this.configs.gasLimitCap}]`
+        );
+        estimatedRequiredGas = this.configs.gasLimitCap;
+      }
+      trx.gasLimit = estimatedRequiredGas * this.configs.gasLimitMultiplier;
       totalGas += trx.gasLimit;
 
       evmTrxs.push(
@@ -375,8 +380,14 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     }
 
     // check gas limit
-    const gasRequired =
-      (await this.network.getGasRequired(tx)) * this.configs.gasLimitMultiplier;
+    let estimatedRequiredGas = await this.network.getGasRequired(tx);
+    if (estimatedRequiredGas > this.configs.gasLimitCap) {
+      this.logger.debug(
+        `Estimated required gas is more than gas limit cap config and cap is used for verification [${estimatedRequiredGas} > ${this.configs.gasLimitCap}]`
+      );
+      estimatedRequiredGas = this.configs.gasLimitCap;
+    }
+    const gasRequired = estimatedRequiredGas * this.configs.gasLimitMultiplier;
     const gasLimitSlippage =
       (gasRequired * BigInt(this.configs.gasLimitSlippage)) / 100n;
     const gasDifference =

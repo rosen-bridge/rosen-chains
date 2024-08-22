@@ -64,6 +64,7 @@ describe('EvmChain', () => {
      * - no extra data should be found in the transactions' data
      * - transactions must be of type 2 and has no blobs
      * - nonces must be in sequential order starting from next available nonce
+     * - gas limit should be as expected
      */
     it('should generate payment transactions successfully for multiple orders', async () => {
       const orders = TestData.multipleOrders;
@@ -87,9 +88,10 @@ describe('EvmChain', () => {
 
       // mock hasLockAddressEnoughAssets, getMaxFeePerGas,
       // getGasRequired, getAddressNextNonce, getMaxPriorityFeePerGas
+      const requiredGas = 100000n;
       testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
       testUtils.mockGetMaxFeePerGas(network, 10n);
-      testUtils.mockGetGasRequired(network, 100000n);
+      testUtils.mockGetGasRequired(network, requiredGas);
       testUtils.mockGetAddressNextAvailableNonce(network, nonce);
       testUtils.mockGetMaxPriorityFeePerGas(network, 10n);
 
@@ -133,6 +135,9 @@ describe('EvmChain', () => {
 
         // check nonce
         expect(tx.nonce).toEqual(nonce + index);
+
+        // check gas limit
+        expect(tx.gasLimit).toEqual(requiredGas * 3n); // requiredGas * gasLimitMultiplier
       }
     });
 
@@ -155,6 +160,7 @@ describe('EvmChain', () => {
      * - no extra data should be found in the transaction data
      * - transaction must be of type 2 and has no blobs
      * - nonce must be the same as the next available nonce
+     * - gas limit should be as expected
      */
     it('should generate payment transaction successfully for single order', async () => {
       const order = TestData.nativePaymentOrder;
@@ -164,9 +170,10 @@ describe('EvmChain', () => {
 
       // mock hasLockAddressEnoughAssets, getMaxFeePerGas,
       // getGasRequired, getAddressNextNonce, getMaxPriorityFeePerGas
+      const requiredGas = 21000n;
       testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
       testUtils.mockGetMaxFeePerGas(network, 10n);
-      testUtils.mockGetGasRequired(network, 21000n);
+      testUtils.mockGetGasRequired(network, requiredGas);
       testUtils.mockGetAddressNextAvailableNonce(network, nonce);
       testUtils.mockGetMaxPriorityFeePerGas(network, 10n);
 
@@ -204,6 +211,83 @@ describe('EvmChain', () => {
 
       // check nonce
       expect(tx.nonce).toEqual(nonce);
+
+      // check gas limit
+      expect(tx.gasLimit).toEqual(requiredGas * 3n); // requiredGas * gasLimitMultiplier
+    });
+
+    /**
+     * @target EvmChain.generateMultipleTransactions should generate payment
+     * transaction with capped gas limit when required is too high
+     * @dependencies
+     * @scenario
+     * - mock hasLockAddressEnoughAssets, getMaxFeePerGas
+     * - mock getGasRequired, getAddressNextNonce
+     * - mock getMaxPriorityFeePerGas
+     * - call the function
+     * - check returned value
+     * @expected
+     * - PaymentTransaction txType, eventId and network should be as
+     *   expected
+     * - extracted order of generated transaction should be the same as input
+     *   order
+     * - eventId should be properly in the transaction data
+     * - no extra data should be found in the transaction data
+     * - transaction must be of type 2 and has no blobs
+     * - nonce must be the same as the next available nonce
+     * - gas limit should be the capped gas limit
+     */
+    it('should generate payment transaction with capped gas limit when required is too high', async () => {
+      const order = TestData.nativePaymentOrder;
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const nonce = 54;
+
+      // mock hasLockAddressEnoughAssets, getMaxFeePerGas,
+      // getGasRequired, getAddressNextNonce, getMaxPriorityFeePerGas
+      testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
+      testUtils.mockGetMaxFeePerGas(network, 10n);
+      testUtils.mockGetGasRequired(network, 200000n);
+      testUtils.mockGetAddressNextAvailableNonce(network, nonce);
+      testUtils.mockGetMaxPriorityFeePerGas(network, 10n);
+
+      // run test
+      const evmTx = await evmChain.generateMultipleTransactions(
+        eventId,
+        txType,
+        order,
+        [],
+        []
+      );
+
+      // check returned value
+      expect(evmTx[0].txType).toEqual(txType);
+      expect(evmTx[0].eventId).toEqual(eventId);
+      expect(evmTx[0].network).toEqual(evmChain.CHAIN);
+
+      // extracted order of generated transaction should be the same as input order
+      const extractedOrder = evmChain.extractTransactionOrder(evmTx[0]);
+      expect(extractedOrder).toEqual(order);
+
+      const tx = Serializer.deserialize(evmTx[0].txBytes);
+
+      // check eventId encoded at the end of the data
+      expect(tx.data.substring(2, 34)).toEqual(eventId);
+
+      // check there is no more data
+      expect(tx.data.length).toEqual(34);
+
+      // check transaction type
+      expect(tx.type).toEqual(2);
+
+      // check blobs zero
+      expect(tx.maxFeePerBlobGas).toEqual(null);
+
+      // check nonce
+      expect(tx.nonce).toEqual(nonce);
+
+      // check gas limit
+      expect(tx.gasLimit).toEqual(100000n * 3n); // gasLimitCap * gasLimitMultiplier
     });
 
     /**
@@ -798,6 +882,49 @@ describe('EvmChain', () => {
       const txType = TransactionType.payment;
       const tx = Transaction.from(TestData.transaction1Json);
       tx.gasLimit = 60000n * evmChain.configs.gasLimitMultiplier;
+      tx.maxFeePerGas = 22n;
+      tx.maxPriorityFeePerGas = 8n;
+      tx.value = 0n;
+
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+
+      // run test
+      const result = await evmChain.verifyTransactionFee(paymentTx);
+
+      // check returned value
+      expect(result).toEqual(false);
+    });
+
+    /**
+     * @target EvmChain.verifyTransactionFee should return false when gasLimit is over
+     * the cap for erc-20 transfer
+     * @dependencies
+     * @scenario
+     * - mock mockGetGasRequired
+     * - mock mockGetMaxFeePerGas, mockGetMaxPriorityFeePerGas
+     * - mock PaymentTransaction
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when gasLimit is over the cap for erc-20 transfer', async () => {
+      // mock a config that has more fee and wrong required gas
+      // comparing to the mocked transaction
+      testUtils.mockGetGasRequired(network, 90000n);
+      testUtils.mockGetMaxFeePerGas(network, 20n);
+      testUtils.mockGetMaxPriorityFeePerGas(network, 7n);
+
+      // mock PaymentTransaction
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const tx = Transaction.from(TestData.transaction1Json);
+      tx.gasLimit = 120000n * evmChain.configs.gasLimitMultiplier;
       tx.maxFeePerGas = 22n;
       tx.maxPriorityFeePerGas = 8n;
       tx.value = 0n;

@@ -5,6 +5,7 @@ export interface EvmConfigs extends ChainConfigs {
   gasPriceSlippage: bigint;
   gasLimitSlippage: bigint;
   gasLimitMultiplier: bigint;
+  gasLimitCap: bigint;
 }
 
 export type TssSignFunction = (txHash: Uint8Array) => Promise<{

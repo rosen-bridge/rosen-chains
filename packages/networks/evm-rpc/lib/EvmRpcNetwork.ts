@@ -29,6 +29,7 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
   readonly chain: string;
   protected readonly provider: JsonRpcProvider;
   protected readonly dbAction: AddressTxAction;
+  protected readonly lockAddress: string;
 
   constructor(
     chain: string,
@@ -44,6 +45,7 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
       ? new JsonRpcProvider(`${url}/${authToken}`)
       : new JsonRpcProvider(`${url}`);
     this.dbAction = new AddressTxAction(lockAddress, dataSource, logger);
+    this.lockAddress = lockAddress;
   }
 
   /**
@@ -297,7 +299,10 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
    */
   getGasRequired = async (transaction: Transaction): Promise<bigint> => {
     try {
-      const gas = await this.provider.estimateGas(transaction);
+      const gas = await this.provider.estimateGas({
+        ...transaction.toJSON(),
+        from: this.lockAddress,
+      });
       this.logger.debug(
         `requested 'estimateGas' of ${
           this.chain
