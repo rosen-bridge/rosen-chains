@@ -1,5 +1,13 @@
 # @rosen-chains/evm-rpc
 
+## 2.1.1
+
+### Patch Changes
+
+- fix gas estimation
+- Updated dependencies
+  - @rosen-chains/evm@4.0.0
+
 ## 2.1.0
 
 ### Minor Changes
