@@ -1,5 +1,11 @@
 # @rosen-chains/evm
 
+## 4.0.0
+
+### Major Changes
+
+- add gasLimitCap to EvmConfigs (the cap is used in tx generation and fee verification when required gas is too high)
+
 ## 3.0.0
 
 ### Major Changes
