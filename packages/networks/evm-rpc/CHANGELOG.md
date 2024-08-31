@@ -1,5 +1,13 @@
 # @rosen-chains/evm-rpc
 
+## 2.1.2
+
+### Patch Changes
+
+- improve log in `getGasRequired` function
+- Updated dependencies
+  - @rosen-chains/evm@4.0.1
+
 ## 2.1.1
 
 ### Patch Changes

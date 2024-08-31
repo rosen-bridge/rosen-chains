@@ -568,33 +568,43 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       return;
     }
 
-    // check type
-    if (tx.type !== 2) {
-      this.logger.warn(
-        `Cannot submit transaction [${transaction.txId}]: Transaction is not of type 2`
-      );
-      return;
-    }
+    try {
+      // check type
+      if (tx.type !== 2) {
+        this.logger.warn(
+          `Cannot submit transaction [${transaction.txId}]: Transaction is not of type 2`
+        );
+        return;
+      }
 
-    // check fees
-    const gasRequired = await this.network.getGasRequired(tx);
-    if (gasRequired > tx.gasLimit) {
-      this.logger.warn(
-        `Cannot submit transaction [${transaction.txId}]: Transaction gas limit [${tx.maxFeePerGas}] is less than the required gas [${gasRequired}]`
-      );
-      return;
-    }
+      // check fees
+      const gasRequired = await this.network.getGasRequired(tx);
+      if (gasRequired > tx.gasLimit) {
+        this.logger.warn(
+          `Cannot submit transaction [${transaction.txId}]: Transaction gas limit [${tx.maxFeePerGas}] is less than the required gas [${gasRequired}]`
+        );
+        return;
+      }
 
-    // check lock still has enough assets
-    const txAssets = await this.getTransactionAssets(transaction);
-    if (!(await this.hasLockAddressEnoughAssets(txAssets.inputAssets))) {
+      // check lock still has enough assets
+      const txAssets = await this.getTransactionAssets(transaction);
+      if (!(await this.hasLockAddressEnoughAssets(txAssets.inputAssets))) {
+        this.logger.warn(
+          `Cannot submit transaction [${
+            transaction.txId
+          }]: Locked assets cannot cover transaction assets: ${JSONBigInt.stringify(
+            txAssets.inputAssets
+          )}`
+        );
+        return;
+      }
+    } catch (e) {
       this.logger.warn(
-        `Cannot submit transaction [${
-          transaction.txId
-        }]: Locked assets cannot cover transaction assets: ${JSONBigInt.stringify(
-          txAssets.inputAssets
-        )}`
+        `An error occurred while checking transaction [${transaction.txId}] for submission: ${e}`
       );
+      if (e instanceof Error && e.stack) {
+        this.logger.warn(e.stack);
+      }
       return;
     }
 
