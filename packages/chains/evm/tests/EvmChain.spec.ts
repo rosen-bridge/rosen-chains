@@ -1564,6 +1564,46 @@ describe('EvmChain', () => {
       await evmChain.submitTransaction(paymentTx);
       expect(submitTransactionSpy).not.toHaveBeenCalled();
     });
+
+    /**
+     * @target EvmChain.submitTransaction should not submit the transaction
+     * when checking failed due to error
+     * @dependencies
+     * @scenario
+     * - mock invalid PaymentTransaction
+     * - mock getGasRequired to throw error
+     * - run test
+     * - check function is not called
+     * @expected
+     * - it should not call the function
+     */
+    it('should not submit the transaction when checking failed due to error', async () => {
+      // mock getGasRequired
+      vi.spyOn(network, 'getGasRequired').mockImplementation(() => {
+        throw Error(`test Error`);
+      });
+
+      // mock PaymentTransaction
+      const tx = Transaction.from(TestData.transaction1Json);
+      tx.gasLimit = 55000n;
+      tx.maxFeePerGas = 21n;
+      tx.maxPriorityFeePerGas = 6n;
+      tx.value = 2n;
+
+      const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const txType = TransactionType.payment;
+      const paymentTx = new PaymentTransaction(
+        evmChain.CHAIN,
+        tx.unsignedHash,
+        eventId,
+        Serializer.serialize(tx),
+        txType
+      );
+      const submitTransactionSpy = vi.spyOn(network, 'submitTransaction');
+      submitTransactionSpy.mockImplementation(async () => undefined);
+      await evmChain.submitTransaction(paymentTx);
+      expect(submitTransactionSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('verifyTransactionExtraConditions', () => {
