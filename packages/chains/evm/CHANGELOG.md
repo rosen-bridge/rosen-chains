@@ -1,5 +1,11 @@
 # @rosen-chains/evm
 
+## 4.0.1
+
+### Patch Changes
+
+- catch errors while checking tx before submission
+
 ## 4.0.0
 
 ### Major Changes
