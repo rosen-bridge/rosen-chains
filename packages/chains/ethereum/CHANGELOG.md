@@ -1,5 +1,13 @@
 # @rosen-chains/ethereum
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies
+  - @rosen-chains/evm@4.0.2
+  - @rosen-chains/abstract-chain@9.0.2
+
 ## 0.1.5
 
 ### Patch Changes

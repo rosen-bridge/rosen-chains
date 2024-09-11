@@ -1,5 +1,14 @@
 # @rosen-chains/bitcoin-esplora
 
+## 4.0.2
+
+### Patch Changes
+
+- improve logs
+- Updated dependencies
+  - @rosen-chains/bitcoin@5.0.2
+  - @rosen-chains/abstract-chain@9.0.2
+
 ## 4.0.1
 
 ### Patch Changes
