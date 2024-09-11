@@ -416,9 +416,9 @@ class BitcoinEsploraNetwork extends AbstractBitcoinNetwork {
       .get<Array<string>>(`/api/mempool/txids`)
       .then((res) => {
         this.logger.debug(
-          `requested 'mempool/txids'. received: ${JsonBigInt.stringify(
-            res.data
-          )}`
+          `requested 'mempool/txids'. received [${JsonBigInt.stringify(
+            res.data.length
+          )}] txs`
         );
         return res.data;
       })

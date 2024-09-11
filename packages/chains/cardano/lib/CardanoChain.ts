@@ -495,6 +495,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
     // check ttl
     const ttl = txBody.ttl();
     if (ttl && ttl < (await this.network.currentSlot())) {
+      this.logger.info(
+        `Tx [${transaction.txId}] is invalid: ttl [${ttl}] is expired`
+      );
       return {
         isValid: false,
         details: {
@@ -508,7 +511,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
     for (let i = 0; i < txBody.inputs().len(); i++) {
       const boxId = CardanoUtils.getBoxId(txBody.inputs().get(i));
       if (!(await this.network.isBoxUnspentAndValid(boxId))) {
-        this.logger.debug(
+        this.logger.info(
           `Tx [${transaction.txId}] is invalid due to spending invalid input box [${boxId}] at index [${i}]`
         );
         return {
@@ -563,8 +566,8 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
     if (
       tx.body().fee().compare(CardanoUtils.bigIntToBigNum(this.configs.fee)) > 0
     ) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction fee [${tx
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified: Transaction fee [${tx
           .body()
           .fee()
           .to_str()}] is more than maximum allowed fee [${this.configs.fee.toString()}]`
@@ -586,7 +589,9 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
 
     // check metadata
     if (tx.auxiliary_data()) {
-      this.logger.debug(`Tx [${transaction.txId}] invalid: Contains metadata`);
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified: Contains metadata`
+      );
       return false;
     }
 
@@ -594,8 +599,8 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
     const changeBoxIndex = tx.body().outputs().len() - 1;
     const changeBox = tx.body().outputs().get(changeBoxIndex);
     if (changeBox.address().to_bech32() !== this.configs.addresses.lock) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Change box address is wrong`
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified: Change box address is wrong`
       );
       return false;
     }

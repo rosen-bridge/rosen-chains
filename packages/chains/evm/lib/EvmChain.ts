@@ -27,6 +27,7 @@ import { Signature, Transaction } from 'ethers';
 import Serializer from './Serializer';
 import * as EvmUtils from './EvmUtils';
 import { AbstractLogger } from '@rosen-bridge/abstract-logger';
+import JsonBigInt from '@rosen-bridge/json-bigint';
 
 abstract class EvmChain extends AbstractChain<Transaction> {
   declare network: AbstractEvmNetwork;
@@ -80,8 +81,12 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     unsignedTransactions: PaymentTransaction[],
     serializedSignedTransactions: string[]
   ): Promise<PaymentTransaction[]> => {
-    // split orders
+    // split orders and aggregate
     const orders = EvmUtils.splitPaymentOrders(order);
+    let orderRequiredAssets: AssetBalance = {
+      nativeToken: 0n,
+      tokens: [],
+    };
     orders.forEach((singleOrder) => {
       if (singleOrder.assets.tokens.length === 1) {
         const assetId = singleOrder.assets.tokens[0].id;
@@ -90,8 +95,15 @@ abstract class EvmChain extends AbstractChain<Transaction> {
             `Asset id [${assetId}] is not supported`
           );
         }
+        orderRequiredAssets = ChainUtils.sumAssetBalance(
+          orderRequiredAssets,
+          singleOrder.assets
+        );
       }
     });
+    this.logger.debug(
+      `Order required assets: ${JsonBigInt.stringify(orderRequiredAssets)}`
+    );
 
     // check the number of parallel transactions won't be exceeded
     let nextNonce = await this.network.getAddressNextAvailableNonce(
@@ -182,9 +194,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     }
 
     // check the balance in the lock address
-    const requiredAssets: AssetBalance = orders.reduce(
-      (sum: AssetBalance, order: SinglePayment) =>
-        ChainUtils.sumAssetBalance(sum, order.assets),
+    const requiredAssets: AssetBalance = ChainUtils.sumAssetBalance(
+      orderRequiredAssets,
       {
         nativeToken: this.tokenMap.wrapAmount(
           this.NATIVE_TOKEN_ID,
@@ -193,6 +204,9 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         ).amount,
         tokens: [],
       }
+    );
+    this.logger.debug(
+      `Required assets: ${JsonBigInt.stringify(requiredAssets)}`
     );
 
     if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
@@ -351,19 +365,23 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     try {
       tx = Serializer.deserialize(transaction.txBytes);
     } catch (error) {
-      this.logger.debug(`Tx [${transaction.txId}] invalid: ${error}`);
+      this.logger.info(
+        `Failed to deserialize tx [${transaction.txId}]: ${error}`
+      );
       return false;
     }
 
     if (tx.to === null) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] invalid: does not have \`to\``
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified: does not have \`to\``
       );
       return false;
     }
 
     if (tx.type !== 2) {
-      this.logger.debug(`Tx [${transaction.txId}] invalid: is not of type 2`);
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified: is not of type 2`
+      );
       return false;
     }
 
@@ -396,8 +414,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         : gasRequired - tx.gasLimit;
 
     if (gasDifference > gasLimitSlippage) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction gas limit [${tx.gasLimit}] is too far from calculated gas limit [${gasRequired}]`
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified: Transaction gas limit [${tx.gasLimit}] is too far from calculated gas limit [${gasRequired}]`
       );
       return false;
     }
@@ -412,8 +430,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         : networkMaxFee - tx.maxFeePerGas;
 
     if (maxFeeDifference > maxFeeSlippage) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction max fee [${tx.maxFeePerGas}] is too far from network's max fee [${networkMaxFee}]`
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified: Transaction max fee [${tx.maxFeePerGas}] is too far from network's max fee [${networkMaxFee}]`
       );
       return false;
     }
@@ -427,8 +445,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         : networkMaxPriorityFee - tx.maxPriorityFeePerGas;
 
     if (maxPriorityFeeDifference > priorityFeeSlippage) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction max priority fee [${tx.maxPriorityFeePerGas}] is too far from network's max priority fee [${networkMaxPriorityFee}]`
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified: Transaction max priority fee [${tx.maxPriorityFeePerGas}] is too far from network's max priority fee [${networkMaxPriorityFee}]`
       );
       return false;
     }
@@ -452,8 +470,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     try {
       trx = Serializer.deserialize(transaction.txBytes);
     } catch (error) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] invalid: failed to deserialized due to error: ${error}`
+      this.logger.info(
+        `Tx [${transaction.txId}] is invalid: failed to deserialized due to error: ${error}`
       );
       return {
         isValid: false,
@@ -467,8 +485,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     // check if tx is failed
     const txStatus = await this.network.getTransactionStatus(transaction.txId);
     if (txStatus === EvmTxStatus.failed) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] invalid: tx is failed in blockchain`
+      this.logger.info(
+        `Tx [${transaction.txId}] is invalid: tx is failed in blockchain`
       );
       return {
         isValid: false,
@@ -491,8 +509,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
           details: undefined,
         };
       }
-      this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Transaction's nonce [${trx.nonce}] is not available anymore according to address's current nonce [${nextNonce}]`
+      this.logger.info(
+        `Tx [${transaction.txId}] is invalid: Transaction's nonce [${trx.nonce}] is not available anymore according to address's current nonce [${nextNonce}]`
       );
       return {
         isValid: false,
@@ -564,7 +582,9 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     try {
       tx = Serializer.deserialize(transaction.txBytes);
     } catch (error) {
-      this.logger.debug(`Tx [${transaction.txId}] invalid: ${error}`);
+      this.logger.warn(
+        `Failed to deserialize tx [${transaction.txId}]: ${error}`
+      );
       return;
     }
 
@@ -705,7 +725,9 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     const tx = Serializer.deserialize(transaction.txBytes);
 
     if (tx.to === null) {
-      this.logger.debug(`Tx [${transaction.txId}] is invalid. \`to\` is null`);
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified. \`to\` is null`
+      );
       return false;
     }
 
@@ -717,16 +739,16 @@ abstract class EvmChain extends AbstractChain<Transaction> {
 
     // only type 2 transactions are allowed
     if (tx.type !== 2) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] is invalid. It is not of type 2`
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified. It is not of type 2`
       );
       return false;
     }
 
     // tx data must have correct length
     if (![eidlen + 2, eidlen + 2 + 136].includes(tx.data.length)) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] is invalid. Unexpected \`data\` bytes length [${tx.data.length}]`
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified. Unexpected \`data\` bytes length [${tx.data.length}]`
       );
       return false;
     }
@@ -734,8 +756,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     // eventId must be at the end of `data`
     const eventId = tx.data.substring(tx.data.length - eidlen);
     if (eventId !== transaction.eventId) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] is invalid. Encoded eventId [${eventId}] does not match with the expected one [${transaction.eventId}]`
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified. Encoded eventId [${eventId}] does not match with the expected one [${transaction.eventId}]`
       );
       return false;
     }
@@ -745,8 +767,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       (tx.value === 0n && tx.data.length === eidlen + 2) ||
       (tx.value !== 0n && tx.data.length === 136 + eidlen + 2)
     ) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] is invalid. It both transfers native-token and has extra data.`
+      this.logger.info(
+        `Tx [${transaction.txId}] is not verified. It both transfers native-token and has extra data.`
       );
       return false;
     }
@@ -754,8 +776,8 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     // only erc-20 `transfer` is allowed
     if (tx.value === 0n) {
       if (!EvmUtils.isTransfer(tx.to, tx.data)) {
-        this.logger.debug(
-          `Tx [${transaction.txId}] is invalid. \`data\` field [${tx.data}] can not be parsed with 'transfer' ABI.`
+        this.logger.info(
+          `Tx [${transaction.txId}] is not verified. \`data\` field [${tx.data}] can not be parsed with 'transfer' ABI.`
         );
         return false;
       }
@@ -782,7 +804,7 @@ abstract class EvmChain extends AbstractChain<Transaction> {
       );
     const txStatus = await this.network.getTransactionStatus(transaction.hash);
     if (txStatus !== EvmTxStatus.succeed) {
-      this.logger.debug(
+      this.logger.info(
         `Lock tx [${transaction.hash}] is not succeed (failed or unexpected status)`
       );
       return false;
