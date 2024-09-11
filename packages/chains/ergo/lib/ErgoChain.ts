@@ -513,7 +513,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
       const box = outputBoxes.get(i);
       if (box.ergo_tree().to_base16_bytes() === ErgoChain.feeBoxErgoTree) {
         if (BigInt(box.value().as_i64().to_str()) > this.configs.fee) {
-          this.logger.info(
+          this.logger.warn(
             `Tx [${transaction.txId}] is not verified: Transaction fee [${box
               .value()
               .as_i64()
@@ -545,7 +545,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
         blockInfo.height - box.creation_height() >
         NUMBER_OF_BLOCKS_PER_YEAR
       ) {
-        this.logger.info(
+        this.logger.error(
           `Lock tx [${transaction.id().to_str()}] is not verified, box [${box
             .box_id()
             .to_str()}] creation_height [${box.creation_height()}] is more than a year ago`
@@ -581,7 +581,7 @@ class ErgoChain extends AbstractUtxoChain<wasm.Transaction, wasm.ErgoBox> {
 
       const r4Value = output.register_value(4);
       if (r4Value) {
-        this.logger.info(
+        this.logger.warn(
           `Tx [${
             transaction.txId
           }] is not verified: Change box at index [${i}] has value [${r4Value.encode_to_base16()}] in R4`

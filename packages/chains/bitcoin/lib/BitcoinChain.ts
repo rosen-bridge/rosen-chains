@@ -311,7 +311,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
       (Number(fee - estimatedFee) * 100) / Number(fee)
     );
     if (feeDifferencePercent > this.configs.txFeeSlippage) {
-      this.logger.info(
+      this.logger.warn(
         `Tx [${transaction.txId}] is not verified: Fee difference is too high. Slippage is higher than allowed value [${feeDifferencePercent} > ${this.configs.txFeeSlippage}]. fee: ${fee}, estimated fee: ${estimatedFee}`
       );
       return false;
@@ -346,7 +346,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
     const changeBoxIndex = tx.txOutputs.length - 1;
     const changeBox = tx.txOutputs[changeBoxIndex];
     if (changeBox.script.toString('hex') !== this.lockScript) {
-      this.logger.info(
+      this.logger.warn(
         `Tx [${transaction.txId}] is not verified: Change box address is wrong`
       );
       return false;

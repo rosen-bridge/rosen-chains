@@ -566,7 +566,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
     if (
       tx.body().fee().compare(CardanoUtils.bigIntToBigNum(this.configs.fee)) > 0
     ) {
-      this.logger.info(
+      this.logger.warn(
         `Tx [${transaction.txId}] is not verified: Transaction fee [${tx
           .body()
           .fee()
@@ -589,7 +589,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
 
     // check metadata
     if (tx.auxiliary_data()) {
-      this.logger.info(
+      this.logger.warn(
         `Tx [${transaction.txId}] is not verified: Contains metadata`
       );
       return false;
@@ -599,7 +599,7 @@ class CardanoChain extends AbstractUtxoChain<CardanoTx, CardanoUtxo> {
     const changeBoxIndex = tx.body().outputs().len() - 1;
     const changeBox = tx.body().outputs().get(changeBoxIndex);
     if (changeBox.address().to_bech32() !== this.configs.addresses.lock) {
-      this.logger.info(
+      this.logger.warn(
         `Tx [${transaction.txId}] is not verified: Change box address is wrong`
       );
       return false;
