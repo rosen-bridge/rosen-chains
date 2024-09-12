@@ -312,7 +312,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
     );
     if (feeDifferencePercent > this.configs.txFeeSlippage) {
       this.logger.warn(
-        `Fee difference is high. Slippage is higher than allowed value [${feeDifferencePercent} > ${this.configs.txFeeSlippage}]. fee: ${fee}, estimated fee: ${estimatedFee}`
+        `Tx [${transaction.txId}] is not verified: Fee difference is too high. Slippage is higher than allowed value [${feeDifferencePercent} > ${this.configs.txFeeSlippage}]. fee: ${fee}, estimated fee: ${estimatedFee}`
       );
       return false;
     }
@@ -346,8 +346,8 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
     const changeBoxIndex = tx.txOutputs.length - 1;
     const changeBox = tx.txOutputs[changeBoxIndex];
     if (changeBox.script.toString('hex') !== this.lockScript) {
-      this.logger.debug(
-        `Tx [${transaction.txId}] invalid: Change box address is wrong`
+      this.logger.warn(
+        `Tx [${transaction.txId}] is not verified: Change box address is wrong`
       );
       return false;
     }
@@ -382,7 +382,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
     for (let i = 0; i < tx.txInputs.length; i++) {
       const boxId = getPsbtTxInputBoxId(tx.txInputs[i]);
       if (!(await this.network.isBoxUnspentAndValid(boxId))) {
-        this.logger.debug(
+        this.logger.info(
           `Tx [${transaction.txId}] is invalid due to spending invalid input box [${boxId}] at index [${i}]`
         );
         return {
