@@ -5,6 +5,7 @@
 ### Patch Changes
 
 - update rosen-extractor version
+- update minimum-fee version
 
 ## 9.0.1
 
