@@ -1,5 +1,12 @@
 # @rosen-chains/abstract-chain
 
+## 9.0.2
+
+### Patch Changes
+
+- update rosen-extractor version
+- update minimum-fee version
+
 ## 9.0.1
 
 ### Patch Changes
