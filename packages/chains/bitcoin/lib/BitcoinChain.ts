@@ -492,8 +492,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
    * @returns the minimum amount
    */
   getMinimumNativeToken = (): bigint => {
-    // there is no token in bitcoin
-    return 0n;
+    return 546n; // smallest non-dust value
   };
 
   /**
@@ -646,8 +645,11 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
    */
   minimumMeaningfulSatoshi = (feeRatio: number): bigint => {
     return BigInt(
-      Math.ceil(
-        (feeRatio * SEGWIT_INPUT_WEIGHT_UNIT) / 4 // estimate fee per weight and convert to virtual size
+      Math.max(
+        Math.ceil(
+          (feeRatio * SEGWIT_INPUT_WEIGHT_UNIT) / 4 // estimate fee per weight and convert to virtual size
+        ),
+        Number(this.getMinimumNativeToken())
       )
     );
   };
