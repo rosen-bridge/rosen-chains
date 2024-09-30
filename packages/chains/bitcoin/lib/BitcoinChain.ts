@@ -167,8 +167,14 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
       if (order.assets.tokens.length) {
         throw Error('Bitcoin does not support tokens in payment order');
       }
-      if (order.address.slice(0, 4) !== 'bc1q') {
-        throw Error('Bitcoin does not support payment to non-segwit addresses');
+      if (
+        order.address.slice(0, 4) !== 'bc1q' &&
+        order.address[0] !== '1' &&
+        order.address[0] !== '3'
+      ) {
+        throw Error(
+          'Bitcoin supports payments only to native-segwit, legacy or script addresses'
+        );
       }
       const orderBtc = this.unwrapBtc(order.assets.nativeToken).amount;
 
