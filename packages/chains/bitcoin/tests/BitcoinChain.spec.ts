@@ -87,9 +87,8 @@ describe('BitcoinChain', () => {
       const expectedRequiredAssets = structuredClone(
         testData.transaction2Order[0].assets
       );
-      expectedRequiredAssets.nativeToken += BigInt(
-        Math.ceil(SEGWIT_INPUT_WEIGHT_UNIT / 4)
-      );
+      expectedRequiredAssets.nativeToken +=
+        bitcoinChain.getMinimumNativeToken();
       expect(getCovBoxesSpy).toHaveBeenCalledWith(
         testUtils.configs.addresses.lock,
         expectedRequiredAssets,

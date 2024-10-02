@@ -167,8 +167,14 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
       if (order.assets.tokens.length) {
         throw Error('Bitcoin does not support tokens in payment order');
       }
-      if (order.address.slice(0, 4) !== 'bc1q') {
-        throw Error('Bitcoin does not support payment to non-segwit addresses');
+      if (
+        order.address.slice(0, 4) !== 'bc1q' &&
+        order.address[0] !== '1' &&
+        order.address[0] !== '3'
+      ) {
+        throw Error(
+          'Bitcoin supports payments only to native-segwit, legacy or script addresses'
+        );
       }
       const orderBtc = this.unwrapBtc(order.assets.nativeToken).amount;
 
@@ -492,8 +498,7 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
    * @returns the minimum amount
    */
   getMinimumNativeToken = (): bigint => {
-    // there is no token in bitcoin
-    return 0n;
+    return 546n; // smallest non-dust value
   };
 
   /**
@@ -646,8 +651,11 @@ class BitcoinChain extends AbstractUtxoChain<BitcoinTx, BitcoinUtxo> {
    */
   minimumMeaningfulSatoshi = (feeRatio: number): bigint => {
     return BigInt(
-      Math.ceil(
-        (feeRatio * SEGWIT_INPUT_WEIGHT_UNIT) / 4 // estimate fee per weight and convert to virtual size
+      Math.max(
+        Math.ceil(
+          (feeRatio * SEGWIT_INPUT_WEIGHT_UNIT) / 4 // estimate fee per weight and convert to virtual size
+        ),
+        Number(this.getMinimumNativeToken())
       )
     );
   };
