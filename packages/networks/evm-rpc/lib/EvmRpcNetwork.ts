@@ -311,13 +311,16 @@ class EvmRpcNetwork extends AbstractEvmNetwork {
       return gas;
     } catch (e: unknown) {
       const baseError = `Failed to get required Gas from ${this.chain} RPC: `;
-      if (isCallException(e))
+      if (isCallException(e)) {
         this.logger.debug(
           `Gas estimation failed on chain [${
             this.chain
           }] due to CALL_EXCEPTION: ${JsonBigInt.stringify(e)}`
         );
-      throw new UnexpectedApiError(baseError + `${e}`);
+        throw new UnexpectedApiError(
+          baseError + `CALL_EXCEPTION: ${JsonBigInt.stringify(e.info)}`
+        );
+      } else throw new UnexpectedApiError(baseError + `${e}`);
     }
   };
 
