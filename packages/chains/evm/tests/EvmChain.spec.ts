@@ -349,18 +349,27 @@ describe('EvmChain', () => {
     });
 
     /**
-     * @target EvmChain.generateMultipleTransactions should throw error
+     * @target EvmChain.generateMultipleTransactions should generate tx with next nonce
      * when next available nonce was already used for maximum allowed times
      * @dependencies
      * @scenario
      * - fill the unsigned and signed transactions lists with mock data
      * - mock hasLockAddressEnoughAssets and getAddressNextNonce
      * - call the function
+     * - check returned value
      * @expected
-     * - throw MaxParallelTxError
+     * - PaymentTransaction txType, eventId and network should be as
+     *   expected
+     * - extracted order of generated transaction should be the same as input
+     *   order
+     * - eventId should be properly in the transaction data
+     * - no extra data should be found in the transaction data
+     * - transaction must be of type 2 and has no blobs
+     * - nonce must be the increamented next available nonce
+     * - gas limit should be as expected
      */
-    it('should throw error when next available nonce was already used for maximum allowed times', async () => {
-      const order = TestData.multipleOrders;
+    it('should generate tx with next nonce when next available nonce was already used for maximum allowed times', async () => {
+      const order = TestData.nativePaymentOrder;
       const eventId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       const txType = TransactionType.payment;
       const unsigned = TestData.paralelTransactions.map((elem) => {
@@ -377,21 +386,54 @@ describe('EvmChain', () => {
       const signed = TestData.paralelTransactions.map((elem) =>
         Buffer.from(Serializer.signedSerialize(elem)).toString('hex')
       );
+      const nonce = 53;
 
-      // mock hasLockAddressEnoughAssets, getAddressNextNonce,
+      // mock hasLockAddressEnoughAssets, getMaxFeePerGas,
+      // getGasRequired, getAddressNextNonce, getMaxPriorityFeePerGas
+      const requiredGas = 21000n;
       testUtils.mockHasLockAddressEnoughAssets(evmChain, true);
-      testUtils.mockGetAddressNextAvailableNonce(network, 53);
+      testUtils.mockGetMaxFeePerGas(network, 10n);
+      testUtils.mockGetGasRequired(network, requiredGas);
+      testUtils.mockGetAddressNextAvailableNonce(network, nonce);
+      testUtils.mockGetMaxPriorityFeePerGas(network, 10n);
 
-      // run test and expect error
-      expect(async () => {
-        await evmChain.generateMultipleTransactions(
-          eventId,
-          txType,
-          order,
-          unsigned,
-          signed
-        );
-      }).rejects.toThrow(MaxParallelTxError);
+      // run test
+      const evmTx = await evmChain.generateMultipleTransactions(
+        eventId,
+        txType,
+        order,
+        unsigned,
+        signed
+      );
+
+      // check returned value
+      expect(evmTx[0].txType).toEqual(txType);
+      expect(evmTx[0].eventId).toEqual(eventId);
+      expect(evmTx[0].network).toEqual(evmChain.CHAIN);
+
+      // extracted order of generated transaction should be the same as input order
+      const extractedOrder = evmChain.extractTransactionOrder(evmTx[0]);
+      expect(extractedOrder).toEqual(order);
+
+      const tx = Serializer.deserialize(evmTx[0].txBytes);
+
+      // check eventId encoded at the end of the data
+      expect(tx.data.substring(2, 34)).toEqual(eventId);
+
+      // check there is no more data
+      expect(tx.data.length).toEqual(34);
+
+      // check transaction type
+      expect(tx.type).toEqual(2);
+
+      // check blobs zero
+      expect(tx.maxFeePerBlobGas).toEqual(null);
+
+      // check nonce
+      expect(tx.nonce).toEqual(nonce + 1);
+
+      // check gas limit
+      expect(tx.gasLimit).toEqual(requiredGas * 3n); // requiredGas * gasLimitMultiplier
     });
 
     /**

@@ -2,7 +2,6 @@ import { RosenTokens } from '@rosen-bridge/tokens';
 import JSONBigInt from '@rosen-bridge/json-bigint';
 import {
   AbstractChain,
-  MaxParallelTxError,
   ChainUtils,
   NotEnoughAssetsError,
   PaymentOrder,
@@ -16,7 +15,6 @@ import {
   BlockInfo,
   ImpossibleBehavior,
   TransactionFormatError,
-  SinglePayment,
   TokenInfo,
   ValidityStatus,
 } from '@rosen-chains/abstract-chain';
@@ -109,18 +107,23 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     let nextNonce = await this.network.getAddressNextAvailableNonce(
       this.configs.addresses.lock
     );
-    const waiting =
-      unsignedTransactions.filter(
-        (tx) => Serializer.deserialize(tx.txBytes).nonce === nextNonce
-      ).length +
-      serializedSignedTransactions.filter(
-        (tx) =>
-          Serializer.deserialize(Buffer.from(tx, 'hex')).nonce === nextNonce
-      ).length;
-    if (waiting > this.configs.maxParallelTx) {
-      throw new MaxParallelTxError(
-        `There are [${waiting}] transactions already in the process`
-      );
+    const nonceCount = new Map<number, number>();
+    unsignedTransactions.map((tx) => {
+      const nonce = Serializer.deserialize(tx.txBytes).nonce;
+      const count = nonceCount.get(nonce);
+      count !== undefined
+        ? nonceCount.set(nonce, count + 1)
+        : nonceCount.set(nonce, 1);
+    });
+    serializedSignedTransactions.map((tx) => {
+      const nonce = Serializer.deserialize(Buffer.from(tx, 'hex')).nonce;
+      const count = nonceCount.get(nonce);
+      count !== undefined
+        ? nonceCount.set(nonce, count + 1)
+        : nonceCount.set(nonce, 1);
+    });
+    while ((nonceCount.get(nextNonce) ?? 0) >= this.configs.maxParallelTx) {
+      nextNonce++;
     }
 
     const gasPrice = await this.network.getMaxFeePerGas();
