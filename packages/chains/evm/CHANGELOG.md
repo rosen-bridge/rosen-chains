@@ -1,5 +1,11 @@
 # @rosen-chains/evm
 
+## 4.1.0
+
+### Minor Changes
+
+- enable transaction chaining by limiting max parallel transactions to single nonce
+
 ## 4.0.2
 
 ### Patch Changes
