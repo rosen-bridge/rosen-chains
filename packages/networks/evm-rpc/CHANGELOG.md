@@ -1,5 +1,13 @@
 # @rosen-chains/evm-rpc
 
+## 2.1.4
+
+### Patch Changes
+
+- add CALL_EXCEPTION log info to thrown error
+- Updated dependencies
+  - @rosen-chains/evm@4.1.0
+
 ## 2.1.3
 
 ### Patch Changes

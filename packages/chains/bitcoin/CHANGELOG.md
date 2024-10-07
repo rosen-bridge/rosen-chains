@@ -1,5 +1,12 @@
 # @rosen-chains/bitcoin
 
+## 5.1.0
+
+### Minor Changes
+
+- remove legacy and script address payment restrictions in BitcoinChain
+- set minimum satoshi to 546
+
 ## 5.0.2
 
 ### Patch Changes

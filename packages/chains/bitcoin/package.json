@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/bitcoin",
-  "version": "5.0.2",
+  "version": "5.1.0",
   "description": "this project contains bitcoin chain for Rosen-bridge",
   "repository": "https://github.com/rosen-bridge/rosen-chains",
   "license": "GPL-3.0",
