@@ -127,9 +127,33 @@ abstract class EvmChain extends AbstractChain<Transaction> {
     }
 
     const gasPrice = await this.network.getMaxFeePerGas();
-    let totalGas = 0n;
+
+    // check the balance in the lock address
+    const requiredAssets: AssetBalance = ChainUtils.sumAssetBalance(
+      orderRequiredAssets,
+      {
+        nativeToken: this.tokenMap.wrapAmount(
+          this.NATIVE_TOKEN_ID,
+          this.configs.gasLimitCap * BigInt(orders.length) * gasPrice,
+          this.CHAIN
+        ).amount,
+        tokens: [],
+      }
+    );
+    this.logger.debug(
+      `Required assets: ${JsonBigInt.stringify(requiredAssets)}`
+    );
+
+    if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
+      const neededETH = requiredAssets.nativeToken.toString();
+      const neededTokens = JSONBigInt.stringify(requiredAssets.tokens);
+      throw new NotEnoughAssetsError(
+        `Locked assets cannot cover required assets. native: ${neededETH}, erc-20: ${neededTokens}`
+      );
+    }
 
     // try to generate transactions
+    let totalGas = 0n;
     const maxPriorityFeePerGas = await this.network.getMaxPriorityFeePerGas();
     const evmTrxs: Array<PaymentTransaction> = [];
     for (const singleOrder of orders) {
@@ -194,30 +218,6 @@ abstract class EvmChain extends AbstractChain<Transaction> {
         )
       );
       nextNonce += 1;
-    }
-
-    // check the balance in the lock address
-    const requiredAssets: AssetBalance = ChainUtils.sumAssetBalance(
-      orderRequiredAssets,
-      {
-        nativeToken: this.tokenMap.wrapAmount(
-          this.NATIVE_TOKEN_ID,
-          totalGas * gasPrice,
-          this.CHAIN
-        ).amount,
-        tokens: [],
-      }
-    );
-    this.logger.debug(
-      `Required assets: ${JsonBigInt.stringify(requiredAssets)}`
-    );
-
-    if (!(await this.hasLockAddressEnoughAssets(requiredAssets))) {
-      const neededETH = requiredAssets.nativeToken.toString();
-      const neededTokens = JSONBigInt.stringify(requiredAssets.tokens);
-      throw new NotEnoughAssetsError(
-        `Locked assets cannot cover required assets. native: ${neededETH}, erc-20: ${neededTokens}`
-      );
     }
 
     // report result
