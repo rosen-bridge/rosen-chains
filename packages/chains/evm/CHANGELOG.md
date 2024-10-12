@@ -1,5 +1,11 @@
 # @rosen-chains/evm
 
+## 4.1.1
+
+### Patch Changes
+
+- check lock address balance for required assets before estimating the tx required gas
+
 ## 4.1.0
 
 ### Minor Changes
