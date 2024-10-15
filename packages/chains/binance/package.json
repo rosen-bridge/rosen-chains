@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/binance",
-  "version": "0.1.0",
+  "version": "0.1.0-ece87587",
   "description": "this project contains binance chain for Rosen-bridge",
   "repository": "https://github.com/rosen-bridge/rosen-chains",
   "license": "GPL-3.0",
@@ -30,7 +30,7 @@
   "dependencies": {
     "@rosen-bridge/abstract-logger": "^1.0.0",
     "@rosen-bridge/tokens": "^1.2.1",
-    "@rosen-chains/abstract-chain": "^9.0.2",
-    "@rosen-chains/evm": "^4.1.1"
+    "@rosen-chains/abstract-chain": "9.0.2-ece87587",
+    "@rosen-chains/evm": "4.1.1-ece87587"
   }
 }

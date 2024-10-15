@@ -1,5 +1,11 @@
 # @rosen-chains/abstract-chain
 
+## 0.0.0-ece87587
+
+### Major Changes
+
+- add arbitrary transaction type
+
 ## 9.0.2
 
 ### Patch Changes

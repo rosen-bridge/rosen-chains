@@ -1,5 +1,13 @@
 # @rosen-chains/evm
 
+## 0.0.0-ece87587
+
+### Patch Changes
+
+- fix UInt8Array type error
+- Updated dependencies
+  - @rosen-chains/abstract-chain@0.0.0-ece87587
+
 ## 4.1.1
 
 ### Patch Changes

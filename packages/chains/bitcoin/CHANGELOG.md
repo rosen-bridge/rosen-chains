@@ -1,5 +1,12 @@
 # @rosen-chains/bitcoin
 
+## 0.0.0-ece87587
+
+### Patch Changes
+
+- Updated dependencies
+  - @rosen-chains/abstract-chain@0.0.0-ece87587
+
 ## 5.1.0
 
 ### Minor Changes
