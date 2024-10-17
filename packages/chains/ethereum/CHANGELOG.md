@@ -1,14 +1,14 @@
 # @rosen-chains/ethereum
 
-## 0.0.0-ece87587
+## 0.0.0-0deef57b
 
 ### Patch Changes
 
 - fix EthereumChain export
 - Updated dependencies
 - Updated dependencies
-  - @rosen-chains/evm@0.0.0-ece87587
-  - @rosen-chains/abstract-chain@0.0.0-ece87587
+  - @rosen-chains/evm@0.0.0-0deef57b
+  - @rosen-chains/abstract-chain@0.0.0-0deef57b
 
 ## 0.1.8
 

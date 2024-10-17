@@ -1,6 +1,6 @@
 # @rosen-chains/ergo
 
-## 0.0.0-ece87587
+## 0.0.0-0deef57b
 
 ### Major Changes
 
@@ -9,7 +9,7 @@
 ### Patch Changes
 
 - Updated dependencies
-  - @rosen-chains/abstract-chain@0.0.0-ece87587
+  - @rosen-chains/abstract-chain@0.0.0-0deef57b
 
 ## 9.0.2
 

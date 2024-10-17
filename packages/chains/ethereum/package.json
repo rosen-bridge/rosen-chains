@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/ethereum",
-  "version": "0.1.8-ece87587",
+  "version": "0.1.8-0deef57b",
   "description": "this project contains ethereum chain for Rosen-bridge",
   "repository": "https://github.com/rosen-bridge/rosen-chains",
   "license": "GPL-3.0",
@@ -30,7 +30,7 @@
   "dependencies": {
     "@rosen-bridge/abstract-logger": "^1.0.0",
     "@rosen-bridge/tokens": "^1.2.1",
-    "@rosen-chains/abstract-chain": "9.0.2-ece87587",
-    "@rosen-chains/evm": "4.1.1-ece87587"
+    "@rosen-chains/abstract-chain": "9.0.2-0deef57b",
+    "@rosen-chains/evm": "4.1.1-0deef57b"
   }
 }

@@ -1,6 +1,6 @@
 # @rosen-chains/abstract-chain
 
-## 0.0.0-ece87587
+## 0.0.0-0deef57b
 
 ### Major Changes
 
