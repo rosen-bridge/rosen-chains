@@ -6,12 +6,12 @@ import {
 } from '@rosen-chains/evm';
 import { RosenTokens } from '@rosen-bridge/tokens';
 import { AbstractLogger } from '@rosen-bridge/abstract-logger';
-import { BNB, BINANCE_CHAIN } from './constants';
+import { BNB, BINANCE_CHAIN, BINANCE_CHAIN_ID } from './constants';
 
 class BinanceChain extends EvmChain {
   CHAIN = BINANCE_CHAIN;
   NATIVE_TOKEN_ID = BNB;
-  CHAIN_ID = 56n;
+  CHAIN_ID = BINANCE_CHAIN_ID;
 
   constructor(
     network: AbstractEvmNetwork,
