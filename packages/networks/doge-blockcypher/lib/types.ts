@@ -88,7 +88,7 @@ export interface BlockCypherBlock {
   depth: number;
   prev_block_url: string;
   tx_url: string;
-  next_txids: string[];
+  next_txids: string;
 }
 
 export interface BlockCypherChain {

@@ -239,6 +239,65 @@ describe('DogeExplorerNetwork', () => {
 
       expect(result).toEqual(testData.blockResponse.txids);
     });
+
+    /**
+     * @target `DogeExplorerNetwork.getBlockTransactionIds` should handle pagination for blocks with more than 500 transactions
+     * @dependencies
+     * @scenario
+     * - mock axios to return first batch of tx ids (500 transactions)
+     * - mock axios to return second batch of tx ids (300 transactions)
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should be all mocked tx ids combined
+     */
+    it('should handle pagination for blocks with more than 500 transactions', async () => {
+      // Mock the first batch (500 transactions)
+      mockAxiosGet(testData.largeBlockFirstBatch);
+
+      // Mock the second batch (300 transactions)
+      mockAxiosGet(testData.largeBlockSecondBatch);
+
+      const result = await network.getBlockTransactionIds(
+        testData.largeBlockHash
+      );
+
+      // Expected result should be all transaction IDs combined
+      const expectedTxIds = [
+        ...testData.largeBlockFirstBatch.txids,
+        ...testData.largeBlockSecondBatch.txids,
+      ];
+
+      expect(result).toEqual(expectedTxIds);
+      expect(result.length).toBe(800); // 500 + 300
+    });
+
+    /**
+     * @target `DogeExplorerNetwork.getBlockTransactionIds` should handle errors during pagination
+     * @dependencies
+     * @scenario
+     * - mock axios to return first batch of tx ids (500 transactions)
+     * - mock axios to throw an error for the second batch
+     * - run test and expect it to throw
+     * @expected
+     * - it should throw a FailedError
+     */
+    it('should handle errors during pagination', async () => {
+      // Mock the first batch (500 transactions)
+      mockAxiosGet(testData.largeBlockFirstBatch);
+
+      // Mock an error for the second batch
+      mockAxiosGetToThrow({
+        response: {
+          status: 500,
+          data: 'Internal Server Error',
+        },
+      });
+
+      await expect(async () => {
+        await network.getBlockTransactionIds(testData.largeBlockHash);
+      }).rejects.toThrow(FailedError);
+    });
   });
 
   describe('getBlockInfo', () => {
@@ -546,26 +605,6 @@ describe('DogeExplorerNetwork', () => {
     });
   });
 
-  describe('getMempoolTxIds', () => {
-    /**
-     * @target `DogeExplorerNetwork.getMempoolTxIds` should return mempool tx ids successfully
-     * @dependencies
-     * @scenario
-     * - mock axios to return tx ids
-     * - run test
-     * - check returned value
-     * @expected
-     * - it should be mocked tx ids
-     */
-    it('should return mempool tx ids successfully', async () => {
-      mockAxiosGet(testData.mempoolTxs);
-
-      const result = await network.getMempoolTxIds();
-
-      expect(result).toEqual(testData.txIds);
-    });
-  });
-
   describe('getSpentTransactionByInputId', () => {
     /**
      * @target `DogeExplorerNetwork.getSpentTransactionByInputId` should return transaction
@@ -659,6 +698,69 @@ describe('DogeExplorerNetwork', () => {
       await expect(async () => {
         await network.getTransactionHex(testData.txId);
       }).rejects.toThrow(FailedError);
+    });
+  });
+
+  describe('isTxInMempool', () => {
+    /**
+     * @target `DogeExplorerNetwork.isTxInMempool` should return true when transaction is in mempool
+     * @dependencies
+     * @scenario
+     * - mock axios to return transaction with 0 confirmations
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return true
+     */
+    it('should return true when transaction is in mempool', async () => {
+      const mempoolTx = { ...testData.txResponse, confirmations: 0 };
+      mockAxiosGet(mempoolTx);
+
+      const result = await network.isTxInMempool(testData.txId);
+
+      expect(result).toBe(true);
+    });
+
+    /**
+     * @target `DogeExplorerNetwork.isTxInMempool` should return false when transaction is confirmed
+     * @dependencies
+     * @scenario
+     * - mock axios to return transaction with confirmations > 0
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when transaction is confirmed', async () => {
+      const confirmedTx = { ...testData.txResponse, confirmations: 1 };
+      mockAxiosGet(confirmedTx);
+
+      const result = await network.isTxInMempool(testData.txId);
+
+      expect(result).toBe(false);
+    });
+
+    /**
+     * @target `DogeExplorerNetwork.isTxInMempool` should return false when transaction is not found
+     * @dependencies
+     * @scenario
+     * - mock axios to throw 404 error
+     * - run test
+     * - check returned value
+     * @expected
+     * - it should return false
+     */
+    it('should return false when transaction is not found', async () => {
+      mockAxiosGetToThrow({
+        response: {
+          status: 404,
+          data: 'Transaction not found',
+        },
+      });
+
+      const result = await network.isTxInMempool(testData.txId);
+
+      expect(result).toBe(false);
     });
   });
 });

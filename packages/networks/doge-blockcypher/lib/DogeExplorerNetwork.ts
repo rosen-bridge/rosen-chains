@@ -188,18 +188,29 @@ class DogeExplorerNetwork extends AbstractDogeNetwork {
    * @param blockId the block id
    * @returns list of the transaction ids in the block
    */
-  getBlockTransactionIds = (blockId: string): Promise<Array<string>> => {
-    return this.client
-      .get<BlockCypherBlock>(`/v1/doge/main/blocks/${blockId}`)
-      .then((res) => {
+  getBlockTransactionIds = async (blockId: string): Promise<Array<string>> => {
+    let allTxIds: Array<string> = [];
+    const limit = 500;
+    let txstart = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      try {
+        const url = `/v1/doge/main/blocks/${blockId}?limit=${limit}&txstart=${txstart}`;
+        const res: { data: BlockCypherBlock } =
+          await this.client.get<BlockCypherBlock>(url);
         this.logger.debug(
           `requested 'block/:hash/txids' for blockId [${blockId}]. received: ${JsonBigInt.stringify(
             res.data
           )}`
         );
-        return res.data.txids;
-      })
-      .catch((e) => {
+
+        // Add the current batch of transaction IDs
+        allTxIds = allTxIds.concat(res.data.txids);
+
+        hasMore = res.data.txids.length === limit;
+        txstart += limit;
+      } catch (e: any) {
         const baseError = `Failed to get block [${blockId}] transaction ids from BlockCypher: `;
         if (e.response) {
           throw new FailedError(baseError + e.response.data);
@@ -208,7 +219,10 @@ class DogeExplorerNetwork extends AbstractDogeNetwork {
         } else {
           throw new UnexpectedApiError(baseError + e.message);
         }
-      });
+      }
+    }
+
+    return allTxIds;
   };
 
   /**
@@ -477,23 +491,26 @@ class DogeExplorerNetwork extends AbstractDogeNetwork {
   };
 
   /**
-   * gets all transaction ids in the mempool
-   * @returns list of transaction ids in the mempool
+   * checks if a transaction is in mempool
+   * @param txId the transaction id
+   * @returns true if the transaction is in mempool, false otherwise
    */
-  getMempoolTxIds = async (): Promise<Array<string>> => {
+  isTxInMempool = async (txId: string): Promise<boolean> => {
     return this.client
-      .get<Array<BlockCypherTx>>('/v1/doge/main/txs')
+      .get<BlockCypherTx>(`/v1/doge/main/txs/${txId}`)
       .then((res) => {
         this.logger.debug(
-          `requested 'mempool' for txids. res: ${JsonBigInt.stringify(
+          `requested 'tx' for txId [${txId}]. res: ${JsonBigInt.stringify(
             res.data
           )}`
         );
-        return res.data.map((tx: BlockCypherTx) => tx.hash);
+        return res.data.confirmations === 0;
       })
       .catch((e) => {
         const baseError = `Failed to get mempool txids from BlockCypher: `;
-        if (e.response) {
+        if (e.response && e.response.status === 404) {
+          return false;
+        } else if (e.response) {
           throw new FailedError(baseError + e.response.data);
         } else if (e.request) {
           throw new NetworkError(baseError + e.message);

@@ -1,5 +1,5 @@
 {
-  "name": "@rosen-chains/doge-explorer",
+  "name": "@rosen-chains/doge-blockcypher",
   "version": "0.1.0",
   "description": "A package to be used as network api provider for @rosen-chains/doge package using BlockCypher API",
   "repository": "https://github.com/rosen-bridge/rosen-chains",

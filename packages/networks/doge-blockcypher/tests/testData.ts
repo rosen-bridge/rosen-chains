@@ -723,3 +723,57 @@ export const sortedAddressUtxos = [
     value: 800000000n,
   },
 ];
+
+export const largeBlockHash =
+  '000000000000000000000cde53a239563c5a947d325c526bf140c7663b989b56';
+export const largeBlockFirstBatch = {
+  hash: '000000000000000000000cde53a239563c5a947d325c526bf140c7663b989b56',
+  height: 828669,
+  chain: 'DOGE.main',
+  total: 1346372385,
+  fees: 23200383,
+  size: 1004368,
+  ver: 1073733632,
+  time: '2024-02-03T03:27:05Z',
+  received_time: '2024-02-03T03:27:21.647Z',
+  relayed_by: '109.224.84.149:8333',
+  bits: 386120285,
+  nonce: 149001495,
+  n_tx: 119,
+  prev_block:
+    '0000000000000000000236443a3f4784ec904f5c500bd2e82838756b5657bb85',
+  mrkl_root: 'd2de1afdccbc6dcfbee076cece7b1d2f82b79fb6b630075d203d30b8b63fb259',
+  txids: Array(500)
+    .fill('')
+    .map((_, i) => `txid${i}`),
+  depth: 62119,
+  prev_block_url:
+    'https://api.blockcypher.com/v1/doge/main/blocks/0000000000000000000236443a3f4784ec904f5c500bd2e82838756b5657bb85',
+  tx_url: 'https://api.blockcypher.com/v1/doge/main/txs/',
+};
+
+export const largeBlockSecondBatch = {
+  hash: '000000000000000000000cde53a239563c5a947d325c526bf140c7663b989b56',
+  height: 828669,
+  chain: 'DOGE.main',
+  total: 1346372385,
+  fees: 23200383,
+  size: 1004368,
+  ver: 1073733632,
+  time: '2024-02-03T03:27:05Z',
+  received_time: '2024-02-03T03:27:21.647Z',
+  relayed_by: '109.224.84.149:8333',
+  bits: 386120285,
+  nonce: 149001495,
+  n_tx: 119,
+  prev_block:
+    '0000000000000000000236443a3f4784ec904f5c500bd2e82838756b5657bb85',
+  mrkl_root: 'd2de1afdccbc6dcfbee076cece7b1d2f82b79fb6b630075d203d30b8b63fb259',
+  txids: Array(300)
+    .fill('')
+    .map((_, i) => `txid${i + 500}`),
+  depth: 62119,
+  prev_block_url:
+    'https://api.blockcypher.com/v1/doge/main/blocks/0000000000000000000236443a3f4784ec904f5c500bd2e82838756b5657bb85',
+  tx_url: 'https://api.blockcypher.com/v1/doge/main/txs/',
+};
