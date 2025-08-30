@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/evm-rpc",
-  "version": "3.1.1-70747fb3",
+  "version": "3.1.1-4852a246",
   "description": "A package to be used as network api provider for @rosen-chains/evm package",
   "repository": {
     "type": "git",
@@ -40,9 +40,9 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
-    "@rosen-chains/abstract-chain": "^14.0.1-70747fb3",
+    "@rosen-chains/abstract-chain": "^14.0.1-4852a246",
     "@rosen-bridge/abstract-logger": "^2.1.0",
-    "@rosen-chains/evm": "^8.2.1-70747fb3",
+    "@rosen-chains/evm": "^8.2.1-4852a246",
     "@rosen-bridge/evm-address-tx-extractor": "^1.0.8",
     "@rosen-bridge/json-bigint": "^0.2.0",
     "ethers": "6.13.2",

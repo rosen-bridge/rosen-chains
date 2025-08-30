@@ -1,6 +1,6 @@
 {
   "name": "@rosen-chains/bitcoin-runes",
-  "version": "1.0.0-70747fb3",
+  "version": "1.0.0-4852a246",
   "description": "this project contains Runes protocol of Bitcoin chain for Rosen-bridge",
   "repository": {
     "type": "git",
@@ -49,8 +49,8 @@
     "@rosen-bridge/rosen-extractor": "^8.1.0",
     "@rosen-bridge/selection-types": "^0.1.0",
     "@rosen-bridge/tokens": "^3.2.0",
-    "@rosen-chains/abstract-chain": "^14.0.1-70747fb3",
-    "@rosen-chains/bitcoin": "^8.1.1-70747fb3",
+    "@rosen-chains/abstract-chain": "^14.0.1-4852a246",
+    "@rosen-chains/bitcoin": "^8.1.1-4852a246",
     "bitcoinjs-lib": "^6.1.5"
   }
 }
