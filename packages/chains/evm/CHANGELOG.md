@@ -1,5 +1,13 @@
 # @rosen-chains/evm
 
+## 8.2.1
+
+### Patch Changes
+
+- Update dependencies
+- Update dependencies
+  - @rosen-chains/abstract-chain@14.0.1
+
 ## 8.2.0
 
 ### Minor Changes
