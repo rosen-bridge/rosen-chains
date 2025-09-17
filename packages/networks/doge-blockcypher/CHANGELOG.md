@@ -1,5 +1,14 @@
 # @rosen-chains/doge-blockcypher
 
+## 0.2.2
+
+### Patch Changes
+
+- Fix `implements` variable
+- Update dependencies
+  - @rosen-chains/abstract-chain@14.0.2
+  - @rosen-chains/doge@2.2.2
+
 ## 0.2.1
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @rosen-chains/evm-rpc
 
+## 3.1.2
+
+### Patch Changes
+
+- Update dependencies
+  - @rosen-chains/abstract-chain@14.0.2
+  - @rosen-chains/evm@8.2.2
+
 ## 3.1.1
 
 ### Patch Changes
