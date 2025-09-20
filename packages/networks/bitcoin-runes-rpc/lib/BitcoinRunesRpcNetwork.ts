@@ -17,6 +17,7 @@ import {
   BitcoinRunesTx,
   BitcoinRunesUtxo,
   CONFIRMATION_TARGET,
+  RunesTransfer,
 } from '@rosen-chains/bitcoin-runes';
 import JsonBigInt from '@rosen-bridge/json-bigint';
 import {
@@ -396,46 +397,25 @@ export class BitcoinRunesRpcNetwork extends AbstractBitcoinRunesNetwork {
       })),
     };
 
+    // get transaction height
+    const blockInfo = this.getBlockInfo(blockId);
+
     // get the runes transfers of the transaction from Unisat
-    let txRunes: UnisatTxRunes;
-    try {
-      const response = await this.unisatClient.get<
-        UnisatResponse<UnisatTxRunes>
-      >(`/v1/indexer/runes/event?txid=${transactionId}`);
-      this.logger.debug(
-        `requested 'indexer/runes/event' filtering txId [${transactionId}]. Response: ${JsonBigInt.stringify(
-          response.data
-        )}`
-      );
+    const txRunes = await this.getTransactionRunesTransfer(
+      transactionId,
+      (
+        await blockInfo
+      ).height
+    );
 
-      txRunes = response.data.data;
-      if (txRunes.detail.length !== txRunes.total) {
-        throw Error(
-          `Unexpected pagination: expected [${txRunes.total}] runes but got [${txRunes.detail.length}]`
-        );
-      }
-    } catch (e: any) {
-      const baseError = `Failed to get runes event for tx [${transactionId}] from Unisat: `;
-      if (e.response) {
-        throw new FailedError(
-          baseError + `${JsonBigInt.stringify(e.response.data)}`
-        );
-      } else if (e.request) {
-        throw new NetworkError(baseError + e.message);
-      } else {
-        throw new UnexpectedApiError(baseError + e.message);
-      }
-    }
-
-    for (const transfer of txRunes.detail) {
-      if (transfer.txid !== transactionId) {
+    for (const transfer of txRunes) {
+      if (transfer.txId !== transactionId) {
         throw new ImpossibleBehavior(
-          `Fetched runes event for tx [${transactionId}] but got a transfer with txId [${transfer.txid}]`
+          `Fetched runes event for tx [${transactionId}] but got a transfer with txId [${transfer.txId}]`
         );
       }
-      if (transfer.type === 'send') continue;
 
-      bitcoinTx.outputs[transfer.vout].runes.push({
+      bitcoinTx.outputs[transfer.index].runes.push({
         runeId: transfer.runeId,
         quantity: BigInt(transfer.amount),
       });
@@ -889,5 +869,70 @@ export class BitcoinRunesRpcNetwork extends AbstractBitcoinRunesNetwork {
     }
 
     return utxos;
+  };
+
+  /**
+   * gets Runes transfer of a transaction
+   * @param transactionId the transaction id
+   * @param height height of the transaction
+   * @returns list of receiving runes
+   */
+  getTransactionRunesTransfer = async (
+    transactionId: string,
+    height: number
+  ): Promise<Array<RunesTransfer>> => {
+    try {
+      const response = await this.unisatClient.get<
+        UnisatResponse<UnisatTxRunes>
+      >(`/v1/indexer/runes/event?txid=${transactionId}`);
+      this.logger.debug(
+        `requested 'indexer/runes/event' filtering txId [${transactionId}]. Response: ${JsonBigInt.stringify(
+          response.data
+        )}`
+      );
+
+      const txRunes = response.data.data;
+      this.validateResponseHeight(height, txRunes.height);
+      if (txRunes.detail.length !== txRunes.total) {
+        throw Error(
+          `Unexpected pagination: expected [${txRunes.total}] runes but got [${txRunes.detail.length}]`
+        );
+      }
+      return txRunes.detail
+        .filter((transfer) => transfer.type === 'receive')
+        .map((outRune) => ({
+          address: outRune.address,
+          runeId: outRune.runeId,
+          amount: outRune.amount,
+          txId: outRune.txid,
+          index: outRune.vout,
+        }));
+    } catch (e: any) {
+      const baseError = `Failed to get runes event for tx [${transactionId}] from Unisat: `;
+      if (e.response) {
+        throw new FailedError(
+          baseError + `${JsonBigInt.stringify(e.response.data)}`
+        );
+      } else if (e.request) {
+        throw new NetworkError(baseError + e.message);
+      } else {
+        throw new UnexpectedApiError(baseError + e.message);
+      }
+    }
+  };
+
+  /**
+   * throws error if response height (Unisat height) is less than the expected height
+   * @param expectedHeight
+   * @param responseHeight
+   */
+  protected validateResponseHeight = (
+    expectedHeight: number,
+    responseHeight: number
+  ): void => {
+    if (expectedHeight > responseHeight)
+      throw Error(
+        `Unisat is not synced enough [${responseHeight} < ${expectedHeight}]`
+      );
   };
 }
