@@ -1,13 +1,14 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ChainMinimumFee } from '@rosen-bridge/minimum-fee';
-import { AbstractRosenDataExtractor } from '@rosen-bridge/rosen-extractor';
+import {
+  AbstractRosenDataExtractor,
+  RosenData,
+} from '@rosen-bridge/rosen-extractor';
 import { TokenMap } from '@rosen-bridge/tokens';
 import { blake2b } from 'blakejs';
 import ChainUtils from './ChainUtils';
 import {
-  FailedError,
   ImpossibleBehavior,
-  NetworkError,
   NotFoundError,
   UnexpectedApiError,
   ValueError,
@@ -163,11 +164,6 @@ abstract class AbstractChain<TxType> {
     event: EventTrigger,
     feeConfig: ChainMinimumFee
   ): Promise<boolean> => {
-    if (!this.extractor)
-      throw new ImpossibleBehavior(
-        `rosen-extractor is not defined for chain [${this.CHAIN}]`
-      );
-
     const eventId = Buffer.from(
       blake2b(event.sourceTxId, undefined, 32)
     ).toString('hex');
@@ -187,7 +183,10 @@ abstract class AbstractChain<TxType> {
         event.sourceBlockId
       );
       const blockInfo = await this.network.getBlockInfo(event.sourceBlockId);
-      const data = this.extractor.get(this.serializeTx(tx));
+      const data = await this.getTransactionRosenData(
+        this.serializeTx(tx),
+        blockInfo.height
+      );
       if (!data) {
         this.logger.info(
           `Event [${eventId}] is not valid, failed to extract rosen data from lock transaction`
@@ -493,9 +492,26 @@ abstract class AbstractChain<TxType> {
 
   /**
    * gets the actual id of a transaction by its txId
-   * @param txId
+   * @param txId the transaction id
    */
   getActualTxId = (txId: string) => this.network.getActualTxId(txId);
+
+  /**
+   * gets the RosenData for a transaction
+   * @param txId the transaction id
+   * @param height height of the transaction
+   */
+  protected getTransactionRosenData = async (
+    txId: string,
+    height: number
+  ): Promise<RosenData | undefined> => {
+    if (!this.extractor)
+      throw new ImpossibleBehavior(
+        `rosen-extractor is not defined for chain [${this.CHAIN}]`
+      );
+
+    return this.extractor?.get(txId);
+  };
 }
 
 export default AbstractChain;

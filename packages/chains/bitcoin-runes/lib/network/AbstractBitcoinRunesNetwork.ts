@@ -1,6 +1,6 @@
 import { AbstractUtxoChainNetwork } from '@rosen-chains/abstract-chain';
 import { Psbt } from 'bitcoinjs-lib';
-import { BitcoinRunesTx, BitcoinRunesUtxo } from '../types';
+import { BitcoinRunesTx, BitcoinRunesUtxo, RunesTransfer } from '../types';
 
 abstract class AbstractBitcoinRunesNetwork extends AbstractUtxoChainNetwork<
   BitcoinRunesTx,
@@ -103,6 +103,17 @@ abstract class AbstractBitcoinRunesNetwork extends AbstractUtxoChainNetwork<
     fetchedBoxIds: Array<string>,
     address: string
   ) => Promise<Array<BitcoinRunesUtxo>>;
+
+  /**
+   * gets Runes transfer of a transaction
+   * @param transactionId the transaction id
+   * @param height height of the transaction
+   * @returns list of receiving runes
+   */
+  abstract getTransactionRunesTransfer: (
+    transactionId: string,
+    height: number
+  ) => Promise<Array<RunesTransfer>>;
 }
 
 export default AbstractBitcoinRunesNetwork;

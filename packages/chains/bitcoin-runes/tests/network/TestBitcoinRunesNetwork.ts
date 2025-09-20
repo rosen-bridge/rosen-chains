@@ -9,6 +9,7 @@ import {
   AbstractBitcoinRunesNetwork,
   BitcoinRunesUtxo,
   BitcoinRunesTx,
+  RunesTransfer,
 } from '../../lib';
 
 export class TestBitcoinRunesNetwork extends AbstractBitcoinRunesNetwork {
@@ -91,6 +92,13 @@ export class TestBitcoinRunesNetwork extends AbstractBitcoinRunesNetwork {
     fetchedBoxIds: Array<string>,
     address: string
   ): Promise<Array<BitcoinRunesUtxo>> => {
+    throw Error('Not mocked');
+  };
+
+  getTransactionRunesTransfer = (
+    transactionId: string,
+    height: number
+  ): Promise<Array<RunesTransfer>> => {
     throw Error('Not mocked');
   };
 }

@@ -47,3 +47,11 @@ export type TssSignFunction = (txHash: Uint8Array) => Promise<{
   signature: string;
   signatureRecovery: string;
 }>;
+
+export interface RunesTransfer {
+  address: string;
+  runeId: string;
+  amount: string;
+  txId: string;
+  index: number;
+}

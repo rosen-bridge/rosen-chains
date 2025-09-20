@@ -21,7 +21,11 @@ import { BITCOIN_CHAIN, BTC, getPsbtTxInputBoxId } from '@rosen-chains/bitcoin';
 import { AbstractLogger } from '@rosen-bridge/abstract-logger';
 import JsonBigInt from '@rosen-bridge/json-bigint';
 import { BitcoinRunesBoxSelection } from '@rosen-bridge/bitcoin-runes-utxo-selection';
-import { BitcoinRunesRosenExtractor } from '@rosen-bridge/rosen-extractor';
+import {
+  BitcoinRunesRosenExtractor,
+  RosenData,
+  TokenTransformation,
+} from '@rosen-bridge/rosen-extractor';
 import { RosenAmount, TokenMap } from '@rosen-bridge/tokens';
 import BitcoinRunesTransaction from './BitcoinRunesTransaction';
 import {
@@ -288,9 +292,9 @@ class BitcoinRunesChain extends AbstractUtxoChain<
         forbiddenBoxIds,
         trackMap,
         runesUtxoIterator(),
-        MINIMUM_BTC_FOR_NATIVE_SEGWIT_OUTPUT,
+        0n,
         undefined,
-        feeEstimator
+        () => 0n
       );
       if (!coveredRunesBoxes.covered) {
         throw new NotEnoughValidBoxesError(
@@ -1422,6 +1426,65 @@ class BitcoinRunesChain extends AbstractUtxoChain<
         ).amount)
     );
     return result;
+  };
+
+  /**
+   * gets the RosenData for a transaction
+   * @param txId the transaction id
+   * @param height height of the transaction
+   */
+  protected getTransactionRosenData = async (
+    txId: string,
+    height: number
+  ): Promise<RosenData | undefined> => {
+    if (!this.extractor)
+      throw new ImpossibleBehavior(
+        `rosen-extractor is not defined for chain [${this.CHAIN}]`
+      );
+
+    const data = this.extractor?.get(txId);
+    if (data) {
+      try {
+        const txRunesTransfer = await this.network.getTransactionRunesTransfer(
+          txId,
+          height
+        );
+        let runesTransformation: TokenTransformation | undefined;
+
+        for (const outRune of txRunesTransfer) {
+          // check if rune is transferred to the lock address
+          if (outRune.address !== this.configs.addresses.lock) continue;
+
+          // check if rune is supported by Rosen bridge
+          const wrappedRune = this.tokenMap.search(this.CHAIN, {
+            tokenId: outRune.runeId,
+          });
+
+          if (
+            wrappedRune.length > 0 &&
+            Object.hasOwn(wrappedRune[0], data.toChain)
+          ) {
+            const wrappedAmount = this.tokenMap
+              .wrapAmount(outRune.runeId, BigInt(outRune.amount), this.CHAIN)
+              .amount.toString();
+            runesTransformation = {
+              from: outRune.runeId,
+              to: this.tokenMap.getID(wrappedRune[0], data.toChain),
+              amount: wrappedAmount,
+            };
+            break;
+          }
+        }
+
+        if (!runesTransformation) {
+          this.logger.debug(`No supported Runes is locked in tx [${txId}]`);
+          return undefined;
+        }
+      } catch (e) {
+        this.logger.debug(`Failed to get Runes data from tx [${txId}]: ${e}`);
+        throw e;
+      }
+    }
   };
 }
 
