@@ -677,7 +677,10 @@ class HandshakeChain extends AbstractUtxoChain<HandshakeTx, HandshakeUtxo> {
     const publicKey = Buffer.from(this.configs.aggregatedPublicKey, 'hex');
 
     for (let i = 0; i < signatures.length; i++) {
-      const signature = Buffer.from(signatures[i], 'hex');
+      const signature = Buffer.concat([
+        Buffer.from(signatures[i], 'hex'),
+        Buffer.from([0x01]), // SIGHASH_ALL
+      ]);
       const witness = new Script();
       witness.pushData(signature);
       witness.pushData(publicKey);
