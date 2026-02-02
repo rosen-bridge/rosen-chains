@@ -255,7 +255,7 @@ class HandshakeRpcNetwork extends PartialHandshakeNetwork {
         );
       }
 
-      // Filter out name-related outputs (only keep covenant type 0 = NONE)
+      // Filter outputs (only keep covenant type 0 = NONE and 7 = UPDATE)
       // Transform the RPC transaction to the expected HandshakeTx format
       const handshakeTx: HandshakeTx = {
         id: tx.txid,
@@ -266,13 +266,21 @@ class HandshakeRpcNetwork extends PartialHandshakeNetwork {
             index: input.vout,
           })),
         outputs: tx.vout
-          .filter((output) => output.covenant.type === 0) // Only NONE covenant (regular coins)
+          .filter(
+            (output) =>
+              output.covenant.type === 7 || output.covenant.type === 0,
+          ) // Only 7 covenant (UPDATE) and 0 covenant (HNS)
           .map((output) => ({
             value: this.convertDollarydoos(output.value),
             address: output.address || {
               version: 0,
               hash: '',
               string: '',
+            },
+            covenant: output.covenant || {
+              type: 0,
+              action: 'NONE',
+              items: [],
             },
           })),
       };
