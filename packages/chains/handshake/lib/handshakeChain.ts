@@ -180,7 +180,7 @@ class HandshakeChain extends AbstractUtxoChain<HandshakeTx, HandshakeUtxo> {
     const mtx = new MTX();
     coveredBoxes.boxes.forEach((box) => {
       const coin = Coin.fromJSON({
-        version: 1,
+        version: 0,
         height: -1,
         value: Number(box.value),
         address: this.lockAddress.toString(),
@@ -469,7 +469,7 @@ class HandshakeChain extends AbstractUtxoChain<HandshakeTx, HandshakeUtxo> {
         handshakeTx.inputUtxos[i],
       ) as HandshakeUtxo;
       const coin = Coin.fromJSON({
-        version: 1,
+        version: 0,
         height: -1,
         value: Number(BigInt(input.value)),
         address: this.lockAddress.toString(),
