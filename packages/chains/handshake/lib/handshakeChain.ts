@@ -50,7 +50,7 @@ class HandshakeChain extends AbstractUtxoChain<HandshakeTx, HandshakeUtxo> {
   protected boxSelection: BitcoinBoxSelection;
   protected signFunction: TssSignFunction;
   protected lockAddress: Address;
-  protected lockScript: Buffer;
+  protected lockScript: Buffer; // Serialized Witness Script
 
   constructor(
     network: AbstractHandshakeNetwork,
@@ -68,7 +68,7 @@ class HandshakeChain extends AbstractUtxoChain<HandshakeTx, HandshakeUtxo> {
     this.signFunction = signFunction;
     this.boxSelection = new BitcoinBoxSelection();
     this.lockAddress = Address.fromString(this.configs.addresses.lock);
-    this.lockScript = this.lockAddress.getHash();
+    this.lockScript = Buffer.from(this.configs.lockScript, 'hex');
   }
 
   /**
@@ -217,17 +217,20 @@ class HandshakeChain extends AbstractUtxoChain<HandshakeTx, HandshakeUtxo> {
 
     // create change output
     this.logger.debug(`Remaining HNS: ${remainingHns}`);
-    const estimatedFee = estimateTxFee(
-      mtx.inputs.length,
-      mtx.outputs.length + 1,
-      feeRatio,
-    );
-    this.logger.debug(`Estimated Fee: ${estimatedFee}`);
-    remainingHns -= estimatedFee;
+
+    // Add temporary change output to get accurate fee estimate
     mtx.addOutput({
       address: this.lockAddress,
-      value: Number(remainingHns),
+      value: 0,
     });
+
+    const estimatedFee = estimateTxFee(mtx, feeRatio);
+    this.logger.debug(`Estimated Fee: ${estimatedFee}`);
+
+    remainingHns -= estimatedFee;
+
+    // Update change output with final amount
+    mtx.outputs[mtx.outputs.length - 1].value = Number(remainingHns);
 
     // create the transaction
     const txId = mtx.txid();
@@ -338,8 +341,7 @@ class HandshakeChain extends AbstractUtxoChain<HandshakeTx, HandshakeUtxo> {
 
     const fee = inHns - outHns;
     const estimatedFee = estimateTxFee(
-      mtx.inputs.length,
-      mtx.outputs.length,
+      mtx,
       await this.network.getFeeRatio(),
     );
 
@@ -485,12 +487,12 @@ class HandshakeChain extends AbstractUtxoChain<HandshakeTx, HandshakeUtxo> {
     for (let i = 0; i < handshakeTx.inputUtxos.length; i++) {
       // Create signing hash for this input
       const coin = coins[i];
-      // For witness v0 (P2WPKH), use the P2PKH equivalent script for signing
-      const prev = Script.fromPubkeyhash(this.lockAddress.hash);
+      // For P2WSH multisig, use the witnessScript for signature hash calculation
+      const scriptCode = Script.decode(this.lockScript);
       const value = coin.value;
       const type = 0x01; // SIGHASH_ALL
 
-      const signMessage = mtx.signatureHash(i, prev, value, type);
+      const signMessage = mtx.signatureHash(i, scriptCode, value, type);
 
       const signatureHex = this.signFunction(signMessage).then((response) => {
         this.logger.debug(
@@ -664,9 +666,15 @@ class HandshakeChain extends AbstractUtxoChain<HandshakeTx, HandshakeUtxo> {
     box.txId + '.' + box.index;
 
   /**
-   * inserts signatures into MTX
-   * @param txBytes
-   * @param signatures generated signature by signer service
+   * inserts signatures into MTX for P2WSH multisig
+   *
+   * Witness structure per input: [OP_0, signature, witnessScript]
+   * - OP_0: dummy element required by OP_CHECKMULTISIG
+   * - signature: aggregated signature from the threshold signature scheme (TSS)
+   * - witnessScript: the m-of-n multisig script (32-byte witness program)
+   *
+   * @param txBytes serialized transaction
+   * @param signatures generated signatures by signer service (one signature per input from TSS)
    * @returns a signed transaction (in MTX format)
    */
   protected buildSignedTransaction = (
@@ -674,19 +682,29 @@ class HandshakeChain extends AbstractUtxoChain<HandshakeTx, HandshakeUtxo> {
     signatures: string[],
   ): MTX => {
     const mtx = Serializer.deserialize(txBytes);
-    const publicKey = Buffer.from(this.configs.aggregatedPublicKey, 'hex');
+    const opcodes = Script.opcodes;
 
+    // P2WSH multisig: each input gets its own witness with its signature
     for (let i = 0; i < signatures.length; i++) {
+      const witness = new Script();
+
+      // OP_0 (dummy element for OP_CHECKMULTISIG off-by-one bug)
+      witness.pushOp(opcodes.OP_0);
+
+      // Add TSS aggregated signature with SIGHASH_ALL
       const signature = Buffer.concat([
         Buffer.from(signatures[i], 'hex'),
         Buffer.from([0x01]), // SIGHASH_ALL
       ]);
-      const witness = new Script();
       witness.pushData(signature);
-      witness.pushData(publicKey);
+
+      // Add witnessScript (required for P2WSH validation)
+      witness.pushData(this.lockScript);
       witness.compile();
+
       mtx.inputs[i].witness.fromStack(witness.toStack());
     }
+
     return mtx;
   };
 

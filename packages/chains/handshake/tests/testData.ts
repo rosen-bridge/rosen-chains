@@ -3,6 +3,16 @@ import { RosenTokens } from '@rosen-bridge/tokens';
 export const lockAddress = 'hs1qjrhz7jx4u0ded366rm780h82c8c5n2rfcrgpx2';
 export const lockAddressPublicKey =
   '0345307e1165c99d12557bea11f8c8cd0f6bc057fb51952e824bc7c760fda07335';
+// 2-of-3 multisig witness script for P2WSH testing
+// Format: OP_2 pubkey1 pubkey2 pubkey3 OP_3 OP_CHECKMULTISIG
+export const lockScript =
+  '522102' +
+  '0345307e1165c99d12557bea11f8c8cd0f6bc057fb51952e824bc7c760fda07335' +
+  '2102' +
+  '0345307e1165c99d12557bea11f8c8cd0f6bc057fb51952e824bc7c760fda07335' +
+  '2102' +
+  '0345307e1165c99d12557bea11f8c8cd0f6bc057fb51952e824bc7c760fda07335' +
+  '53ae';
 
 // Test token map
 export const testTokenMap: RosenTokens = [
@@ -114,6 +124,7 @@ export const transaction2SignedTxBytesHex =
   '425262728293031323334353637383940414243210345307e1165c99d12557bea11f8c8cd0f6bc057fb51952e824bc7c76' +
   '0fda07335000000000024012000000000000001400cdc1cde2e417b586bd714f64afc3d7def41b6b15000045f60e0100000' +
   '00014045d7a5c4458e1b989a01c8e1dd5907febaea6f5b000000000000';
+
 
 export const transaction0Input0BoxId =
   'aaaaaaa536b3493c08b85f11755f672f2b40beddb8f2b65c6bb1e68074c85baa.0';

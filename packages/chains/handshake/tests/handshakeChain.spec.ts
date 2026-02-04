@@ -1,5 +1,3 @@
-import { vi } from 'vitest';
-
 import { TokenMap } from '@rosen-bridge/tokens';
 import {
   NotEnoughAssetsError,
@@ -224,8 +222,8 @@ describe('HandshakeChain', () => {
      * difference is less than allowed slippage
      * @dependencies
      * @scenario
-     * - mock PaymentTransaction
-     * - mock getFeeRatio
+     * - mock PaymentTransaction (tx2: 220 sat fee, 155 vsize)
+     * - mock getFeeRatio to produce estimated fee close to actual fee
      * - run test
      * - check returned value
      * @expected
@@ -236,7 +234,9 @@ describe('HandshakeChain', () => {
         testData.transaction2PaymentTransaction,
       );
       const getFeeRatioSpy = vi.spyOn(network, 'getFeeRatio');
-      getFeeRatioSpy.mockResolvedValue(1);
+      // Actual fee: 220 sat, vsize: 155
+      // feeRatio = 220/155 = ~1.42 produces estimated fee close to actual
+      getFeeRatioSpy.mockResolvedValue(1.42);
 
       const handshakeChain = await testUtils.generateChainObject(network);
       const result = await handshakeChain.verifyTransactionFee(paymentTx);
@@ -250,7 +250,7 @@ describe('HandshakeChain', () => {
      * @dependencies
      * @scenario
      * - mock PaymentTransaction
-     * - mock getFeeRatio
+     * - mock getFeeRatio with high value to trigger fee difference beyond slippage tolerance
      * - run test
      * - check returned value
      * @expected
@@ -261,7 +261,7 @@ describe('HandshakeChain', () => {
         testData.transaction2PaymentTransaction,
       );
       const getFeeRatioSpy = vi.spyOn(network, 'getFeeRatio');
-      getFeeRatioSpy.mockResolvedValue(10); // High fee to trigger failure
+      getFeeRatioSpy.mockResolvedValue(10); // High fee to trigger failure beyond slippage
 
       const handshakeChain = await testUtils.generateChainObject(network);
       const result = await handshakeChain.verifyTransactionFee(paymentTx);
@@ -369,7 +369,7 @@ describe('HandshakeChain', () => {
         isValid: true,
         details: undefined,
       });
-      expect(isBoxUnspentAndValidSpy).toHaveBeenCalledWith(
+      expect(isBoxUnspentAndValidSpy).toHaveBeenCalledExactlyOnceWith(
         testData.transaction0Input0BoxId,
       );
     });
@@ -404,7 +404,7 @@ describe('HandshakeChain', () => {
           unexpected: false,
         },
       });
-      expect(isBoxUnspentAndValidSpy).toHaveBeenCalledWith(
+      expect(isBoxUnspentAndValidSpy).toHaveBeenCalledExactlyOnceWith(
         testData.transaction0Input0BoxId,
       );
     });

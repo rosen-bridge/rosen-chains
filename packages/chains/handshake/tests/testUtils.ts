@@ -34,6 +34,7 @@ export const configs: HandshakeConfigs = {
   },
   aggregatedPublicKey: testData.lockAddressPublicKey,
   txFeeSlippage: 10,
+  lockScript: testData.lockScript,
 };
 
 export const mockedSignFn = () =>

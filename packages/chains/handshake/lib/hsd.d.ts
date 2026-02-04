@@ -10,19 +10,24 @@ declare module 'hsd' {
     addCoin(coin: Coin): void;
     addOutput(options: { address: Address; value: number }): void;
     txid(): string;
+    hasWitness(): boolean;
+    getVirtualSize(): number;
     signatureHash(
       index: number,
       prev: Script,
       value: number,
       type: number,
     ): Buffer;
+    encode(): Buffer;
     toRaw(): Buffer;
     static fromRaw(data: Buffer): MTX;
+    static fromJSON(json): MTX;
   }
 
   export class TX {
     inputs: Input[];
     outputs: Output[];
+    getVirtualSize(): number;
     static fromRaw(data: Buffer): TX;
   }
 
@@ -61,10 +66,19 @@ declare module 'hsd' {
   export class Script {
     constructor();
     pushData(data: Buffer): void;
+    pushOp(op: number): void;
     compile(): void;
     toStack(): Buffer[];
-
+    encode(): Buffer;
+    static fromRaw(data: Buffer): Script;
+    static decode(data: Buffer): Script;
     static fromPubkeyhash(hash: Buffer): Script;
+    static opcodes: {
+      OP_0: number;
+      OP_1: number;
+      OP_CHECKMULTISIG: number;
+      [key: string]: number;
+    };
   }
 
   export class Coin {
